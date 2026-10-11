@@ -68,7 +68,7 @@ export default function HeroBanner() {
     <section className="relative w-full bg-[#ebebeb] overflow-hidden border-b border-slate-200 select-none">
       {/* 1. FULL IMAGE MODE (EXACT MATCH FOR SCREENSHOT 3 / IMAGE 372.JPG) */}
       {isFullImage ? (
-        <div className="relative w-full aspect-[1920/728] max-h-[728px]">
+        <div className="relative w-full aspect-[1920/728] min-h-[220px] sm:min-h-[320px] md:min-h-[440px] max-h-[728px]">
           <Link
             href={currentBanner.link_url || '/products?cat=surgical-instruments'}
             className="block w-full h-full relative group cursor-pointer"
@@ -88,13 +88,13 @@ export default function HeroBanner() {
           </Link>
 
           {/* ACCESSIBLE / CLICKABLE ACTION BUTTON OVERLAY FOR MOBILE & TABLET */}
-          <div className="absolute left-6 sm:left-12 md:left-24 bottom-12 sm:bottom-20 md:bottom-28 z-20 pointer-events-auto">
+          <div className="absolute left-4 sm:left-12 md:left-24 bottom-4 sm:bottom-12 md:bottom-20 z-20 pointer-events-auto">
             <Link
               href={currentBanner.link_url || '/products?cat=surgical-instruments'}
-              className="inline-flex items-center gap-2 bg-[#B92025] hover:bg-[#96161B] text-white font-black px-6 sm:px-8 py-2.5 sm:py-3.5 rounded-md text-xs sm:text-sm tracking-wider uppercase transition-all shadow-xl hover:translate-y-[-2px] active:translate-y-0 group"
+              className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#B92025] hover:bg-[#96161B] text-white font-black px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3.5 rounded-md text-[11px] sm:text-xs md:text-sm tracking-wider uppercase transition-all shadow-xl hover:translate-y-[-2px] active:translate-y-0 group"
             >
               <span>{currentBanner.button_text || 'SHOP NOW'}</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
         </div>

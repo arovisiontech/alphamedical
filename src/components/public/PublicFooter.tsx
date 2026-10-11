@@ -37,11 +37,11 @@ export default function PublicFooter() {
   }
 
   return (
-    <footer className="relative bg-[#f8fafc] text-slate-800 pt-20 pb-10 border-t border-slate-200/90 font-sans">
+    <footer className="relative bg-[#f8fafc] text-slate-800 pt-14 sm:pt-20 pb-10 border-t border-slate-200/90 font-sans">
       <div className="w-full max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-6 lg:px-8 2xl:px-12 3xl:px-20">
         
         {/* 1. FLOATING NEWSLETTER CARD (MATCHING SCREENSHOT 2 TOP) */}
-        <div className="relative -mt-32 sm:-mt-36 mb-16 z-20">
+        <div className="relative -mt-16 sm:-mt-28 md:-mt-36 mb-10 sm:mb-16 z-20">
           <div className="bg-white rounded-3xl border border-slate-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.06)] p-6 sm:p-8 2xl:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
             {/* Left: Icon & Text */}
             <div className="flex items-center gap-5 sm:gap-6 w-full lg:w-auto">

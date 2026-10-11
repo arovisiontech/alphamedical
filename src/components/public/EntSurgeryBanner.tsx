@@ -19,7 +19,7 @@ export default function EntSurgeryBanner() {
               Precision instruments for advanced ENT procedures engineered for better surgical outcomes.
             </p>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4 border-t border-slate-200 text-xs font-bold text-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-slate-200 text-xs font-bold text-slate-800">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-[#B92025]" />
                 <span>Premium Quality (AISI 420 Steel)</span>
