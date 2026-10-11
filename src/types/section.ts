@@ -33,3 +33,35 @@ export interface WorldExportData {
     flag: string
   }[]
 }
+
+export interface ComplianceBadgeItem {
+  id: string
+  type: 'iso' | 'fda' | 'custom'
+  code: string
+  label: string
+}
+
+export interface CompliancesPromoData {
+  compliance_badge: string
+  compliance_title_line1: string
+  compliance_title_line2: string
+  compliance_description: string
+  compliances: ComplianceBadgeItem[]
+  left_card: {
+    badge_text: string
+    title: string
+    highlight_title: string
+    description: string
+    button_text: string
+    button_url: string
+    bg_image: string
+  }
+  right_card: {
+    badge_icon: string
+    title_line1: string
+    title_line2: string
+    description: string
+    button_text: string
+    button_url: string
+  }
+}

@@ -33,7 +33,7 @@ export default function AdminSidebar() {
     { name: 'Inquiries & Messages', href: '/admin/contact-messages', icon: MessageSquare },
     { name: 'Content & Banners', href: '/admin/content', icon: Sparkles },
     { name: 'Trust Badges & Features', href: '/admin/features', icon: ShieldCheck },
-    { name: 'Video & Global Export', href: '/admin/sections', icon: Globe },
+    { name: 'Sections & Compliances', href: '/admin/sections', icon: Globe },
     { name: 'Analytics & Stats', href: '/admin/statistics', icon: BarChart3 },
     { name: 'System Settings', href: '/admin/settings', icon: Settings },
     { name: 'User Access', href: '/admin/users', icon: Users },

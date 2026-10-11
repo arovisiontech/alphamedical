@@ -4,7 +4,12 @@ import { CatalogueItem } from '@/src/types/catalogue'
 import { ContactMessage } from '@/src/types/media'
 import { BannerItem } from '@/src/types/banner'
 import { TrustFeatureItem } from '@/src/types/trustFeature'
-import { VideoWhyChooseData, WorldExportData } from '@/src/types/section'
+import {
+  VideoWhyChooseData,
+  WorldExportData,
+  CompliancesPromoData,
+  ComplianceBadgeItem,
+} from '@/src/types/section'
 import {
   savePersistentData,
   getLocalStorageSync,
@@ -19,6 +24,8 @@ export type {
   TrustFeatureItem,
   VideoWhyChooseData,
   WorldExportData,
+  CompliancesPromoData,
+  ComplianceBadgeItem,
 }
 
 // INITIAL CATEGORIES FOR ALPHA MEDICAL SUPPLIES STORE (CARDS 376, 377, 378, 379)
@@ -854,5 +861,64 @@ export function saveStoredWorldExport(data: WorldExportData): void {
   }
   savePersistentData('alpha_world_export_v2', data)
 }
+
+// INITIAL COMPLIANCES & ACTION PROMO CARDS SEED (MATCHING SCREENSHOT 1)
+export const INITIAL_COMPLIANCES_PROMO_SEED: CompliancesPromoData = {
+  compliance_badge: 'OUR COMPLIANCES',
+  compliance_title_line1: 'Global Standards.',
+  compliance_title_line2: 'Trusted Quality.',
+  compliance_description:
+    'We follow internationally recognized standards to ensure safety, quality and reliability in every product we deliver.',
+  compliances: [
+    { id: 'comp-1', type: 'iso', code: '13485 : 2016', label: 'ISO 13485:2016' },
+    { id: 'comp-2', type: 'iso', code: '13485 : 2016', label: 'ISO 13485:2016' },
+    { id: 'comp-3', type: 'iso', code: '13485 : 2016', label: 'ISO 13485:2016' },
+    { id: 'comp-4', type: 'fda', code: 'FDA', label: 'FDA Approved' },
+    { id: 'comp-5', type: 'fda', code: 'FDA', label: 'FDA Compliant' },
+  ],
+  left_card: {
+    badge_text: 'OUR HEALTH CARE',
+    title: 'Are you ready to get',
+    highlight_title: 'customized tools?',
+    description:
+      'We offer tailored surgical instruments to meet your specific needs and requirements.',
+    button_text: 'Contact Now',
+    button_url: '/contact',
+    bg_image: '/images/custom-tools-surgical.jpg',
+  },
+  right_card: {
+    badge_icon: 'bell',
+    title_line1: 'Stay Updated with Our',
+    title_line2: 'Upcoming Activities',
+    description:
+      'Be the first to know about new launches, exhibitions, and latest updates.',
+    button_text: 'View Events',
+    button_url: '/news',
+  },
+}
+
+export function getStoredCompliancesPromo(): CompliancesPromoData {
+  if (typeof window === 'undefined') return INITIAL_COMPLIANCES_PROMO_SEED
+  try {
+    const dataV2 = getLocalStorageSync<CompliancesPromoData | null>(
+      'alpha_compliances_promo_v2',
+      null
+    )
+    if (dataV2 && dataV2.compliance_title_line1) return dataV2
+  } catch (e) {
+    console.error('Failed to read alpha_compliances_promo:', e)
+  }
+  return INITIAL_COMPLIANCES_PROMO_SEED
+}
+
+export function saveStoredCompliancesPromo(data: CompliancesPromoData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_compliances_promo_v2', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_compliances_promo_v2', data)
+}
+
 
 

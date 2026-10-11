@@ -10,6 +10,7 @@ import TrustFeaturesSection from '@/src/components/public/TrustFeaturesSection'
 import VideoWhyChooseSection from '@/src/components/public/VideoWhyChooseSection'
 import FeaturedProductsSection from '@/src/components/public/FeaturedProductsSection'
 import GlobalExportSection from '@/src/components/public/GlobalExportSection'
+import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSection'
 import PartnerCalloutBanner from '@/src/components/public/PartnerCalloutBanner'
 import EntSurgeryBanner from '@/src/components/public/EntSurgeryBanner'
 import DownloadableCataloguesSection from '@/src/components/public/DownloadableCataloguesSection'
@@ -62,6 +63,9 @@ export default function Home() {
 
       {/* 9. TRUSTED WORLDWIDE FACTORY EXPORT SECTION (MATCHING SCREENSHOT 1 BOTTOM) */}
       <GlobalExportSection />
+
+      {/* 10. GLOBAL COMPLIANCES & ACTION PROMO CARDS (MATCHING SCREENSHOT 1) */}
+      <CompliancesPromoSection />
 
       {/* 7. PARTNER CALLOUT BANNER */}
       <PartnerCalloutBanner />
