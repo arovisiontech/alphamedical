@@ -12,13 +12,12 @@ import {
   RefreshCw,
   Plus,
   Trash2,
-  Upload,
   Play,
-  Users,
-  Scissors,
   Bell,
   ArrowRight,
-  ShieldCheck,
+  ListOrdered,
+  Layers,
+  Sparkles,
 } from 'lucide-react'
 import {
   getStoredVideoWhyChoose,
@@ -27,25 +26,31 @@ import {
   saveStoredWorldExport,
   getStoredCompliancesPromo,
   saveStoredCompliancesPromo,
+  getStoredProcessOrder,
+  saveStoredProcessOrder,
 } from '@/src/lib/dataStore'
 import {
   VideoWhyChooseData,
   WorldExportData,
   CompliancesPromoData,
   ComplianceBadgeItem,
+  ProcessOrderSectionData,
+  ProcessOrderStep,
 } from '@/src/types/section'
 
 export default function AdminSectionsPage() {
-  const [activeTab, setActiveTab] = useState<'video' | 'world' | 'compliances'>('compliances')
+  const [activeTab, setActiveTab] = useState<'process' | 'compliances' | 'video' | 'world'>('process')
+  const [processData, setProcessData] = useState<ProcessOrderSectionData>(getStoredProcessOrder())
+  const [compliancesData, setCompliancesData] = useState<CompliancesPromoData>(getStoredCompliancesPromo())
   const [videoData, setVideoData] = useState<VideoWhyChooseData>(getStoredVideoWhyChoose())
   const [worldData, setWorldData] = useState<WorldExportData>(getStoredWorldExport())
-  const [compliancesData, setCompliancesData] = useState<CompliancesPromoData>(getStoredCompliancesPromo())
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const loadData = () => {
+    setProcessData(getStoredProcessOrder())
+    setCompliancesData(getStoredCompliancesPromo())
     setVideoData(getStoredVideoWhyChoose())
     setWorldData(getStoredWorldExport())
-    setCompliancesData(getStoredCompliancesPromo())
   }
 
   useEffect(() => {
@@ -68,6 +73,18 @@ export default function AdminSectionsPage() {
     setTimeout(() => setToastMessage(null), 3500)
   }
 
+  const handleSaveProcess = (e: React.FormEvent) => {
+    e.preventDefault()
+    saveStoredProcessOrder(processData)
+    showToast('Order Process Workflow saved! Changes are live & saved across page reload.')
+  }
+
+  const handleSaveCompliances = (e: React.FormEvent) => {
+    e.preventDefault()
+    saveStoredCompliancesPromo(compliancesData)
+    showToast('Global Compliances & Promo Cards Section saved! Changes are live & saved across page reload.')
+  }
+
   const handleSaveVideo = (e: React.FormEvent) => {
     e.preventDefault()
     saveStoredVideoWhyChoose(videoData)
@@ -80,10 +97,27 @@ export default function AdminSectionsPage() {
     showToast('World Export Destinations Section saved! Changes are live & saved across page reload.')
   }
 
-  const handleSaveCompliances = (e: React.FormEvent) => {
-    e.preventDefault()
-    saveStoredCompliancesPromo(compliancesData)
-    showToast('Global Compliances & Promo Cards Section saved! Changes are live & saved across page reload.')
+  // Process Steps helpers
+  const handleAddProcessStep = () => {
+    const nextNum = String(processData.steps.length + 1).padStart(2, '0')
+    const newStep: ProcessOrderStep = {
+      id: `step-${Date.now()}`,
+      step_number: nextNum,
+      title: 'New Process Milestone',
+      description: 'Enter detailed milestone verification and customer update process.',
+      icon_name: 'clipboard-search',
+    }
+    setProcessData((prev) => ({
+      ...prev,
+      steps: [...prev.steps, newStep],
+    }))
+  }
+
+  const handleRemoveProcessStep = (id: string) => {
+    setProcessData((prev) => ({
+      ...prev,
+      steps: prev.steps.filter((s) => s.id !== id),
+    }))
   }
 
   // Compliances helper functions
@@ -124,13 +158,13 @@ export default function AdminSectionsPage() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-[#96161B] uppercase tracking-wider mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#96161B] animate-pulse" />
-              <span>Interactive Homepage Sections (Screenshot 1 & 2)</span>
+              <span>Interactive Homepage Sections (Screenshots 1 & 2)</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Homepage Sections & Compliances Manager
+              Homepage Sections & Process Workflow Manager
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              100% dynamic management for Compliances, Action Promo Cards, Video / Why Choose, and Global Export sections. All edits persist permanently on refresh (F5).
+              100% dynamic management for 7-Step Order Process Workflow, Compliances, Promo Cards, Video, and Global Export sections. All edits persist permanently on refresh (F5).
             </p>
           </div>
           <button
@@ -148,6 +182,18 @@ export default function AdminSectionsPage() {
         {/* TABS */}
         <div className="flex flex-wrap items-center gap-3">
           <button
+            onClick={() => setActiveTab('process')}
+            className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'process'
+                ? 'bg-[#96161B] text-white shadow-md shadow-red-950/20'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <ListOrdered className="w-4 h-4" />
+            <span>7-Step Order Process Workflow</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('compliances')}
             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'compliances'
@@ -156,7 +202,7 @@ export default function AdminSectionsPage() {
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>Global Compliances & Promo Cards (Screenshot 1)</span>
+            <span>Global Compliances & Promo Cards</span>
           </button>
 
           <button
@@ -185,7 +231,251 @@ export default function AdminSectionsPage() {
         </div>
 
         {/* =========================================================
-            TAB 1: COMPLIANCES & ACTION PROMO CARDS FORM (MATCHING SCREENSHOT 1)
+            TAB 1: 7-STEP ORDER PROCESS WORKFLOW FORM (MATCHING SCREENSHOT 1)
+        ========================================================= */}
+        {activeTab === 'process' && (
+          <form onSubmit={handleSaveProcess} className="space-y-6 sm:space-y-8">
+            
+            {/* LIVE PREVIEW BOX */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
+              <div className="text-xs font-bold text-[#96161B] uppercase tracking-wider mb-2">
+                Live Storefront Section Preview
+              </div>
+              <div className="border border-slate-200 rounded-2xl p-6 bg-slate-50/50 space-y-6">
+                <div className="text-center max-w-xl mx-auto space-y-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    {processData.subtitle}
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black">
+                    <span className="text-slate-900">{processData.title_line1} </span>
+                    <span className="text-[#96161B]">{processData.title_line2}</span>
+                  </div>
+                  <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{processData.tagline}</div>
+                </div>
+
+                {/* Steps Mini Preview */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                  {processData.steps.map((st) => (
+                    <div key={st.id} className="bg-white p-3 rounded-xl border border-slate-200 text-center space-y-1">
+                      <div className="w-6 h-6 rounded-full bg-[#96161B] text-white text-[10px] font-black mx-auto flex items-center justify-center">
+                        {st.step_number}
+                      </div>
+                      <div className="text-[11px] font-extrabold text-slate-900 line-clamp-1">{st.title}</div>
+                      <div className="text-[9px] text-slate-500 line-clamp-2">{st.description}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION HEADINGS FORM */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-6">
+              <h2 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-3">
+                1. Order Process Header & Taglines
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Top Subtitle</label>
+                  <input
+                    type="text"
+                    value={processData.subtitle}
+                    onChange={(e) => setProcessData({ ...processData, subtitle: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title Line 1</label>
+                  <input
+                    type="text"
+                    value={processData.title_line1}
+                    onChange={(e) => setProcessData({ ...processData, title_line1: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Title Line 2 (Red Accent)</label>
+                  <input
+                    type="text"
+                    value={processData.title_line2}
+                    onChange={(e) => setProcessData({ ...processData, title_line2: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B] text-[#96161B] font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Tagline Bar</label>
+                  <input
+                    type="text"
+                    value={processData.tagline}
+                    onChange={(e) => setProcessData({ ...processData, tagline: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Left Side Tag</label>
+                  <input
+                    type="text"
+                    value={processData.left_tag}
+                    onChange={(e) => setProcessData({ ...processData, left_tag: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Right Side Tag</label>
+                  <input
+                    type="text"
+                    value={processData.right_tag}
+                    onChange={(e) => setProcessData({ ...processData, right_tag: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl outline-none focus:border-[#96161B]"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 7 STEPS EDITOR */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 className="text-lg font-black text-slate-900">
+                  2. Timeline Steps ({processData.steps.length} Steps)
+                </h2>
+                <button
+                  type="button"
+                  onClick={handleAddProcessStep}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-[#96161B] text-white text-xs font-bold rounded-xl hover:bg-[#7d1216] transition-colors cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add Step</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {processData.steps.map((st, idx) => (
+                  <div key={st.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 relative group">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-[#96161B] text-white text-xs font-bold flex items-center justify-center">
+                          {st.step_number}
+                        </span>
+                        <span className="text-xs font-black text-slate-700 uppercase">Step #{idx + 1}</span>
+                      </div>
+                      {processData.steps.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProcessStep(st.id)}
+                          className="text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Number</label>
+                        <input
+                          type="text"
+                          value={st.step_number}
+                          onChange={(e) => {
+                            const updated = [...processData.steps]
+                            updated[idx].step_number = e.target.value
+                            setProcessData({ ...processData, steps: updated })
+                          }}
+                          className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Title</label>
+                        <input
+                          type="text"
+                          value={st.title}
+                          onChange={(e) => {
+                            const updated = [...processData.steps]
+                            updated[idx].title = e.target.value
+                            setProcessData({ ...processData, steps: updated })
+                          }}
+                          className="w-full px-2 py-1.5 text-xs border border-slate-300 rounded-lg bg-white font-bold"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-600 uppercase mb-0.5">Description</label>
+                      <textarea
+                        rows={3}
+                        value={st.description}
+                        onChange={(e) => {
+                          const updated = [...processData.steps]
+                          updated[idx].description = e.target.value
+                          setProcessData({ ...processData, steps: updated })
+                        }}
+                        className="w-full px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg bg-white"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* BOTTOM BAR EDITOR */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-4">
+              <h2 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-3">
+                3. Bottom Bar Quote & Partner CTA
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Bottom Quote Tagline</label>
+                  <input
+                    type="text"
+                    value={processData.bottom_quote}
+                    onChange={(e) => setProcessData({ ...processData, bottom_quote: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Button Text</label>
+                  <input
+                    type="text"
+                    value={processData.cta_button_text}
+                    onChange={(e) => setProcessData({ ...processData, cta_button_text: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl font-bold text-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Button URL</label>
+                  <input
+                    type="text"
+                    value={processData.cta_button_url}
+                    onChange={(e) => setProcessData({ ...processData, cta_button_url: e.target.value })}
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* SAVE BUTTON BAR */}
+            <div className="sticky bottom-6 z-40 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/90 shadow-xl flex items-center justify-between">
+              <div className="text-xs text-slate-500 font-semibold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>All changes persist permanently across page refreshes (F5).</span>
+              </div>
+              <button
+                type="submit"
+                className="flex items-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white px-8 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider shadow-lg shadow-red-950/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Order Process Workflow</span>
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* =========================================================
+            TAB 2: COMPLIANCES & ACTION PROMO CARDS FORM (MATCHING SCREENSHOT 1)
         ========================================================= */}
         {activeTab === 'compliances' && (
           <form onSubmit={handleSaveCompliances} className="space-y-6 sm:space-y-8">
@@ -601,11 +891,10 @@ export default function AdminSectionsPage() {
         )}
 
         {/* =========================================================
-            TAB 2: VIDEO & WHY CHOOSE FORM
+            TAB 3: VIDEO & WHY CHOOSE FORM
         ========================================================= */}
         {activeTab === 'video' && (
           <form onSubmit={handleSaveVideo} className="space-y-6 sm:space-y-8">
-            {/* LIVE PREVIEW BOX */}
             <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
               <div className="text-xs font-bold text-[#96161B] uppercase tracking-wider mb-2">
                 Live Storefront Card Preview
@@ -632,19 +921,11 @@ export default function AdminSectionsPage() {
                   <div>
                     <div className="font-black text-xl text-slate-900">{videoData.section_title}</div>
                     <div className="text-xs text-slate-500 mt-1">{videoData.section_subtitle}</div>
-                    <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                      {videoData.features.slice(0, 4).map((f) => (
-                        <div key={f.id} className="p-2 bg-white rounded-lg border border-slate-200">
-                          <div className="font-bold text-slate-800">{f.title}</div>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* FORM FIELDS */}
             <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm space-y-6">
               <h2 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-3">
                 Video Box Settings
@@ -668,48 +949,6 @@ export default function AdminSectionsPage() {
                     className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
                   />
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Button Text</label>
-                  <input
-                    type="text"
-                    value={videoData.video_button_text}
-                    onChange={(e) => setVideoData({ ...videoData, video_button_text: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Poster Image URL</label>
-                  <input
-                    type="text"
-                    value={videoData.poster_image}
-                    onChange={(e) => setVideoData({ ...videoData, poster_image: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
-                  />
-                </div>
-              </div>
-
-              <h2 className="text-lg font-black text-slate-900 border-b border-slate-100 pb-3 pt-4">
-                Why Choose Section
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Main Heading</label>
-                  <input
-                    type="text"
-                    value={videoData.section_title}
-                    onChange={(e) => setVideoData({ ...videoData, section_title: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Section Subtitle</label>
-                  <input
-                    type="text"
-                    value={videoData.section_subtitle}
-                    onChange={(e) => setVideoData({ ...videoData, section_subtitle: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
-                  />
-                </div>
               </div>
             </div>
 
@@ -727,7 +966,7 @@ export default function AdminSectionsPage() {
         )}
 
         {/* =========================================================
-            TAB 3: WORLD EXPORT FORM
+            TAB 4: WORLD EXPORT FORM
         ========================================================= */}
         {activeTab === 'world' && (
           <form onSubmit={handleSaveWorld} className="space-y-6 sm:space-y-8">
@@ -761,27 +1000,6 @@ export default function AdminSectionsPage() {
                     value={worldData.heading_line3}
                     onChange={(e) => setWorldData({ ...worldData, heading_line3: e.target.value })}
                     className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl font-bold text-[#96161B]"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Staff Count Stat</label>
-                  <input
-                    type="text"
-                    value={worldData.staff_count}
-                    onChange={(e) => setWorldData({ ...worldData, staff_count: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Instruments Count Stat</label>
-                  <input
-                    type="text"
-                    value={worldData.instruments_count}
-                    onChange={(e) => setWorldData({ ...worldData, instruments_count: e.target.value })}
-                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl"
                   />
                 </div>
               </div>

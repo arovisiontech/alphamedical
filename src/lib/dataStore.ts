@@ -9,6 +9,9 @@ import {
   WorldExportData,
   CompliancesPromoData,
   ComplianceBadgeItem,
+  ProcessOrderStep,
+  ProcessOrderBadge,
+  ProcessOrderSectionData,
 } from '@/src/types/section'
 import {
   savePersistentData,
@@ -26,6 +29,9 @@ export type {
   WorldExportData,
   CompliancesPromoData,
   ComplianceBadgeItem,
+  ProcessOrderStep,
+  ProcessOrderBadge,
+  ProcessOrderSectionData,
 }
 
 // INITIAL CATEGORIES FOR ALPHA MEDICAL SUPPLIES STORE (CARDS 376, 377, 378, 379)
@@ -919,6 +925,107 @@ export function saveStoredCompliancesPromo(data: CompliancesPromoData): void {
   }
   savePersistentData('alpha_compliances_promo_v2', data)
 }
+
+// INITIAL PROCESS ORDER WORKFLOW SEED (MATCHING SCREENSHOT 1)
+export const INITIAL_PROCESS_ORDER_SEED: ProcessOrderSectionData = {
+  subtitle: 'HOW ALPHA WHOLESALE MEDICAL SUPPLIES',
+  title_line1: 'Processes Your',
+  title_line2: 'Order',
+  tagline: 'PRECISION • QUALITY • TRUST • WORLDWIDE',
+  left_tag: 'QUALITY IN EVERY STEP',
+  right_tag: 'SURGICAL INSTRUMENTS FOR A HEALTHIER TOMORROW',
+  steps: [
+    {
+      id: 'step-1',
+      step_number: '01',
+      title: 'Requirement Analysis',
+      description:
+        'Our team carefully reviews your product requirements, specifications, branding details, and order quantities to ensure complete accuracy before production begins.',
+      icon_name: 'clipboard-search',
+    },
+    {
+      id: 'step-2',
+      step_number: '02',
+      title: 'Order Updates & Delivery Timeline',
+      description:
+        'We keep you regularly informed about your order status, production progress, and estimated delivery timeline for complete transparency.',
+      icon_name: 'file-check',
+    },
+    {
+      id: 'step-3',
+      step_number: '03',
+      title: 'Quality Inspection & Testing',
+      description:
+        'Every surgical instrument undergoes strict quality control, functional testing, and final inspection to meet international standards and certifications.',
+      icon_name: 'shield-check',
+    },
+    {
+      id: 'step-4',
+      step_number: '04',
+      title: 'Custom Branding & Packaging',
+      description:
+        'We offer smooth customization options for logos, laser engraving, and private labeling to help promote your brand around the world.',
+      icon_name: 'package',
+    },
+    {
+      id: 'step-5',
+      step_number: '05',
+      title: 'Customs Clearance Support',
+      description:
+        'We assist with smooth customs clearance processes to ensure hassle-free delivery. We work with trusted partners to handle regulations for Europe, UK, and the USA.',
+      icon_name: 'file-text',
+    },
+    {
+      id: 'step-6',
+      step_number: '06',
+      title: 'Secure Shipping & Delivery',
+      description:
+        'All orders are securely packed and shipped through reliable couriers and freight partners with tracking support for safe and on-time delivery.',
+      icon_name: 'truck',
+    },
+    {
+      id: 'step-7',
+      step_number: '07',
+      title: 'After-Sales Support',
+      description:
+        "Our relationship doesn't end after delivery. We provide dedicated customer support, assistance, and guidance to ensure your complete satisfaction.",
+      icon_name: 'headphones',
+    },
+  ],
+  bottom_quote: 'ADVANCING SURGERY, IMPROVING LIVES.',
+  bottom_badges: [
+    { id: 'b-1', icon_name: 'shield', text: 'TRUSTED WORLDWIDE' },
+    { id: 'b-2', icon_name: 'globe', text: 'PREMIUM QUALITY INSTRUMENTS' },
+    { id: 'b-3', icon_name: 'users', text: 'DEDICATED B2B SUPPORT' },
+    { id: 'b-4', icon_name: 'truck', text: 'ON-TIME GLOBAL DELIVERY' },
+  ],
+  cta_button_text: 'PARTNER WITH US',
+  cta_button_url: '/contact',
+}
+
+export function getStoredProcessOrder(): ProcessOrderSectionData {
+  if (typeof window === 'undefined') return INITIAL_PROCESS_ORDER_SEED
+  try {
+    const dataV2 = getLocalStorageSync<ProcessOrderSectionData | null>(
+      'alpha_process_order_v2',
+      null
+    )
+    if (dataV2 && dataV2.title_line1) return dataV2
+  } catch (e) {
+    console.error('Failed to read alpha_process_order:', e)
+  }
+  return INITIAL_PROCESS_ORDER_SEED
+}
+
+export function saveStoredProcessOrder(data: ProcessOrderSectionData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_process_order_v2', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_process_order_v2', data)
+}
+
 
 
 

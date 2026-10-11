@@ -65,3 +65,32 @@ export interface CompliancesPromoData {
     button_url: string
   }
 }
+
+export interface ProcessOrderStep {
+  id: string
+  step_number: string
+  title: string
+  description: string
+  icon_name: string
+}
+
+export interface ProcessOrderBadge {
+  id: string
+  icon_name: string
+  text: string
+}
+
+export interface ProcessOrderSectionData {
+  subtitle: string
+  title_line1: string
+  title_line2: string
+  tagline: string
+  left_tag: string
+  right_tag: string
+  steps: ProcessOrderStep[]
+  bottom_quote: string
+  bottom_badges: ProcessOrderBadge[]
+  cta_button_text: string
+  cta_button_url: string
+}
+
