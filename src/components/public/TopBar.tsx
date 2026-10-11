@@ -18,11 +18,11 @@ export default function TopBar() {
 
         {/* RIGHT: Phone & Email + Admin access */}
         <div className="flex items-center gap-4 text-[11px] text-slate-200">
-          <a href="tel:+1123456789" className="hover:text-white transition-colors">
-            (+1 123 456 789)
+          <a href="tel:+9252000000" className="hover:text-white transition-colors">
+            (+92 52 000 000)
           </a>
-          <a href="mailto:info@alpha-medicalsupplies.com" className="hover:text-white transition-colors hidden sm:inline">
-            info@alpha-medicalsupplies.com
+          <a href="mailto:Info@alpha-medicalsupplie.com" className="hover:text-white transition-colors hidden sm:inline">
+            Info@alpha-medicalsupplie.com
           </a>
           <Link
             href="/admin"

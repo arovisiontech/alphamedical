@@ -106,19 +106,16 @@ export default function PublicFooter() {
           
           {/* COL 1: LOGO & CONTACT INFO (LG: 4 COLS) */}
           <div className="lg:col-span-4 space-y-5">
-            {/* Logo */}
-            <Link href="/" className="inline-flex items-center gap-3">
-              <div className="relative w-10 h-10 shrink-0">
-                <Image src="/logo5.svg" alt="Alpha Medical" fill className="object-contain" />
-              </div>
-              <div>
-                <span className="text-xl 2xl:text-2xl font-black text-[#96161B] tracking-tight block leading-none">
-                  ALPHA
-                </span>
-                <span className="text-[9px] 2xl:text-[10px] font-bold text-slate-600 tracking-wider uppercase block mt-0.5">
-                  WHOLESALE MEDICAL SUPPLIES LLC
-                </span>
-              </div>
+            {/* Logo (Exact Logo 5.svg Image) */}
+            <Link href="/" className="inline-block">
+              <Image
+                src="/logo5.svg"
+                alt="ALPHA Wholesale Medical Supplies LLC"
+                width={220}
+                height={60}
+                className="h-12 sm:h-14 w-auto object-contain"
+                priority
+              />
             </Link>
 
             {/* Address */}
@@ -137,16 +134,32 @@ export default function PublicFooter() {
 
               <div className="flex items-start gap-3">
                 <Phone className="w-4 h-4 text-[#96161B] shrink-0 mt-0.5" />
-                <div>
-                  <div className="text-slate-700">Phone: (+92) 52 3563200</div>
-                  <div className="text-slate-500">Phone: (+92) 52 3553777 | (+92) 523252500</div>
+                <div className="space-y-0.5">
+                  <div className="text-slate-700">
+                    Phone:{' '}
+                    <a href="tel:+9252000000" className="hover:text-[#96161B] transition-colors">
+                      +92 52 000 000
+                    </a>
+                  </div>
+                  <div className="text-slate-700">
+                    Phone:{' '}
+                    <a href="tel:+92300000000" className="hover:text-[#96161B] transition-colors">
+                      +92 300 000 000
+                    </a>
+                  </div>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
                 <Mail className="w-4 h-4 text-[#96161B] shrink-0" />
                 <div className="text-slate-700">
-                  Email: <a href="mailto:Info@Durablehs.com" className="hover:text-[#96161B] font-semibold">Info@Durablehs.com</a>
+                  Email:{' '}
+                  <a
+                    href="mailto:Info@alpha-medicalsupplie.com"
+                    className="hover:text-[#96161B] font-semibold transition-colors"
+                  >
+                    Info@alpha-medicalsupplie.com
+                  </a>
                 </div>
               </div>
             </div>
