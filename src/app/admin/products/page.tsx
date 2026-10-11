@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   RefreshCw,
   ShoppingBag,
+  Tag,
 } from 'lucide-react'
 import {
   getStoredProducts,
@@ -36,7 +37,7 @@ export default function AdminProductsPage() {
   const [categories, setCategories] = useState<CategoryItem[]>([])
   const [search, setSearch] = useState('')
   const [selectedCat, setSelectedCat] = useState('all')
-  const [viewTab, setViewTab] = useState<'all' | 'best_sellers' | 'new_arrivals'>('all')
+  const [viewTab, setViewTab] = useState<'all' | 'best_sellers' | 'new_arrivals' | 'sale'>('all')
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   // Modal State
@@ -267,6 +268,8 @@ export default function AdminProductsPage() {
       matchesTab = !!p.is_best_seller || p.is_featured
     } else if (viewTab === 'new_arrivals') {
       matchesTab = !!p.is_new_arrival || p.badge === 'New'
+    } else if (viewTab === 'sale') {
+      matchesTab = !!(p.badge?.toLowerCase().includes('sale') || (p.original_price && p.price && p.original_price > p.price))
     }
 
     return matchesSearch && matchesCat && matchesTab
@@ -274,6 +277,11 @@ export default function AdminProductsPage() {
 
   const bestSellersCount = products.filter((p) => p.is_best_seller || p.is_featured).length
   const newArrivalsCount = products.filter((p) => p.is_new_arrival || p.badge === 'New').length
+  const saleCount = products.filter(
+    (p) =>
+      p.badge?.toLowerCase().includes('sale') ||
+      (p.original_price && p.price && p.original_price > p.price)
+  ).length
 
   return (
     <AdminShell>
@@ -359,6 +367,18 @@ export default function AdminProductsPage() {
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
             <span>✨ New Arrivals ({newArrivalsCount})</span>
+          </button>
+
+          <button
+            onClick={() => setViewTab('sale')}
+            className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              viewTab === 'sale'
+                ? 'bg-[#96161B] text-white shadow-md shadow-red-950/20'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Tag className="w-4 h-4 text-white" />
+            <span>🏷️ Sale / Discount Products ({saleCount})</span>
           </button>
         </div>
 
@@ -754,9 +774,25 @@ export default function AdminProductsPage() {
                     type="text"
                     value={formData.badge}
                     onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                    placeholder="New / Best Seller / Hot"
+                    placeholder="Sale / New / Best Seller / Hot"
                     className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
                   />
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    {['Sale', 'New', 'Best Seller', 'Hot'].map((b) => (
+                      <button
+                        type="button"
+                        key={b}
+                        onClick={() => setFormData({ ...formData, badge: b })}
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                          formData.badge === b
+                            ? 'bg-[#96161B] text-white'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {b}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

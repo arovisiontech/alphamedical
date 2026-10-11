@@ -94,3 +94,23 @@ export interface ProcessOrderSectionData {
   cta_button_url: string
 }
 
+export interface DiscountProductItem {
+  id: string
+  title: string
+  sku: string
+  original_price: number
+  price: number
+  badge: string
+  in_stock: boolean
+  featured_image: string
+  slug: string
+  sort_order: number
+}
+
+export interface DiscountProductsSectionData {
+  subtitle: string
+  title_line1: string
+  title_line2: string
+  products: DiscountProductItem[]
+}
+

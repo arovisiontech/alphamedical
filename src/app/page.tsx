@@ -12,6 +12,7 @@ import FeaturedProductsSection from '@/src/components/public/FeaturedProductsSec
 import GlobalExportSection from '@/src/components/public/GlobalExportSection'
 import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSection'
 import OrderProcessSection from '@/src/components/public/OrderProcessSection'
+import DiscountProductsSection from '@/src/components/public/DiscountProductsSection'
 import PartnerCalloutBanner from '@/src/components/public/PartnerCalloutBanner'
 import EntSurgeryBanner from '@/src/components/public/EntSurgeryBanner'
 import DownloadableCataloguesSection from '@/src/components/public/DownloadableCataloguesSection'
@@ -70,6 +71,9 @@ export default function Home() {
 
       {/* 11. HOW ALPHA PROCESSES YOUR ORDER (MATCHING SCREENSHOT 1) */}
       <OrderProcessSection />
+
+      {/* 12. DISCOUNT PRODUCTS SECTION (MATCHING SCREENSHOT 1) */}
+      <DiscountProductsSection onAddToCart={handleAddToCart} />
 
       {/* 7. PARTNER CALLOUT BANNER */}
       <PartnerCalloutBanner />

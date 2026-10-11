@@ -18,6 +18,8 @@ import {
   ListOrdered,
   Layers,
   Sparkles,
+  Tag,
+  ShoppingCart,
 } from 'lucide-react'
 import {
   getStoredVideoWhyChoose,
@@ -28,6 +30,8 @@ import {
   saveStoredCompliancesPromo,
   getStoredProcessOrder,
   saveStoredProcessOrder,
+  getStoredDiscountProducts,
+  saveStoredDiscountProducts,
 } from '@/src/lib/dataStore'
 import {
   VideoWhyChooseData,
@@ -36,10 +40,13 @@ import {
   ComplianceBadgeItem,
   ProcessOrderSectionData,
   ProcessOrderStep,
+  DiscountProductsSectionData,
+  DiscountProductItem,
 } from '@/src/types/section'
 
 export default function AdminSectionsPage() {
-  const [activeTab, setActiveTab] = useState<'process' | 'compliances' | 'video' | 'world'>('process')
+  const [activeTab, setActiveTab] = useState<'discount' | 'process' | 'compliances' | 'video' | 'world'>('discount')
+  const [discountData, setDiscountData] = useState<DiscountProductsSectionData>(getStoredDiscountProducts())
   const [processData, setProcessData] = useState<ProcessOrderSectionData>(getStoredProcessOrder())
   const [compliancesData, setCompliancesData] = useState<CompliancesPromoData>(getStoredCompliancesPromo())
   const [videoData, setVideoData] = useState<VideoWhyChooseData>(getStoredVideoWhyChoose())
@@ -47,6 +54,7 @@ export default function AdminSectionsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const loadData = () => {
+    setDiscountData(getStoredDiscountProducts())
     setProcessData(getStoredProcessOrder())
     setCompliancesData(getStoredCompliancesPromo())
     setVideoData(getStoredVideoWhyChoose())
@@ -71,6 +79,52 @@ export default function AdminSectionsPage() {
   const showToast = (msg: string) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(null), 3500)
+  }
+
+  const handleSaveDiscount = (e: React.FormEvent) => {
+    e.preventDefault()
+    saveStoredDiscountProducts(discountData)
+    showToast('Discount Products Section saved! Changes are live & saved across page reload.')
+  }
+
+  const handleAddDiscountProduct = () => {
+    const newId = `disc-${Date.now()}`
+    const newProd: DiscountProductItem = {
+      id: newId,
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: `ortho-weitlaner-retractor-sharp-${Date.now()}`,
+      sort_order: discountData.products.length + 1,
+    }
+    setDiscountData((prev) => ({
+      ...prev,
+      products: [...prev.products, newProd],
+    }))
+  }
+
+  const handleRemoveDiscountProduct = (id: string) => {
+    setDiscountData((prev) => ({
+      ...prev,
+      products: prev.products.filter((p) => p.id !== id),
+    }))
+  }
+
+  const handleUpdateDiscountProduct = (
+    id: string,
+    field: keyof DiscountProductItem,
+    value: any
+  ) => {
+    setDiscountData((prev) => ({
+      ...prev,
+      products: prev.products.map((p) =>
+        p.id === id ? { ...p, [field]: value } : p
+      ),
+    }))
   }
 
   const handleSaveProcess = (e: React.FormEvent) => {
@@ -182,6 +236,18 @@ export default function AdminSectionsPage() {
         {/* TABS */}
         <div className="flex flex-wrap items-center gap-3">
           <button
+            onClick={() => setActiveTab('discount')}
+            className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'discount'
+                ? 'bg-[#96161B] text-white shadow-md shadow-red-950/20'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Tag className="w-4 h-4" />
+            <span>Discount Products Showcase</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('process')}
             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'process'
@@ -229,6 +295,333 @@ export default function AdminSectionsPage() {
             <span>World Export Globe Section</span>
           </button>
         </div>
+
+        {/* =========================================================
+            TAB 0: DISCOUNT PRODUCTS SHOWCASE (MATCHING SCREENSHOT 1)
+        ========================================================= */}
+        {activeTab === 'discount' && (
+          <form onSubmit={handleSaveDiscount} className="space-y-6 sm:space-y-8">
+            
+            {/* LIVE PREVIEW BOX (MATCHING SCREENSHOT 1) */}
+            <div className="bg-gradient-to-br from-slate-50 to-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
+                    Storefront Live Preview (Screenshot 1 Layout)
+                  </span>
+                </div>
+                <span className="text-[11px] font-bold text-slate-400">Updates in real-time as you type</span>
+              </div>
+
+              {/* Exact Screenshot 1 Preview Card Grid */}
+              <div className="p-6 bg-white rounded-2xl border border-slate-100 shadow-inner overflow-hidden">
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="w-7 h-[2px] bg-[#96161B] rounded-full inline-block" />
+                      <span className="text-xs font-bold text-[#96161B] uppercase tracking-wider">
+                        {discountData.subtitle}
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 uppercase">
+                      <span>{discountData.title_line1} </span>
+                      <span className="text-[#96161B]">{discountData.title_line2}</span>
+                    </h2>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-[#64748b] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                      ‹
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-[#96161B] text-white flex items-center justify-center text-xs font-bold shadow-sm">
+                      ›
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {discountData.products.slice(0, 4).map((p, idx) => (
+                    <div
+                      key={p.id || idx}
+                      className="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col justify-between"
+                    >
+                      <div>
+                        <span className="bg-[#96161B] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase">
+                          {p.badge || 'Sale'}
+                        </span>
+                        <div className="relative w-full h-32 my-2 flex items-center justify-center bg-slate-50/50 rounded-xl">
+                          <Image
+                            src={p.featured_image || '/images/products/image-399.png'}
+                            alt={p.title}
+                            fill
+                            className="object-contain p-2"
+                          />
+                        </div>
+                        <h4 className="text-xs font-extrabold text-slate-900 uppercase leading-snug line-clamp-2 min-h-[32px] mb-1">
+                          {p.title}
+                        </h4>
+                        <div className="text-[10px] font-semibold text-slate-400 mb-1">
+                          SKU:{p.sku}
+                        </div>
+                        <div className="flex items-baseline gap-2 mb-2">
+                          {p.original_price && (
+                            <span className="text-xs font-bold text-slate-900 line-through">
+                              ${p.original_price.toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-sm font-black text-[#96161B]">
+                            ${p.price.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-[10px] font-semibold text-emerald-600 mb-3">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span>{p.in_stock ? 'In Stock' : 'Out of Stock'}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 pt-2 border-t border-slate-100">
+                        <div className="border border-slate-200 rounded px-1.5 py-0.5 text-[11px] font-bold text-slate-700 bg-white">
+                          - 1 +
+                        </div>
+                        <div className="flex-1 bg-[#96161B] text-white rounded py-1 px-2 text-[10px] font-bold flex items-center justify-center gap-1">
+                          <ShoppingCart className="w-3 h-3" />
+                          <span>Add To Cart</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION HEADINGS FORM */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm space-y-6">
+              <h3 className="text-base font-black text-slate-900 uppercase tracking-wide border-b border-slate-100 pb-3 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-[#96161B]" />
+                <span>Section Header Text & Badges</span>
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Small Subtitle
+                  </label>
+                  <input
+                    type="text"
+                    value={discountData.subtitle}
+                    onChange={(e) =>
+                      setDiscountData({ ...discountData, subtitle: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#96161B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Main Title Word 1 (Black)
+                  </label>
+                  <input
+                    type="text"
+                    value={discountData.title_line1}
+                    onChange={(e) =>
+                      setDiscountData({ ...discountData, title_line1: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#96161B]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                    Main Title Word 2 (Red)
+                  </label>
+                  <input
+                    type="text"
+                    value={discountData.title_line2}
+                    onChange={(e) =>
+                      setDiscountData({ ...discountData, title_line2: e.target.value })
+                    }
+                    className="w-full px-4 py-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#96161B] text-[#96161B] font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* DYNAMIC PRODUCTS MANAGER */}
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 className="text-base font-black text-slate-900 uppercase tracking-wide flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-[#96161B]" />
+                  <span>Discount Products List ({discountData.products.length})</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleAddDiscountProduct}
+                  className="flex items-center gap-1.5 px-4 py-2 bg-[#96161B] hover:bg-[#801317] text-white text-xs font-bold rounded-xl shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Add New Product</span>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {discountData.products.map((item, idx) => (
+                  <div
+                    key={item.id || idx}
+                    className="p-5 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-4 hover:border-slate-300 transition-colors"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <span className="w-6 h-6 rounded-full bg-slate-800 text-white font-black text-xs flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-black text-slate-900 uppercase">
+                          {item.title}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveDiscountProduct(item.id)}
+                        className="text-red-500 hover:text-red-700 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
+                        title="Delete product"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          Product Title
+                        </label>
+                        <input
+                          type="text"
+                          value={item.title}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(item.id, 'title', e.target.value)
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          SKU Code
+                        </label>
+                        <input
+                          type="text"
+                          value={item.sku}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(item.id, 'sku', e.target.value)
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          Original Price ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.original_price}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(
+                              item.id,
+                              'original_price',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          Discount / Sale Price ($)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={item.price}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(
+                              item.id,
+                              'price',
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white font-bold text-[#96161B]"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          Badge Label
+                        </label>
+                        <input
+                          type="text"
+                          value={item.badge}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(item.id, 'badge', e.target.value)
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+                          Image Path
+                        </label>
+                        <input
+                          type="text"
+                          value={item.featured_image}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(item.id, 'featured_image', e.target.value)
+                          }
+                          className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl bg-white"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-5">
+                        <input
+                          type="checkbox"
+                          id={`in-stock-${item.id}`}
+                          checked={item.in_stock}
+                          onChange={(e) =>
+                            handleUpdateDiscountProduct(item.id, 'in_stock', e.target.checked)
+                          }
+                          className="w-4 h-4 text-[#96161B] rounded focus:ring-[#96161B] cursor-pointer"
+                        />
+                        <label
+                          htmlFor={`in-stock-${item.id}`}
+                          className="text-xs font-bold text-slate-700 uppercase cursor-pointer"
+                        >
+                          In Stock
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* STICKY SAVE ACTIONS */}
+            <div className="sticky bottom-6 z-40 bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-slate-200/90 shadow-xl flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-semibold">
+                Changes persist permanently in storage across page reload (F5).
+              </span>
+              <button
+                type="submit"
+                className="flex items-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white px-8 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer shadow-lg shadow-red-950/20 active:scale-95 transition-all"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save Discount Products Section</span>
+              </button>
+            </div>
+          </form>
+        )}
 
         {/* =========================================================
             TAB 1: 7-STEP ORDER PROCESS WORKFLOW FORM (MATCHING SCREENSHOT 1)

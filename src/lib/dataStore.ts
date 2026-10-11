@@ -12,6 +12,8 @@ import {
   ProcessOrderStep,
   ProcessOrderBadge,
   ProcessOrderSectionData,
+  DiscountProductItem,
+  DiscountProductsSectionData,
 } from '@/src/types/section'
 import {
   savePersistentData,
@@ -1024,6 +1026,112 @@ export function saveStoredProcessOrder(data: ProcessOrderSectionData): void {
     } catch (e) {}
   }
   savePersistentData('alpha_process_order_v2', data)
+}
+
+// ============================================================================
+// DISCOUNT PRODUCTS SECTION SEED & PERSISTENCE (MATCHING SCREENSHOT 1)
+// ============================================================================
+export const INITIAL_DISCOUNT_PRODUCTS_SEED: DiscountProductsSectionData = {
+  subtitle: 'Explore Our Range',
+  title_line1: 'DISCOUNT',
+  title_line2: 'PRODUCTS',
+  products: [
+    {
+      id: 'disc-1',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-1',
+      sort_order: 1,
+    },
+    {
+      id: 'disc-2',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-2',
+      sort_order: 2,
+    },
+    {
+      id: 'disc-3',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-3',
+      sort_order: 3,
+    },
+    {
+      id: 'disc-4',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-4',
+      sort_order: 4,
+    },
+    {
+      id: 'disc-5',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-5',
+      sort_order: 5,
+    },
+    {
+      id: 'disc-6',
+      title: 'ORTHO WEITLANER RETRACTOR SHARP',
+      sku: '1001',
+      original_price: 64.95,
+      price: 55.95,
+      badge: 'Sale',
+      in_stock: true,
+      featured_image: '/images/products/image-399.png',
+      slug: 'ortho-weitlaner-retractor-sharp-1001-6',
+      sort_order: 6,
+    },
+  ],
+}
+
+export function getStoredDiscountProducts(): DiscountProductsSectionData {
+  if (typeof window === 'undefined') return INITIAL_DISCOUNT_PRODUCTS_SEED
+  try {
+    const dataV1 = getLocalStorageSync<DiscountProductsSectionData | null>(
+      'alpha_discount_products_v1',
+      null
+    )
+    if (dataV1 && dataV1.products && dataV1.products.length > 0) return dataV1
+  } catch (e) {
+    console.error('Failed to read alpha_discount_products:', e)
+  }
+  return INITIAL_DISCOUNT_PRODUCTS_SEED
+}
+
+export function saveStoredDiscountProducts(data: DiscountProductsSectionData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_discount_products_v1', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_discount_products_v1', data)
 }
 
 
