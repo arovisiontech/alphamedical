@@ -14,6 +14,9 @@ import {
   ProcessOrderSectionData,
   DiscountProductItem,
   DiscountProductsSectionData,
+  FaqItem,
+  BulkInquiryBadge,
+  FaqBulkInquiryData,
 } from '@/src/types/section'
 import {
   savePersistentData,
@@ -1133,6 +1136,86 @@ export function saveStoredDiscountProducts(data: DiscountProductsSectionData): v
   }
   savePersistentData('alpha_discount_products_v1', data)
 }
+
+// ============================================================================
+// FAQ & BULK INQUIRY LUXURY SECTION (MATCHING SCREENSHOT 1)
+// ============================================================================
+export const INITIAL_FAQ_BULK_INQUIRY_SEED: FaqBulkInquiryData = {
+  faq_subtitle: 'SUPPORT',
+  faq_title: 'FAQ',
+  faq_description: 'Here are some frequently asked questions to help you.',
+  faq_tag: 'QUALITY INSTRUMENTS FOR A HEALTHIER TOMORROW',
+  faqs: [
+    {
+      id: 'faq-1',
+      question: 'Do you offer bulk or wholesale pricing?',
+      answer:
+        'Yes, special pricing is available for bulk orders, distributors, and long-term business partners.',
+    },
+    {
+      id: 'faq-2',
+      question: 'What payment methods do you accept?',
+      answer:
+        'We accept Wire Transfer (TT), Letter of Credit (LC), PayPal, and major corporate purchasing cards.',
+    },
+    {
+      id: 'faq-3',
+      question: 'What is your warranty policy?',
+      answer:
+        'All Alpha surgical instruments come with a comprehensive 2-year warranty against defects in material and craftsmanship.',
+    },
+    {
+      id: 'faq-4',
+      question: 'Do you ship internationally?',
+      answer:
+        'Yes, we provide fully insured express air shipping and sea freight partnerships to over 75+ countries globally.',
+    },
+    {
+      id: 'faq-5',
+      question: 'Are your instruments reusable and sterilizable?',
+      answer:
+        'Yes, all surgical instruments are precision forged from German medical stainless steel, autoclave compliant up to 134°C.',
+    },
+  ],
+  inquiry_subtitle: 'BUSINESS SOLUTIONS',
+  inquiry_title_p1: 'Bulk',
+  inquiry_title_p2: 'Inquiry ?',
+  inquiry_description: 'Get special discounts on bulk purchases.',
+  inquiry_button_text: 'Contact Us Today',
+  inquiry_button_url: '/contact',
+  inquiry_image: '/images/bulk-inquiry-surgical.jpg',
+  inquiry_badges: [
+    { id: 'b-1', icon_name: 'users', title: 'B2B PRICING' },
+    { id: 'b-2', icon_name: 'shield', title: 'TRUSTED SUPPLY PARTNER' },
+    { id: 'b-3', icon_name: 'globe', title: 'GLOBAL SHIPPING' },
+  ],
+  bottom_quote: 'ADVANCING SURGERY, IMPROVING LIVES.',
+  bottom_tag: 'MEDICAL INSTRUMENTS FOR A BETTER TOMORROW',
+}
+
+export function getStoredFaqBulkInquiry(): FaqBulkInquiryData {
+  if (typeof window === 'undefined') return INITIAL_FAQ_BULK_INQUIRY_SEED
+  try {
+    const dataV1 = getLocalStorageSync<FaqBulkInquiryData | null>(
+      'alpha_faq_bulk_inquiry_v1',
+      null
+    )
+    if (dataV1 && dataV1.faq_title) return dataV1
+  } catch (e) {
+    console.error('Failed to read alpha_faq_bulk_inquiry:', e)
+  }
+  return INITIAL_FAQ_BULK_INQUIRY_SEED
+}
+
+export function saveStoredFaqBulkInquiry(data: FaqBulkInquiryData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_faq_bulk_inquiry_v1', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_faq_bulk_inquiry_v1', data)
+}
+
 
 
 

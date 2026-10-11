@@ -13,6 +13,7 @@ import GlobalExportSection from '@/src/components/public/GlobalExportSection'
 import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSection'
 import OrderProcessSection from '@/src/components/public/OrderProcessSection'
 import DiscountProductsSection from '@/src/components/public/DiscountProductsSection'
+import FaqBulkInquirySection from '@/src/components/public/FaqBulkInquirySection'
 import PartnerCalloutBanner from '@/src/components/public/PartnerCalloutBanner'
 import EntSurgeryBanner from '@/src/components/public/EntSurgeryBanner'
 import DownloadableCataloguesSection from '@/src/components/public/DownloadableCataloguesSection'
@@ -74,6 +75,9 @@ export default function Home() {
 
       {/* 12. DISCOUNT PRODUCTS SECTION (MATCHING SCREENSHOT 1) */}
       <DiscountProductsSection onAddToCart={handleAddToCart} />
+
+      {/* 13. FAQ & BULK INQUIRY LUXURY SECTION (MATCHING SCREENSHOT 1) */}
+      <FaqBulkInquirySection />
 
       {/* 7. PARTNER CALLOUT BANNER */}
       <PartnerCalloutBanner />

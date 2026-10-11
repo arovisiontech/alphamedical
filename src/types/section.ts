@@ -114,3 +114,33 @@ export interface DiscountProductsSectionData {
   products: DiscountProductItem[]
 }
 
+export interface FaqItem {
+  id: string
+  question: string
+  answer: string
+}
+
+export interface BulkInquiryBadge {
+  id: string
+  icon_name: string
+  title: string
+}
+
+export interface FaqBulkInquiryData {
+  faq_subtitle: string
+  faq_title: string
+  faq_description: string
+  faq_tag: string
+  faqs: FaqItem[]
+  inquiry_subtitle: string
+  inquiry_title_p1: string
+  inquiry_title_p2: string
+  inquiry_description: string
+  inquiry_button_text: string
+  inquiry_button_url: string
+  inquiry_image: string
+  inquiry_badges: BulkInquiryBadge[]
+  bottom_quote: string
+  bottom_tag: string
+}
+
