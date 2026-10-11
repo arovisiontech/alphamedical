@@ -14,10 +14,6 @@ import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSec
 import OrderProcessSection from '@/src/components/public/OrderProcessSection'
 import DiscountProductsSection from '@/src/components/public/DiscountProductsSection'
 import FaqBulkInquirySection from '@/src/components/public/FaqBulkInquirySection'
-import PartnerCalloutBanner from '@/src/components/public/PartnerCalloutBanner'
-import EntSurgeryBanner from '@/src/components/public/EntSurgeryBanner'
-import DownloadableCataloguesSection from '@/src/components/public/DownloadableCataloguesSection'
-import ContactForm from '@/src/components/public/ContactForm'
 import PublicFooter from '@/src/components/public/PublicFooter'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import CartQuoteModal from '@/src/components/public/CartQuoteModal'
@@ -79,23 +75,7 @@ export default function Home() {
       {/* 13. FAQ & BULK INQUIRY LUXURY SECTION (MATCHING SCREENSHOT 1) */}
       <FaqBulkInquirySection />
 
-      {/* 7. PARTNER CALLOUT BANNER */}
-      <PartnerCalloutBanner />
-
-      {/* 8. ENT SURGERY PROMO BANNER */}
-      <EntSurgeryBanner />
-
-      {/* 9. DOWNLOADABLE CATALOGUES */}
-      <DownloadableCataloguesSection />
-
-      {/* 10. CONTACT / QUOTATION DESK */}
-      <section className="py-16 bg-[#f8fafc]">
-        <div className="max-w-4xl mx-auto px-4 sm:px-8">
-          <ContactForm />
-        </div>
-      </section>
-
-      {/* 11. FOOTER */}
+      {/* 14. FOOTER */}
       <PublicFooter />
 
       {/* MODALS */}

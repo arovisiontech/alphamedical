@@ -18,6 +18,17 @@ import {
   Sparkles,
 } from 'lucide-react'
 
+interface NavItem {
+  name: string
+  href: string
+  hasDropdown?: boolean
+  isBadge?: boolean
+  columns?: {
+    title: string
+    items: string[]
+  }[]
+}
+
 export default function MainRedNavbar() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
@@ -47,7 +58,7 @@ export default function MainRedNavbar() {
     setOpenAccordion(openAccordion === name ? null : name)
   }
 
-  const navItems = [
+  const navItems: NavItem[] = [
     {
       name: 'Surgical Instruments',
       href: '/products?cat=surgical-instruments',
@@ -115,7 +126,7 @@ export default function MainRedNavbar() {
         },
       ],
     },
-    { name: 'Sale', href: '/products?sale=true', isBadge: true },
+    { name: 'Sale', href: '/products?sale=true' },
     { name: 'Resources', href: '/resources' },
     { name: 'Contact Us', href: '/contact' },
   ]
@@ -123,11 +134,11 @@ export default function MainRedNavbar() {
   return (
     <>
       {/* =========================================================
-          DESKTOP NAVBAR (LARGE SCREENS: lg & up)
+          DESKTOP NAVBAR (MATCHING SCREENSHOT 1)
       ========================================================= */}
-      <nav className="hidden lg:block bg-[#B92025] text-white sticky top-0 z-40 shadow-md">
-        <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 flex items-center justify-between relative">
-          <div className="flex items-center space-x-1 font-bold text-xs uppercase tracking-wider">
+      <nav className="hidden lg:block bg-[#96161B] text-white sticky top-0 z-40 shadow-sm border-t border-red-800/40 font-sans">
+        <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 flex items-center justify-center relative">
+          <div className="flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 2xl:gap-14 text-[13px] sm:text-sm 2xl:text-[15px] font-semibold">
             {navItems.map((item) => (
               <div
                 key={item.name}
@@ -137,21 +148,18 @@ export default function MainRedNavbar() {
               >
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-1.5 px-4 py-3.5 hover:bg-black/20 transition-colors ${
-                    item.isBadge ? 'bg-black/25 text-yellow-300 font-extrabold flex items-center gap-1' : ''
-                  }`}
+                  className="flex items-center gap-1.5 py-3.5 text-white hover:text-white/80 transition-colors whitespace-nowrap cursor-pointer"
                 >
-                  {item.isBadge && <Flame className="w-3.5 h-3.5 text-yellow-300" />}
                   <span>{item.name}</span>
-                  {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/80" />}
+                  {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                 </Link>
 
                 {/* MEGA MENU DROPDOWN */}
                 {item.hasDropdown && activeDropdown === item.name && (
-                  <div className="absolute top-full left-0 w-[650px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-b-2xl p-6 z-50 animate-fade-in grid grid-cols-3 gap-6">
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-[650px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 z-50 animate-fade-in grid grid-cols-3 gap-6">
                     {item.columns?.map((col, idx) => (
                       <div key={idx} className="space-y-3">
-                        <h4 className="font-extrabold text-xs text-[#B92025] uppercase tracking-wider border-b border-red-100 pb-1.5">
+                        <h4 className="font-extrabold text-xs text-[#96161B] uppercase tracking-wider border-b border-red-100 pb-1.5">
                           {col.title}
                         </h4>
                         <ul className="space-y-1.5 text-xs text-slate-600 font-medium">
@@ -159,7 +167,7 @@ export default function MainRedNavbar() {
                             <li key={sIdx}>
                               <Link
                                 href={`/products?query=${encodeURIComponent(sub)}`}
-                                className="hover:text-[#B92025] hover:underline block py-0.5"
+                                className="hover:text-[#96161B] hover:underline block py-0.5"
                               >
                                 • {sub}
                               </Link>
@@ -173,21 +181,13 @@ export default function MainRedNavbar() {
               </div>
             ))}
           </div>
-
-          {/* Quick PDF Catalogue link */}
-          <div className="hidden xl:flex items-center gap-2 text-xs font-bold text-white py-2">
-            <FileText className="w-3.5 h-3.5 text-yellow-300" />
-            <Link href="/catalogues" className="hover:underline text-[11px] font-extrabold tracking-wide uppercase">
-              2026 Product Catalogues (PDF)
-            </Link>
-          </div>
         </div>
       </nav>
 
       {/* =========================================================
           MOBILE & TABLET STICKY BAR (< lg SCREENS)
       ========================================================= */}
-      <nav className="lg:hidden bg-[#B92025] text-white sticky top-0 z-40 shadow-md border-t border-[#96161B]">
+      <nav className="lg:hidden bg-[#96161B] text-white sticky top-0 z-40 shadow-md border-t border-red-800/40">
         <div className="px-3 py-2 flex items-center justify-between gap-2">
           {/* HAMBURGER TRIGGER BUTTON */}
           <button
