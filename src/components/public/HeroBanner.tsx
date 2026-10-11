@@ -91,7 +91,7 @@ export default function HeroBanner() {
           <div className="absolute left-4 sm:left-12 md:left-24 bottom-4 sm:bottom-12 md:bottom-20 z-20 pointer-events-auto">
             <Link
               href={currentBanner.link_url || '/products?cat=surgical-instruments'}
-              className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#B92025] hover:bg-[#96161B] text-white font-black px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3.5 rounded-md text-[11px] sm:text-xs md:text-sm tracking-wider uppercase transition-all shadow-xl hover:translate-y-[-2px] active:translate-y-0 group"
+              className="inline-flex items-center gap-1.5 sm:gap-2 bg-[#96161B] hover:bg-[#7e1216] text-white font-black px-4 sm:px-6 md:px-8 py-2 sm:py-2.5 md:py-3.5 rounded-md text-[11px] sm:text-xs md:text-sm tracking-wider uppercase transition-all shadow-xl hover:translate-y-[-2px] active:translate-y-0 group glow-btn-red shimmer-effect"
             >
               <span>{currentBanner.button_text || 'SHOP NOW'}</span>
               <ArrowRight className="w-3.5 h-3.5 sm:w-4 sm:h-4 group-hover:translate-x-1 transition-transform" />

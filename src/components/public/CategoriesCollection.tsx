@@ -146,7 +146,7 @@ export default function CategoriesCollection() {
                 >
                   <Link
                     href={`/products?cat=${cat.slug}`}
-                    className="block relative rounded-[28px] overflow-hidden bg-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-slate-200/80"
+                    className="block relative rounded-[28px] overflow-hidden bg-white shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 border border-slate-200/80 hover-card-3d shimmer-effect"
                   >
                     {/* CARD CONTAINER WITH EXACT 442x536 ASPECT RATIO */}
                     <div className="relative aspect-[442/536] w-full overflow-hidden bg-slate-900">

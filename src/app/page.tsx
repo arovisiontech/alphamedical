@@ -14,6 +14,7 @@ import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSec
 import OrderProcessSection from '@/src/components/public/OrderProcessSection'
 import DiscountProductsSection from '@/src/components/public/DiscountProductsSection'
 import FaqBulkInquirySection from '@/src/components/public/FaqBulkInquirySection'
+import ScrollAnimationObserver from '@/src/components/public/ScrollAnimationObserver'
 import PublicFooter from '@/src/components/public/PublicFooter'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import CartQuoteModal from '@/src/components/public/CartQuoteModal'
@@ -42,6 +43,9 @@ export default function Home() {
         cartCount={cartItems.length}
       />
 
+      {/* ANIMATION VIEWPORT CONTROLLER */}
+      <ScrollAnimationObserver />
+
       {/* 3. MAIN MAROON RED NAVBAR WITH MEGA MENUS */}
       <MainRedNavbar />
 
@@ -49,31 +53,49 @@ export default function Home() {
       <HeroBanner />
 
       {/* 5. CATEGORIES COLLECTION (CURVED MAROON HEADERS) */}
-      <CategoriesCollection />
+      <div className="reveal-on-scroll">
+        <CategoriesCollection />
+      </div>
 
       {/* 6. TRUST / VALUE BADGES (PREMIUM QUALITY, FAST SHIPPING, SUPPORT, TRUSTED BY PROFESSIONALS) */}
-      <TrustFeaturesSection />
+      <div className="reveal-on-scroll delay-100">
+        <TrustFeaturesSection />
+      </div>
 
       {/* 7. VIDEO & WHY CHOOSE SECTION (MATCHING SCREENSHOT 1 TOP) */}
-      <VideoWhyChooseSection />
+      <div className="reveal-scale">
+        <VideoWhyChooseSection />
+      </div>
 
       {/* 8. BEST SELLERS / FEATURED PRODUCTS (MATCHING IMAGE 399) */}
-      <FeaturedProductsSection onAddToCart={handleAddToCart} />
+      <div className="reveal-on-scroll delay-100">
+        <FeaturedProductsSection onAddToCart={handleAddToCart} />
+      </div>
 
       {/* 9. TRUSTED WORLDWIDE FACTORY EXPORT SECTION (MATCHING SCREENSHOT 1 BOTTOM) */}
-      <GlobalExportSection />
+      <div className="reveal-on-scroll">
+        <GlobalExportSection />
+      </div>
 
       {/* 10. GLOBAL COMPLIANCES & ACTION PROMO CARDS */}
-      <CompliancesPromoSection />
+      <div className="reveal-scale delay-100">
+        <CompliancesPromoSection />
+      </div>
 
       {/* 11. HOW ALPHA PROCESSES YOUR ORDER (MATCHING SCREENSHOT 1) */}
-      <OrderProcessSection />
+      <div className="reveal-on-scroll">
+        <OrderProcessSection />
+      </div>
 
       {/* 12. DISCOUNT PRODUCTS SECTION (MATCHING SCREENSHOT 1) */}
-      <DiscountProductsSection onAddToCart={handleAddToCart} />
+      <div className="reveal-on-scroll delay-100">
+        <DiscountProductsSection onAddToCart={handleAddToCart} />
+      </div>
 
       {/* 13. FAQ & BULK INQUIRY LUXURY SECTION (MATCHING SCREENSHOT 1) */}
-      <FaqBulkInquirySection />
+      <div className="reveal-scale">
+        <FaqBulkInquirySection />
+      </div>
 
       {/* 14. FOOTER */}
       <PublicFooter />

@@ -89,7 +89,7 @@ export default function VideoWhyChooseSection() {
                 <button
                   type="button"
                   onClick={() => setIsVideoModalOpen(true)}
-                  className="w-16 h-16 sm:w-20 sm:h-20 2xl:w-24 2xl:h-24 rounded-full bg-white/95 hover:bg-white text-slate-900 shadow-2xl flex items-center justify-center pl-1 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer group/btn"
+                  className="w-16 h-16 sm:w-20 sm:h-20 2xl:w-24 2xl:h-24 rounded-full bg-white/95 hover:bg-white text-slate-900 shadow-2xl flex items-center justify-center pl-1 hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer group/btn animate-ripple"
                   aria-label="Play video"
                 >
                   <Play className="w-7 h-7 sm:w-8 sm:h-8 2xl:w-10 2xl:h-10 fill-slate-900 text-slate-900 group-hover/btn:text-[#96161B] group-hover/btn:fill-[#96161B] transition-colors" />

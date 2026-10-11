@@ -42,10 +42,10 @@ export default function TrustFeaturesSection() {
               return (
                 <div
                   key={feat.id}
-                  className="p-5 sm:p-6 2xl:p-8 flex items-center gap-4 sm:gap-5 group hover:bg-red-50/30 transition-colors"
+                  className="p-5 sm:p-6 2xl:p-8 flex items-center gap-4 sm:gap-5 group hover:bg-red-50/40 transition-all duration-300 hover-card-3d cursor-default"
                 >
                   {/* Circular Pinkish Red Tinted Icon Container */}
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 2xl:w-20 2xl:h-20 rounded-full bg-[#fdecef] shrink-0 flex items-center justify-center p-3 sm:p-3.5 2xl:p-4 group-hover:scale-105 transition-transform duration-300 shadow-sm border border-red-100/60">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 2xl:w-20 2xl:h-20 rounded-full bg-[#fdecef] shrink-0 flex items-center justify-center p-3 sm:p-3.5 2xl:p-4 group-hover:scale-110 transition-transform duration-300 shadow-sm border border-red-100/60 group-hover:shadow-md">
                     <div className="relative w-full h-full flex items-center justify-center">
                       <Image
                         src={feat.icon_url || '/images/features/preimum-1.svg'}

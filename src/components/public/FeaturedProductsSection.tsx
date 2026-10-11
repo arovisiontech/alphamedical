@@ -162,12 +162,12 @@ export default function FeaturedProductsSection({
             return (
               <div
                 key={prod.id}
-                className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_rgba(150,22,27,0.12)] hover:border-[#96161B]/30 transition-all duration-300 p-5 sm:p-6 2xl:p-8 flex flex-col justify-between relative overflow-hidden"
+                className="group bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-[0_2px_12px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_rgba(150,22,27,0.14)] hover:border-[#96161B]/30 hover-card-3d transition-all duration-300 p-5 sm:p-6 2xl:p-8 flex flex-col justify-between relative overflow-hidden"
               >
                 {/* Top Badge (Deep Red Pill with "New") */}
                 <div className="flex items-center justify-between mb-2">
                   {badge ? (
-                    <span className="bg-[#96161B] text-white text-[11px] sm:text-xs font-bold px-3 py-1 rounded-md shadow-sm">
+                    <span className="bg-[#96161B] text-white text-[11px] sm:text-xs font-bold px-3 py-1 rounded-md shadow-sm shimmer-effect">
                       {badge}
                     </span>
                   ) : (
@@ -250,7 +250,7 @@ export default function FeaturedProductsSection({
                       className={`flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm 2xl:text-base flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
                         isAdded
                           ? 'bg-emerald-600 text-white shadow-md'
-                          : 'bg-[#96161B] hover:bg-[#7d1216] text-white shadow-md shadow-red-950/20 active:scale-95'
+                          : 'bg-[#96161B] hover:bg-[#7d1216] text-white shadow-md shadow-red-950/20 active:scale-95 glow-btn-red shimmer-effect'
                       }`}
                     >
                       {isAdded ? (

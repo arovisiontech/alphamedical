@@ -224,10 +224,10 @@ export default function FaqBulkInquirySection() {
               <div className="mb-12">
                 <Link
                   href={data.inquiry_button_url || '/contact'}
-                  className="inline-flex items-center gap-2.5 bg-[#96161B] hover:bg-[#7e1216] text-white font-black text-xs sm:text-sm 2xl:text-base px-7 sm:px-8 py-3.5 rounded-full shadow-lg shadow-red-950/60 hover:shadow-red-900/80 active:scale-95 transition-all cursor-pointer ring-2 ring-red-900/40"
+                  className="inline-flex items-center gap-2.5 bg-[#96161B] hover:bg-[#7e1216] text-white font-black text-xs sm:text-sm 2xl:text-base px-7 sm:px-8 py-3.5 rounded-full shadow-lg shadow-red-950/60 hover:shadow-red-900/80 active:scale-95 transition-all cursor-pointer ring-2 ring-red-900/40 glow-btn-red shimmer-effect"
                 >
                   <span>{data.inquiry_button_text}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </Link>
               </div>
 

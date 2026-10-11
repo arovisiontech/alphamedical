@@ -174,12 +174,12 @@ export default function DiscountProductsSection({
             return (
               <div
                 key={item.id || idx}
-                className="w-[270px] sm:w-[295px] md:w-[310px] 2xl:w-[350px] 3xl:w-[410px] shrink-0 snap-start bg-white rounded-2xl border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_32px_rgba(150,22,27,0.12)] hover:border-red-200 transition-all duration-300 p-5 flex flex-col justify-between group"
+                className="w-[270px] sm:w-[295px] md:w-[310px] 2xl:w-[350px] 3xl:w-[410px] shrink-0 snap-start bg-white rounded-2xl border border-slate-200/90 shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_16px_36px_rgba(150,22,27,0.14)] hover:border-red-200 hover-card-3d transition-all duration-300 p-5 flex flex-col justify-between group"
               >
                 <div>
                   {/* Top Row: Sale Badge */}
                   <div className="flex items-center justify-between mb-2">
-                    <span className="bg-[#96161B] text-white text-[11px] 2xl:text-xs font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm">
+                    <span className="bg-[#96161B] text-white text-[11px] 2xl:text-xs font-bold px-2.5 py-0.5 rounded-md uppercase tracking-wider shadow-sm shimmer-effect">
                       {item.badge || 'Sale'}
                     </span>
                   </div>
@@ -266,10 +266,10 @@ export default function DiscountProductsSection({
                     disabled={!item.in_stock}
                     className={`flex-1 py-2 px-2.5 sm:px-3 rounded-lg text-xs 2xl:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
                       isAdded
-                        ? 'bg-emerald-600 text-white'
+                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
                         : !item.in_stock
                         ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-[#96161B] hover:bg-[#7e1216] text-white hover:shadow-md'
+                        : 'bg-[#96161B] hover:bg-[#7e1216] text-white hover:shadow-md glow-btn-red shimmer-effect'
                     }`}
                   >
                     {isAdded ? (
