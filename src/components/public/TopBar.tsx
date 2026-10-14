@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { Phone, Mail, ShieldCheck } from 'lucide-react'
+import GeoModeSwitcher from './GeoModeSwitcher'
 
 export default function TopBar() {
   return (
@@ -16,14 +17,15 @@ export default function TopBar() {
           <span>We ship all over the world - Choose Free shipping on all orders above $350 USD</span>
         </div>
 
-        {/* RIGHT: Phone & Email + Admin access */}
-        <div className="flex items-center gap-4 text-[11px] text-slate-200">
-          <a href="tel:+9252000000" className="hover:text-white transition-colors">
+        {/* RIGHT: Phone & Email + Mode Switcher + Admin access */}
+        <div className="flex items-center gap-3 sm:gap-4 text-[11px] text-slate-200">
+          <a href="tel:+9252000000" className="hover:text-white transition-colors hidden sm:inline">
             (+92 52 000 000)
           </a>
-          <a href="mailto:Info@alpha-medicalsupplie.com" className="hover:text-white transition-colors hidden sm:inline">
+          <a href="mailto:Info@alpha-medicalsupplie.com" className="hover:text-white transition-colors hidden lg:inline">
             Info@alpha-medicalsupplie.com
           </a>
+          <GeoModeSwitcher />
           <Link
             href="/admin"
             className="hidden lg:flex items-center gap-1 text-[10px] font-bold text-white bg-black/20 hover:bg-[#B92025] px-2 py-0.5 rounded transition-colors"

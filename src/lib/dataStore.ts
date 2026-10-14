@@ -22,6 +22,7 @@ import {
   savePersistentData,
   getLocalStorageSync,
 } from '@/src/lib/persistentStorage'
+import { GeoStoreSettings } from '@/src/types/storeSettings'
 
 export type {
   ProductItem,
@@ -1215,6 +1216,57 @@ export function saveStoredFaqBulkInquiry(data: FaqBulkInquiryData): void {
   }
   savePersistentData('alpha_faq_bulk_inquiry_v1', data)
 }
+
+// INITIAL GEO STORE SETTINGS (DUAL MODE: USA ONLINE STORE + GLOBAL INQUIRY)
+export const INITIAL_GEO_STORE_SETTINGS_SEED: GeoStoreSettings = {
+  store_mode: 'auto_geo',
+  allowed_store_countries: ['US'],
+  default_country: 'US',
+  paypal_enabled: true,
+  paypal_mode: 'sandbox',
+  paypal_client_id: 'sb',
+  paypal_secret_key: '',
+  usa_bank_enabled: true,
+  stripe_publishable_key: 'pk_test_sample',
+  stripe_secret_key: '',
+  ach_direct_debit_enabled: true,
+  credit_cards_enabled: true,
+  inquiry_notification_email: 'info@alpha-medicalsupplie.com',
+  inquiry_phone_whatsapp: '+92 52 000 000 / +92 300 000 000',
+  international_quote_headline: 'International B2B Surgical & Medical Export Inquiries',
+  international_quote_notice:
+    'Direct instant online checkout is configured for USA hospital networks and clinics. For all international orders, our export desk delivers precision B2B quotation, bulk FOB/CIF shipping, and custom surgical instrumentation support.',
+  show_prices_to_international: true,
+  store_name: 'ALPHA Medical Supplies Store',
+  contact_email: 'info@alpha-medicalsupplie.com',
+  contact_phone: '+92 52 000 000',
+  physical_address: 'Alpha Medical Complex, Healthcare Industrial Zone, Sialkot, Pakistan / USA Fulfillment',
+  updated_at: new Date().toISOString(),
+}
+
+export function getStoredGeoStoreSettings(): GeoStoreSettings {
+  if (typeof window === 'undefined') return INITIAL_GEO_STORE_SETTINGS_SEED
+  try {
+    const data = getLocalStorageSync<GeoStoreSettings | null>(
+      'alpha_geo_store_settings_v1',
+      null
+    )
+    if (data && data.store_mode) return data
+  } catch (e) {
+    console.error('Failed to read alpha_geo_store_settings:', e)
+  }
+  return INITIAL_GEO_STORE_SETTINGS_SEED
+}
+
+export function saveStoredGeoStoreSettings(data: GeoStoreSettings): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_geo_store_settings_v1', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_geo_store_settings_v1', data)
+}
+
 
 
 

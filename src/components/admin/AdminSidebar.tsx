@@ -35,7 +35,7 @@ export default function AdminSidebar() {
     { name: 'Trust Badges & Features', href: '/admin/features', icon: ShieldCheck },
     { name: 'Sections & Compliances', href: '/admin/sections', icon: Globe },
     { name: 'Analytics & Stats', href: '/admin/statistics', icon: BarChart3 },
-    { name: 'System Settings', href: '/admin/settings', icon: Settings },
+    { name: 'Store & Geo Settings', href: '/admin/settings', icon: Settings },
     { name: 'User Access', href: '/admin/users', icon: Users },
   ]
 

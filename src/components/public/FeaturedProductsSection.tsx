@@ -12,9 +12,11 @@ import {
   Plus,
   ArrowRight,
   ChevronRight,
+  FileText,
 } from 'lucide-react'
 import { getStoredProducts, INITIAL_PRODUCTS_SEED } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
+import { useGeoLocation } from '@/src/context/GeoLocationContext'
 
 interface FeaturedProductsSectionProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
@@ -23,6 +25,7 @@ interface FeaturedProductsSectionProps {
 export default function FeaturedProductsSection({
   onAddToCart,
 }: FeaturedProductsSectionProps) {
+  const { isUsaStore, openInquiryModal } = useGeoLocation()
   const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS_SEED)
   const [activeTab, setActiveTab] = useState<'best_sellers' | 'new_arrivals'>('new_arrivals')
   const [quantities, setQuantities] = useState<Record<string, number>>({})
@@ -217,59 +220,73 @@ export default function FeaturedProductsSection({
                     <span>{inStock ? 'In Stock' : 'Pre-Order / Out of Stock'}</span>
                   </div>
 
-                  {/* Bottom Action Bar: Quantity Selector + Add To Cart Button */}
-                  <div className="pt-2 flex items-center gap-2 sm:gap-3">
-                    {/* Quantity Pill */}
-                    <div className="flex items-center justify-between border border-slate-300 rounded-xl px-2 py-1.5 sm:py-2 w-24 sm:w-28 shrink-0 bg-white">
-                      <button
-                        type="button"
-                        onClick={() => handleQtyChange(prod.id, -1)}
-                        className="text-slate-600 hover:text-slate-900 p-0.5 rounded transition-colors disabled:opacity-30 cursor-pointer"
-                        disabled={qty <= 1}
-                        aria-label="Decrease quantity"
-                      >
-                        <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </button>
-                      <span className="font-bold text-xs sm:text-sm text-slate-900 select-none">
-                        {qty}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleQtyChange(prod.id, 1)}
-                        className="text-slate-600 hover:text-slate-900 p-0.5 rounded transition-colors cursor-pointer"
-                        aria-label="Increase quantity"
-                      >
-                        <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                      </button>
-                    </div>
+                  {/* Bottom Action Bar: USA Store (Cart + Qty) vs International (B2B Quote Request) */}
+                  <div className="pt-2">
+                    {isUsaStore ? (
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        {/* Quantity Pill */}
+                        <div className="flex items-center justify-between border border-slate-300 rounded-xl px-2 py-1.5 sm:py-2 w-24 sm:w-28 shrink-0 bg-white">
+                          <button
+                            type="button"
+                            onClick={() => handleQtyChange(prod.id, -1)}
+                            className="text-slate-600 hover:text-slate-900 p-0.5 rounded transition-colors disabled:opacity-30 cursor-pointer"
+                            disabled={qty <= 1}
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <span className="font-bold text-xs sm:text-sm text-slate-900 select-none">
+                            {qty}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleQtyChange(prod.id, 1)}
+                            className="text-slate-600 hover:text-slate-900 p-0.5 rounded transition-colors cursor-pointer"
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
 
-                    {/* Add To Cart Button (with cart icon badge 0 & bold text) */}
-                    <button
-                      type="button"
-                      onClick={() => handleCartClick(prod)}
-                      className={`flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm 2xl:text-base flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
-                        isAdded
-                          ? 'bg-emerald-600 text-white shadow-md'
-                          : 'bg-[#96161B] hover:bg-[#7d1216] text-white shadow-md shadow-red-950/20 active:scale-95 glow-btn-red shimmer-effect'
-                      }`}
-                    >
-                      {isAdded ? (
-                        <>
-                          <Check className="w-4 h-4 sm:w-5 sm:h-5" />
-                          <span>Added</span>
-                        </>
-                      ) : (
-                        <>
-                          <div className="relative">
-                            <ShoppingCart className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
-                            <span className="absolute -top-1.5 -right-2 bg-white text-[#96161B] text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
-                              0
-                            </span>
-                          </div>
-                          <span>Add To Cart</span>
-                        </>
-                      )}
-                    </button>
+                        {/* Add To Cart Button */}
+                        <button
+                          type="button"
+                          onClick={() => handleCartClick(prod)}
+                          className={`flex-1 py-2 sm:py-2.5 px-3 rounded-xl font-bold text-xs sm:text-sm 2xl:text-base flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer ${
+                            isAdded
+                              ? 'bg-emerald-600 text-white shadow-md'
+                              : 'bg-[#96161B] hover:bg-[#7d1216] text-white shadow-md shadow-red-950/20 active:scale-95 glow-btn-red shimmer-effect'
+                          }`}
+                        >
+                          {isAdded ? (
+                            <>
+                              <Check className="w-4 h-4 sm:w-5 sm:h-5" />
+                              <span>Added</span>
+                            </>
+                          ) : (
+                            <>
+                              <div className="relative">
+                                <ShoppingCart className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+                                <span className="absolute -top-1.5 -right-2 bg-white text-[#96161B] text-[9px] font-black w-3.5 h-3.5 rounded-full flex items-center justify-center">
+                                  0
+                                </span>
+                              </div>
+                              <span>Add To Cart</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    ) : (
+                      /* International Inquiry Button */
+                      <button
+                        type="button"
+                        onClick={() => openInquiryModal(prod)}
+                        className="w-full py-2.5 sm:py-3 px-3 rounded-xl font-extrabold text-xs sm:text-sm 2xl:text-base flex items-center justify-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white shadow-md shadow-red-950/20 active:scale-95 glow-btn-red shimmer-effect transition-all cursor-pointer"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Request B2B Quote</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

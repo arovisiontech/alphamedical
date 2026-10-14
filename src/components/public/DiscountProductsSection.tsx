@@ -10,6 +10,7 @@ import {
   Minus,
   Plus,
   Check,
+  FileText,
 } from 'lucide-react'
 import {
   getStoredDiscountProducts,
@@ -20,6 +21,7 @@ import {
   DiscountProductsSectionData,
 } from '@/src/types/section'
 import { ProductItem } from '@/src/types/product'
+import { useGeoLocation } from '@/src/context/GeoLocationContext'
 
 interface DiscountProductsSectionProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
@@ -28,6 +30,7 @@ interface DiscountProductsSectionProps {
 export default function DiscountProductsSection({
   onAddToCart,
 }: DiscountProductsSectionProps) {
+  const { isUsaStore, openInquiryModal } = useGeoLocation()
   const [data, setData] = useState<DiscountProductsSectionData>(
     INITIAL_DISCOUNT_PRODUCTS_SEED
   )
@@ -234,59 +237,81 @@ export default function DiscountProductsSection({
                   </div>
                 </div>
 
-                {/* Bottom Action Row: Quantity Selector + Add To Cart Button */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-                  {/* Quantity Selector: [ - 1 + ] */}
-                  <div className="flex items-center justify-between border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 bg-white shrink-0 min-w-[76px] sm:min-w-[84px]">
-                    <button
-                      type="button"
-                      onClick={() => handleQtyChange(item.id, -1)}
-                      aria-label="Decrease quantity"
-                      className="text-slate-400 hover:text-slate-800 p-0.5 cursor-pointer"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <span className="px-1 text-xs 2xl:text-sm font-bold">
-                      {currentQty}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleQtyChange(item.id, 1)}
-                      aria-label="Increase quantity"
-                      className="text-slate-400 hover:text-slate-800 p-0.5 cursor-pointer"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
+                {/* Bottom Action Row: USA Store vs International Inquiry */}
+                <div className="pt-2 border-t border-slate-100">
+                  {isUsaStore ? (
+                    <div className="flex items-center gap-2">
+                      {/* Quantity Selector: [ - 1 + ] */}
+                      <div className="flex items-center justify-between border border-slate-200 rounded-lg px-2 py-1 text-xs font-bold text-slate-800 bg-white shrink-0 min-w-[76px] sm:min-w-[84px]">
+                        <button
+                          type="button"
+                          onClick={() => handleQtyChange(item.id, -1)}
+                          aria-label="Decrease quantity"
+                          className="text-slate-400 hover:text-slate-800 p-0.5 cursor-pointer"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="px-1 text-xs 2xl:text-sm font-bold">
+                          {currentQty}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleQtyChange(item.id, 1)}
+                          aria-label="Increase quantity"
+                          className="text-slate-400 hover:text-slate-800 p-0.5 cursor-pointer"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
 
-                  {/* Add To Cart Red Pill Button with Cart Icon */}
-                  <button
-                    type="button"
-                    onClick={() => handleCartClick(item)}
-                    disabled={!item.in_stock}
-                    className={`flex-1 py-2 px-2.5 sm:px-3 rounded-lg text-xs 2xl:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
-                      isAdded
-                        ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                        : !item.in_stock
-                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                        : 'bg-[#96161B] hover:bg-[#7e1216] text-white hover:shadow-md glow-btn-red shimmer-effect'
-                    }`}
-                  >
-                    {isAdded ? (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Added</span>
-                      </>
-                    ) : (
-                      <>
-                        <div className="relative">
-                          <ShoppingCart className="w-3.5 h-3.5 2xl:w-4 2xl:h-4" />
-                          <span className="w-1.5 h-1.5 bg-white rounded-full absolute -top-0.5 -right-0.5" />
-                        </div>
-                        <span className="whitespace-nowrap">Add To Cart</span>
-                      </>
-                    )}
-                  </button>
+                      {/* Add To Cart Red Pill Button with Cart Icon */}
+                      <button
+                        type="button"
+                        onClick={() => handleCartClick(item)}
+                        disabled={!item.in_stock}
+                        className={`flex-1 py-2 px-2.5 sm:px-3 rounded-lg text-xs 2xl:text-sm font-bold flex items-center justify-center gap-1.5 transition-all duration-200 cursor-pointer shadow-sm active:scale-95 ${
+                          isAdded
+                            ? 'bg-emerald-600 text-white shadow-emerald-500/20'
+                            : !item.in_stock
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-[#96161B] hover:bg-[#7e1216] text-white hover:shadow-md glow-btn-red shimmer-effect'
+                        }`}
+                      >
+                        {isAdded ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Added</span>
+                          </>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <ShoppingCart className="w-3.5 h-3.5 2xl:w-4 2xl:h-4" />
+                              <span className="w-1.5 h-1.5 bg-white rounded-full absolute -top-0.5 -right-0.5" />
+                            </div>
+                            <span className="whitespace-nowrap">Add To Cart</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ) : (
+                    /* International B2B Quote Button */
+                    <button
+                      type="button"
+                      onClick={() =>
+                        openInquiryModal({
+                          id: item.id,
+                          title: item.title,
+                          sku: item.sku,
+                          featured_image: item.featured_image,
+                          price: item.price,
+                        })
+                      }
+                      className="w-full py-2 px-3 rounded-lg text-xs 2xl:text-sm font-extrabold flex items-center justify-center gap-2 bg-[#96161B] hover:bg-[#7e1216] text-white shadow-sm active:scale-95 glow-btn-red shimmer-effect transition-all cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>Request B2B Quote</span>
+                    </button>
+                  )}
                 </div>
               </div>
             )
