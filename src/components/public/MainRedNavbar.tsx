@@ -502,25 +502,32 @@ export default function MainRedNavbar() {
             {/* Drawer Contact Footer */}
             <div className="p-4 bg-slate-900 text-white space-y-2 text-xs border-t border-slate-800">
               <a
-                href="tel:+9252000000"
+                href="tel:+15615289764"
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-[#B92025]" />
-                <span>Call: +92 52 000 000</span>
+                <span>Call: +1 (561) 528 9764</span>
               </a>
               <a
-                href="tel:+92300000000"
+                href="tel:+18644232826"
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-[#B92025]" />
-                <span>Call: +92 300 000 000</span>
+                <span>Call: +1 (864) 423 2826</span>
               </a>
               <a
-                href="mailto:Info@alpha-medicalsupplie.com"
+                href="mailto:Sohail@alpha-medicalsupplies.com"
                 className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
               >
                 <Mail className="w-3.5 h-3.5 text-[#B92025]" />
-                <span>Info@alpha-medicalsupplie.com</span>
+                <span>Sohail@alpha-medicalsupplies.com</span>
+              </a>
+              <a
+                href="mailto:Aftab@alpha-medicalsupplies.com"
+                className="flex items-center gap-2 text-slate-300 hover:text-white transition-colors"
+              >
+                <Mail className="w-3.5 h-3.5 text-[#B92025]" />
+                <span>Aftab@alpha-medicalsupplies.com</span>
               </a>
             </div>
           </div>

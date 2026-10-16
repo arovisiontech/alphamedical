@@ -3,14 +3,38 @@ import fs from 'fs'
 import path from 'path'
 import { CategoryItem } from '@/src/types/category'
 
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 const dataFilePath = path.join(process.cwd(), 'src', 'data', 'categories.json')
+const tmpFilePath = path.join('/tmp', 'alpha_categories.json')
+
+const g = globalThis as unknown as { __alpha_categories?: CategoryItem[] }
 
 function getStoredCategoriesFromFile(): CategoryItem[] {
+  if (g.__alpha_categories && Array.isArray(g.__alpha_categories) && g.__alpha_categories.length > 0) {
+    return g.__alpha_categories
+  }
+
+  try {
+    if (fs.existsSync(tmpFilePath)) {
+      const content = fs.readFileSync(tmpFilePath, 'utf-8')
+      const parsed = JSON.parse(content)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        g.__alpha_categories = parsed
+        return parsed
+      }
+    }
+  } catch (e) {}
+
   try {
     if (fs.existsSync(dataFilePath)) {
       const content = fs.readFileSync(dataFilePath, 'utf-8')
       const parsed = JSON.parse(content)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        g.__alpha_categories = parsed
+        return parsed
+      }
     }
   } catch (err) {
     console.error('[API /api/categories] Error reading categories file:', err)
@@ -19,24 +43,30 @@ function getStoredCategoriesFromFile(): CategoryItem[] {
 }
 
 function saveCategoriesToFile(categories: CategoryItem[]): boolean {
+  g.__alpha_categories = categories
+
   try {
     const dir = path.dirname(dataFilePath)
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true })
     }
     fs.writeFileSync(dataFilePath, JSON.stringify(categories, null, 2), 'utf-8')
-    return true
-  } catch (err) {
-    console.error('[API /api/categories] Error writing categories file:', err)
-    return false
-  }
+  } catch (err) {}
+
+  try {
+    fs.writeFileSync(tmpFilePath, JSON.stringify(categories, null, 2), 'utf-8')
+  } catch (err) {}
+
+  return true
 }
 
 export async function GET(req: NextRequest) {
   const categories = getStoredCategoriesFromFile()
   return NextResponse.json(categories, {
     headers: {
-      'Cache-Control': 'no-store, max-age=0',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+      'Pragma': 'no-cache',
+      'Expires': '0',
     },
   })
 }
@@ -63,12 +93,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
 
-    const success = saveCategoriesToFile(updated)
-    if (success) {
-      return NextResponse.json({ success: true, count: updated.length, categories: updated })
-    } else {
-      return NextResponse.json({ error: 'Failed to write categories to storage' }, { status: 500 })
-    }
+    saveCategoriesToFile(updated)
+    return NextResponse.json({ success: true, count: updated.length, categories: updated })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Server error' }, { status: 500 })
   }

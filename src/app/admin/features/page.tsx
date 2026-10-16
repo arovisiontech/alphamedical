@@ -225,7 +225,7 @@ export default function AdminTrustFeaturesPage() {
               </h2>
             </div>
             <span className="text-xs font-semibold text-slate-400">
-              Interactive preview matching screenshot 1:1
+              Interactive real-time storefront preview
             </span>
           </div>
 

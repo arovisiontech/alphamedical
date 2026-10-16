@@ -128,7 +128,7 @@ export default function ContactForm({ initialSubject = '' }: ContactFormProps) {
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+92 300 1234567"
+                placeholder="+1 (561) 528 9764"
                 className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#B92025] focus:border-transparent text-xs text-slate-900 outline-none"
               />
             </div>

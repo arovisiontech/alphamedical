@@ -283,7 +283,7 @@ export default function AdminSectionsPage() {
             }`}
           >
             <HelpCircle className="w-4 h-4" />
-            <span>FAQ & Bulk Inquiry (Screenshot 1)</span>
+            <span>FAQ & Bulk Inquiry Showcase</span>
           </button>
 
           <button
@@ -359,7 +359,7 @@ export default function AdminSectionsPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   <span className="text-xs font-black text-white uppercase tracking-wider">
-                    Storefront Live Preview (Screenshot 1 Layout)
+                    Storefront Live Preview (Interactive Layout)
                   </span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-400">Updates in real-time as you type</span>
@@ -707,7 +707,7 @@ export default function AdminSectionsPage() {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   <span className="text-xs font-black text-slate-800 uppercase tracking-wider">
-                    Storefront Live Preview (Screenshot 1 Layout)
+                    Storefront Live Preview (Interactive Layout)
                   </span>
                 </div>
                 <span className="text-[11px] font-bold text-slate-400">Updates in real-time as you type</span>

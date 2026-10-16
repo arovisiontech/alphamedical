@@ -37,7 +37,7 @@ import CartQuoteModal from '@/src/components/public/CartQuoteModal'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
-import { ProductItem } from '@/src/types/product'
+import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { getStoredProducts } from '@/src/lib/dataStore'
 
 interface ProductDetailClientProps {
@@ -125,10 +125,14 @@ export default function ProductDetailClient({
     original_price: product.original_price ?? 64.95,
     stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
     sizes: (product.sizes && product.sizes.length > 0 ? product.sizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
-    tier_10_discount: discountTiers.find((t) => t.quantity === 10)?.discount_percentage ?? 5,
-    tier_30_discount: discountTiers.find((t) => t.quantity === 30)?.discount_percentage ?? 10,
-    tier_70_discount: discountTiers.find((t) => t.quantity === 70)?.discount_percentage ?? 15,
-    tier_100_discount: discountTiers.find((t) => t.quantity === 100)?.discount_percentage ?? 20,
+    custom_tiers: discountTiers.filter((t) => t.quantity > 1).length > 0
+      ? discountTiers.filter((t) => t.quantity > 1).map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
+      : [
+          { pieces: 10, discount: 5 },
+          { pieces: 30, discount: 10 },
+          { pieces: 70, discount: 15 },
+          { pieces: 100, discount: 20 },
+        ],
   })
 
   // Modals
@@ -186,32 +190,17 @@ export default function ProductDetailClient({
         .map((s) => s.trim())
         .filter(Boolean)
 
-      const updatedTiers = [
+      const updatedTiers: QuantityDiscountTier[] = [
         { quantity: 1, discount_percentage: 0, badge: 'Standard price', free_shipping: false },
-        {
-          quantity: 10,
-          discount_percentage: Number(quickEditForm.tier_10_discount) || 5,
-          badge: `Save ${quickEditForm.tier_10_discount}%`,
-          free_shipping: true,
-        },
-        {
-          quantity: 30,
-          discount_percentage: Number(quickEditForm.tier_30_discount) || 10,
-          badge: `Save ${quickEditForm.tier_30_discount}%`,
-          free_shipping: true,
-        },
-        {
-          quantity: 70,
-          discount_percentage: Number(quickEditForm.tier_70_discount) || 15,
-          badge: `Save ${quickEditForm.tier_70_discount}%`,
-          free_shipping: true,
-        },
-        {
-          quantity: 100,
-          discount_percentage: Number(quickEditForm.tier_100_discount) || 20,
-          badge: `Save ${quickEditForm.tier_100_discount}%`,
-          free_shipping: true,
-        },
+        ...quickEditForm.custom_tiers
+          .filter((t) => Number(t.pieces) > 1 && Number(t.discount) >= 0)
+          .sort((a, b) => Number(a.pieces) - Number(b.pieces))
+          .map((t) => ({
+            quantity: Number(t.pieces),
+            discount_percentage: Number(t.discount),
+            badge: `Save ${t.discount}%`,
+            free_shipping: true,
+          })),
       ]
 
       const updatedProduct: ProductItem = {
@@ -513,15 +502,20 @@ export default function ProductDetailClient({
             <button
               type="button"
               onClick={() => {
+                const existingCustomTiers = discountTiers
+                  .filter((t) => t.quantity > 1)
+                  .map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
                 setQuickEditForm({
                   price: product.price ?? 53.90,
                   original_price: product.original_price ?? 64.95,
                   stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
                   sizes: (availableSizes && availableSizes.length > 0 ? availableSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
-                  tier_10_discount: discountTiers.find((t) => t.quantity === 10)?.discount_percentage ?? 5,
-                  tier_30_discount: discountTiers.find((t) => t.quantity === 30)?.discount_percentage ?? 10,
-                  tier_70_discount: discountTiers.find((t) => t.quantity === 70)?.discount_percentage ?? 15,
-                  tier_100_discount: discountTiers.find((t) => t.quantity === 100)?.discount_percentage ?? 20,
+                  custom_tiers: existingCustomTiers.length > 0 ? existingCustomTiers : [
+                    { pieces: 10, discount: 5 },
+                    { pieces: 30, discount: 10 },
+                    { pieces: 70, discount: 15 },
+                    { pieces: 100, discount: 20 },
+                  ],
                 })
                 setIsQuickEditOpen(true)
               }}
@@ -1372,62 +1366,89 @@ export default function ProductDetailClient({
 
               {/* Bulk Tier Discounts */}
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                <div className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                  Bulk Quantity Discount Percentages (%)
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                      Bulk Order Quantity & Discount Tiers
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Customize pieces (volume) & discount percentage.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const lastTier = quickEditForm.custom_tiers[quickEditForm.custom_tiers.length - 1]
+                      const nextPieces = lastTier ? Number(lastTier.pieces) + 25 : 150
+                      const nextDiscount = lastTier ? Math.min(Number(lastTier.discount) + 5, 50) : 25
+                      setQuickEditForm({
+                        ...quickEditForm,
+                        custom_tiers: [...quickEditForm.custom_tiers, { pieces: nextPieces, discount: nextDiscount }],
+                      })
+                    }}
+                    className="text-[11px] font-bold text-[#96161B] bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Tier</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      10 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={quickEditForm.tier_10_discount}
-                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_10_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      30 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={quickEditForm.tier_30_discount}
-                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_30_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      70 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={quickEditForm.tier_70_discount}
-                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_70_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      100 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={quickEditForm.tier_100_discount}
-                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_100_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {quickEditForm.custom_tiers.map((tier, idx) => (
+                    <div key={idx} className="p-2.5 bg-white border border-slate-200 rounded-xl space-y-2 relative group shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                        <span>Tier {idx + 1}</span>
+                        {quickEditForm.custom_tiers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = quickEditForm.custom_tiers.filter((_, i) => i !== idx)
+                              setQuickEditForm({ ...quickEditForm, custom_tiers: next })
+                            }}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
+                            title="Remove tier"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase">Pieces</label>
+                          <input
+                            type="number"
+                            min={2}
+                            value={tier.pieces}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0
+                              const next = [...quickEditForm.custom_tiers]
+                              next[idx].pieces = val
+                              setQuickEditForm({ ...quickEditForm, custom_tiers: next })
+                            }}
+                            placeholder="e.g. 10"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase">Discount (%)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={99}
+                            value={tier.discount}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0
+                              const next = [...quickEditForm.custom_tiers]
+                              next[idx].discount = val
+                              setQuickEditForm({ ...quickEditForm, custom_tiers: next })
+                            }}
+                            placeholder="e.g. 5"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-[#96161B] outline-none focus:ring-2 focus:ring-[#96161B]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

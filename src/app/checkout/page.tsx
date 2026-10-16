@@ -362,7 +362,7 @@ function CheckoutContent() {
                         required
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder="+92 300 1234567"
+                        placeholder="+1 (561) 528 9764"
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs 2xl:text-sm outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
                       />
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />

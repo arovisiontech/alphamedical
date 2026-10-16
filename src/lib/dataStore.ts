@@ -135,18 +135,30 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
 
 let isProductsSyncInitiated = false
 
+// Cross-tab broadcast listener for immediate live updates across multiple open browser tabs
+if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
+  try {
+    const alphaChannel = new BroadcastChannel('alpha_sync_channel')
+    alphaChannel.onmessage = (event) => {
+      if (event.data?.type === 'products_updated' || event.data?.type === 'content_updated') {
+        window.dispatchEvent(new Event('alpha_content_updated'))
+      }
+    }
+  } catch (e) {}
+}
+
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
     const dataV2 = getLocalStorageSync<ProductItem[] | null>('alpha_products_v2', null)
 
-    // Background sync with API file storage once on client
+    // Background sync with API file storage once on client with cache-busting
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
-      fetch('/api/products')
+      fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
-          if (Array.isArray(serverProds)) {
+          if (Array.isArray(serverProds) && serverProds.length > 0) {
             const localStr = localStorage.getItem('alpha_products_v2')
             const serverStr = JSON.stringify(serverProds)
             if (localStr !== serverStr) {
@@ -159,10 +171,10 @@ export function getStoredProducts(): ProductItem[] {
         .catch(() => {})
     }
 
-    if (Array.isArray(dataV2)) return dataV2
+    if (Array.isArray(dataV2) && dataV2.length > 0) return dataV2
 
     const data = getLocalStorageSync<ProductItem[] | null>('alpha_products', null)
-    if (Array.isArray(data)) {
+    if (Array.isArray(data) && data.length > 0) {
       return data
     }
   } catch (e) {
@@ -174,15 +186,25 @@ export function getStoredProducts(): ProductItem[] {
 export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('alpha_products_v2', JSON.stringify(products))
-      localStorage.setItem('alpha_products', JSON.stringify(products))
+      const serialized = JSON.stringify(products)
+      localStorage.setItem('alpha_products_v2', serialized)
+      localStorage.setItem('alpha_products', serialized)
       window.dispatchEvent(new Event('alpha_content_updated'))
+
+      // Broadcast to other open tabs
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const alphaChannel = new BroadcastChannel('alpha_sync_channel')
+          alphaChannel.postMessage({ type: 'products_updated', timestamp: Date.now() })
+          alphaChannel.close()
+        } catch (e) {}
+      }
 
       // Immediately sync with server disk JSON file
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(products),
+        body: serialized,
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
@@ -872,16 +894,16 @@ export const INITIAL_GEO_STORE_SETTINGS_SEED: GeoStoreSettings = {
   stripe_secret_key: '',
   ach_direct_debit_enabled: true,
   credit_cards_enabled: true,
-  inquiry_notification_email: 'info@alpha-medicalsupplie.com',
-  inquiry_phone_whatsapp: '+92 52 000 000 / +92 300 000 000',
+  inquiry_notification_email: 'Sohail@alpha-medicalsupplies.com',
+  inquiry_phone_whatsapp: '+1 (561) 528 9764 / +1 (864) 423 2826',
   international_quote_headline: 'International B2B Surgical & Medical Export Inquiries',
   international_quote_notice:
     'Direct instant online checkout is configured for USA hospital networks and clinics. For all international orders, our export desk delivers precision B2B quotation, bulk FOB/CIF shipping, and custom surgical instrumentation support.',
   show_prices_to_international: true,
   store_name: 'ALPHA Medical Supplies Store',
-  contact_email: 'info@alpha-medicalsupplie.com',
-  contact_phone: '+92 52 000 000',
-  physical_address: 'Alpha Medical Complex, Healthcare Industrial Zone, Sialkot, Pakistan / USA Fulfillment',
+  contact_email: 'Sohail@alpha-medicalsupplies.com, Aftab@alpha-medicalsupplies.com',
+  contact_phone: '+1 (561) 528 9764 / +1 (864) 423 2826',
+  physical_address: '129 Fleetwood Drive Easley SC 29640 USA',
   updated_at: new Date().toISOString(),
 }
 

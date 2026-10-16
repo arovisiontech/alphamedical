@@ -15,8 +15,8 @@ export default function DealerLocatorPage() {
     {
       city: 'North America HQ',
       address: '129 Fleetwood Drive, Easley, SC 29640, USA',
-      phone: '+1 (800) 555-ALPHA',
-      email: 'usa@alphamedical.com',
+      phone: '+1 (561) 528 9764 / +1 (864) 423 2826',
+      email: 'Sohail@alpha-medicalsupplies.com',
       coverage: 'United States & Canada',
     },
     {

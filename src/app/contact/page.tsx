@@ -60,7 +60,7 @@ export default function ContactPage({ searchParams }: { searchParams?: Promise<{
                   </div>
                   <div>
                     <div className="font-bold text-slate-900">Headquarters</div>
-                    <div className="text-slate-500">Alpha Medical Complex, Healthcare Zone, Lahore, Pakistan</div>
+                    <div className="text-slate-500">129 Fleetwood Drive Easley SC 29640 USA</div>
                   </div>
                 </div>
 
@@ -68,9 +68,16 @@ export default function ContactPage({ searchParams }: { searchParams?: Promise<{
                   <div className="w-8 h-8 rounded-xl bg-red-50 text-[#B92025] flex items-center justify-center shrink-0">
                     <Phone className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="font-bold text-slate-900">Phone / WhatsApp</div>
-                    <div className="text-slate-500">+92 300 1234567 / +92 42 3556677</div>
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-slate-900">Phone / Direct Lines</div>
+                    <div className="text-slate-600 font-semibold">
+                      <a href="tel:+15615289764" className="hover:text-[#B92025] transition-colors block">
+                        +1 (561) 528 9764 (Direct Line)
+                      </a>
+                      <a href="tel:+18644232826" className="hover:text-[#B92025] transition-colors block">
+                        +1 (864) 423 2826 (Office / Sales)
+                      </a>
+                    </div>
                   </div>
                 </div>
 
@@ -78,9 +85,16 @@ export default function ContactPage({ searchParams }: { searchParams?: Promise<{
                   <div className="w-8 h-8 rounded-xl bg-red-50 text-[#B92025] flex items-center justify-center shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
-                  <div>
-                    <div className="font-bold text-slate-900">Email Address</div>
-                    <div className="text-slate-500">info@alphamedical.com</div>
+                  <div className="space-y-0.5">
+                    <div className="font-bold text-slate-900">Official Emails</div>
+                    <div className="text-slate-600 font-semibold">
+                      <a href="mailto:Sohail@alpha-medicalsupplies.com" className="hover:text-[#B92025] transition-colors block">
+                        Sohail@alpha-medicalsupplies.com
+                      </a>
+                      <a href="mailto:Aftab@alpha-medicalsupplies.com" className="hover:text-[#B92025] transition-colors block">
+                        Aftab@alpha-medicalsupplies.com
+                      </a>
+                    </div>
                   </div>
                 </div>
 

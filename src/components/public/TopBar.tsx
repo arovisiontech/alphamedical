@@ -19,11 +19,13 @@ export default function TopBar() {
 
         {/* RIGHT: Phone & Email + Mode Switcher + Admin access */}
         <div className="flex items-center gap-3 sm:gap-4 text-[11px] text-slate-200">
-          <a href="tel:+9252000000" className="hover:text-white transition-colors hidden sm:inline">
-            (+92 52 000 000)
+          <a href="tel:+15615289764" className="hover:text-white transition-colors hidden sm:inline flex items-center gap-1">
+            <Phone className="w-3 h-3 text-red-300" />
+            <span>+1 (561) 528 9764</span>
           </a>
-          <a href="mailto:Info@alpha-medicalsupplie.com" className="hover:text-white transition-colors hidden lg:inline">
-            Info@alpha-medicalsupplie.com
+          <a href="mailto:Sohail@alpha-medicalsupplies.com" className="hover:text-white transition-colors hidden lg:inline flex items-center gap-1">
+            <Mail className="w-3 h-3 text-red-300" />
+            <span>Sohail@alpha-medicalsupplies.com</span>
           </a>
           <GeoModeSwitcher />
           <Link

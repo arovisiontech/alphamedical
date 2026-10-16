@@ -49,7 +49,7 @@ export default function ReturnsRefundsPage() {
 
             <h3 className="font-bold text-slate-900 text-base">How to Initiate a Return</h3>
             <p>
-              Contact our dedicated customer support desk at <a href="mailto:info@durablehs.com" className="text-[#96161B] font-bold underline">info@durablehs.com</a> or call (+92) 52 3563200 with your invoice number to receive a Return Merchandise Authorization (RMA) label.
+              Contact our dedicated customer support desk at <a href="mailto:Sohail@alpha-medicalsupplies.com" className="text-[#96161B] font-bold underline">Sohail@alpha-medicalsupplies.com</a> or call <a href="tel:+15615289764" className="text-[#96161B] font-bold underline">+1 (561) 528 9764</a> with your invoice number to receive a Return Merchandise Authorization (RMA) label.
             </p>
           </div>
         </div>

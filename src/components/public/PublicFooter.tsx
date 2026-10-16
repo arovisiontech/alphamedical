@@ -136,30 +136,39 @@ export default function PublicFooter() {
                 <Phone className="w-4 h-4 text-[#96161B] shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
                   <div className="text-slate-700">
-                    Phone:{' '}
-                    <a href="tel:+9252000000" className="hover:text-[#96161B] transition-colors">
-                      +92 52 000 000
+                    Direct:{' '}
+                    <a href="tel:+15615289764" className="hover:text-[#96161B] font-semibold transition-colors">
+                      +1 (561) 528 9764
                     </a>
                   </div>
                   <div className="text-slate-700">
-                    Phone:{' '}
-                    <a href="tel:+92300000000" className="hover:text-[#96161B] transition-colors">
-                      +92 300 000 000
+                    Office:{' '}
+                    <a href="tel:+18644232826" className="hover:text-[#96161B] font-semibold transition-colors">
+                      +1 (864) 423 2826
                     </a>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Mail className="w-4 h-4 text-[#96161B] shrink-0" />
-                <div className="text-slate-700">
-                  Email:{' '}
-                  <a
-                    href="mailto:Info@alpha-medicalsupplie.com"
-                    className="hover:text-[#96161B] font-semibold transition-colors"
-                  >
-                    Info@alpha-medicalsupplie.com
-                  </a>
+              <div className="flex items-start gap-3">
+                <Mail className="w-4 h-4 text-[#96161B] shrink-0 mt-0.5" />
+                <div className="space-y-0.5">
+                  <div className="text-slate-700">
+                    <a
+                      href="mailto:Sohail@alpha-medicalsupplies.com"
+                      className="hover:text-[#96161B] font-semibold transition-colors block"
+                    >
+                      Sohail@alpha-medicalsupplies.com
+                    </a>
+                  </div>
+                  <div className="text-slate-700">
+                    <a
+                      href="mailto:Aftab@alpha-medicalsupplies.com"
+                      className="hover:text-[#96161B] font-semibold transition-colors block"
+                    >
+                      Aftab@alpha-medicalsupplies.com
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

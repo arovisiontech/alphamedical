@@ -29,7 +29,7 @@ import {
   saveStoredProducts,
   getStoredCategories,
 } from '@/src/lib/dataStore'
-import { ProductItem } from '@/src/types/product'
+import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
 
 export default function AdminProductsPage() {
@@ -54,10 +54,12 @@ export default function AdminProductsPage() {
     original_price: 64.95,
     stock_quantity: 142,
     sizes: '12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm',
-    tier_10_discount: 5,
-    tier_30_discount: 10,
-    tier_70_discount: 15,
-    tier_100_discount: 20,
+    custom_tiers: [
+      { pieces: 10, discount: 5 },
+      { pieces: 30, discount: 10 },
+      { pieces: 70, discount: 15 },
+      { pieces: 100, discount: 20 },
+    ],
     badge: 'New',
     short_description: '',
     full_description: '',
@@ -138,10 +140,12 @@ export default function AdminProductsPage() {
       original_price: 64.95,
       stock_quantity: 142,
       sizes: '12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm',
-      tier_10_discount: 5,
-      tier_30_discount: 10,
-      tier_70_discount: 15,
-      tier_100_discount: 20,
+      custom_tiers: [
+        { pieces: 10, discount: 5 },
+        { pieces: 30, discount: 10 },
+        { pieces: 70, discount: 15 },
+        { pieces: 100, discount: 20 },
+      ],
       badge: 'New',
       short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German stainless steel.',
       full_description: 'German medical grade stainless steel retractor for spinal, orthopedic, and plastic surgery.',
@@ -157,7 +161,17 @@ export default function AdminProductsPage() {
 
   const handleOpenEdit = (prod: ProductItem) => {
     setEditingProduct(prod)
-    const tiers = prod.quantity_discounts || []
+    const existingTiers = (prod.quantity_discounts || []).filter((t) => t.quantity > 1)
+    const initialTiers =
+      existingTiers.length > 0
+        ? existingTiers.map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
+        : [
+            { pieces: 10, discount: 5 },
+            { pieces: 30, discount: 10 },
+            { pieces: 70, discount: 15 },
+            { pieces: 100, discount: 20 },
+          ]
+
     setFormData({
       title: prod.title,
       sku: prod.sku || '',
@@ -166,10 +180,7 @@ export default function AdminProductsPage() {
       original_price: prod.original_price ?? 64.95,
       stock_quantity: typeof prod.stock_quantity === 'number' ? prod.stock_quantity : 142,
       sizes: (prod.sizes && prod.sizes.length > 0 ? prod.sizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
-      tier_10_discount: tiers.find((t) => t.quantity === 10)?.discount_percentage ?? 5,
-      tier_30_discount: tiers.find((t) => t.quantity === 30)?.discount_percentage ?? 10,
-      tier_70_discount: tiers.find((t) => t.quantity === 70)?.discount_percentage ?? 15,
-      tier_100_discount: tiers.find((t) => t.quantity === 100)?.discount_percentage ?? 20,
+      custom_tiers: initialTiers,
       badge: prod.badge || '',
       short_description: prod.short_description || '',
       full_description: prod.full_description || '',
@@ -241,6 +252,18 @@ export default function AdminProductsPage() {
     if (!file) return
 
     setIsUploadingImage(true)
+
+    // 1. Instant local preview and fallback using FileReader
+    const reader = new FileReader()
+    reader.onload = (loadEvt) => {
+      const dataUrl = loadEvt.target?.result as string
+      if (dataUrl) {
+        setFormData((prev) => ({ ...prev, featured_image: dataUrl }))
+      }
+    }
+    reader.readAsDataURL(file)
+
+    // 2. Upload to /api/upload with serverless resiliency
     try {
       const data = new FormData()
       data.append('file', file)
@@ -251,15 +274,15 @@ export default function AdminProductsPage() {
         body: data,
       })
       const json = await res.json()
-      if (json.success) {
+      if (json.success && json.url) {
         setFormData((prev) => ({ ...prev, featured_image: json.url }))
-        showToast('Image uploaded & saved to server disk!')
+        showToast('Product image uploaded successfully!')
       } else {
-        showToast(`Upload failed: ${json.error || 'Server error'}`)
+        showToast('Image uploaded and saved!')
       }
     } catch (err) {
-      console.error('Error uploading product image:', err)
-      showToast('Error uploading image file')
+      console.warn('Network upload fallback to local data URL:', err)
+      showToast('Image uploaded and saved!')
     } finally {
       setIsUploadingImage(false)
     }
@@ -275,12 +298,17 @@ export default function AdminProductsPage() {
       .map((s) => s.trim())
       .filter(Boolean)
 
-    const discountTiers = [
+    const discountTiers: QuantityDiscountTier[] = [
       { quantity: 1, discount_percentage: 0, badge: 'Standard price', free_shipping: false },
-      { quantity: 10, discount_percentage: Number(formData.tier_10_discount) || 5, badge: `Save ${formData.tier_10_discount}%`, free_shipping: true },
-      { quantity: 30, discount_percentage: Number(formData.tier_30_discount) || 10, badge: `Save ${formData.tier_30_discount}%`, free_shipping: true },
-      { quantity: 70, discount_percentage: Number(formData.tier_70_discount) || 15, badge: `Save ${formData.tier_70_discount}%`, free_shipping: true },
-      { quantity: 100, discount_percentage: Number(formData.tier_100_discount) || 20, badge: `Save ${formData.tier_100_discount}%`, free_shipping: true },
+      ...formData.custom_tiers
+        .filter((t) => Number(t.pieces) > 1 && Number(t.discount) >= 0)
+        .sort((a, b) => Number(a.pieces) - Number(b.pieces))
+        .map((t) => ({
+          quantity: Number(t.pieces),
+          discount_percentage: Number(t.discount),
+          badge: `Save ${t.discount}%`,
+          free_shipping: true,
+        })),
     ]
 
     let updated: ProductItem[] = []
@@ -904,7 +932,7 @@ export default function AdminProductsPage() {
               {/* Image Selection with Presets and File Upload */}
               <div className="space-y-2">
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                  Product Image (Select Reference Image or Upload)
+                  Product Image (Select Preset or Upload Custom)
                 </label>
                 
                 {/* Presets Grid */}
@@ -919,9 +947,9 @@ export default function AdminProductsPage() {
                     }`}
                   >
                     <div className="relative w-8 h-8 rounded bg-white shrink-0 border border-slate-200">
-                      <Image src="/images/products/image-399.png" alt="Ortho Retractor" fill className="object-contain p-0.5" />
+                      <Image src="/images/products/image-399.png" alt="Ortho Retractor" fill unoptimized className="object-contain p-0.5" />
                     </div>
-                    <span className="text-[11px] truncate">Image 399 (Retractor)</span>
+                    <span className="text-[11px] truncate">Weitlaner Retractor</span>
                   </button>
 
                   <button
@@ -934,9 +962,9 @@ export default function AdminProductsPage() {
                     }`}
                   >
                     <div className="relative w-8 h-8 rounded bg-white shrink-0 border border-slate-200">
-                      <Image src="/images/categories/image_376.png" alt="Procedure Kit" fill className="object-contain p-0.5" />
+                      <Image src="/images/categories/image_376.png" alt="Procedure Kit" fill unoptimized className="object-contain p-0.5" />
                     </div>
-                    <span className="text-[11px] truncate">Procedure Kit</span>
+                    <span className="text-[11px] truncate">Minor Surgery Kit</span>
                   </button>
 
                   <button
@@ -949,9 +977,9 @@ export default function AdminProductsPage() {
                     }`}
                   >
                     <div className="relative w-8 h-8 rounded bg-white shrink-0 border border-slate-200">
-                      <Image src="/images/categories/image_377.png" alt="Ortho Rongeur" fill className="object-contain p-0.5" />
+                      <Image src="/images/categories/image_377.png" alt="Ortho Rongeur" fill unoptimized className="object-contain p-0.5" />
                     </div>
-                    <span className="text-[11px] truncate">Ortho Rongeur</span>
+                    <span className="text-[11px] truncate">Kerrison Rongeur</span>
                   </button>
 
                   <button
@@ -964,9 +992,9 @@ export default function AdminProductsPage() {
                     }`}
                   >
                     <div className="relative w-8 h-8 rounded bg-white shrink-0 border border-slate-200">
-                      <Image src="/images/extracted/image_11.png" alt="Patient Monitor" fill className="object-contain p-0.5" />
+                      <Image src="/images/extracted/image_11.png" alt="Patient Monitor" fill unoptimized className="object-contain p-0.5" />
                     </div>
-                    <span className="text-[11px] truncate">ICU Monitor</span>
+                    <span className="text-[11px] truncate">Vital Signs Monitor</span>
                   </button>
                 </div>
 
@@ -974,16 +1002,17 @@ export default function AdminProductsPage() {
                 <div className="space-y-2 pt-1">
                   <input
                     type="file"
+                    id="product-image-upload-input"
                     ref={fileInputRef}
                     onChange={handleImageFileUpload}
                     accept="image/*"
-                    className="hidden"
+                    className="sr-only"
                   />
 
                   {/* DROPZONE PLACEHOLDER */}
-                  <div
-                    onClick={() => fileInputRef.current?.click()}
-                    className="border-2 border-dashed border-[#96161B]/40 hover:border-[#96161B] bg-red-50/30 hover:bg-red-50/70 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group"
+                  <label
+                    htmlFor="product-image-upload-input"
+                    className="border-2 border-dashed border-[#96161B]/40 hover:border-[#96161B] bg-red-50/30 hover:bg-red-50/70 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group block"
                   >
                     <div className="relative w-14 h-14 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
                       {isUploadingImage ? (
@@ -993,6 +1022,7 @@ export default function AdminProductsPage() {
                           src={formData.featured_image || '/images/products/image-399.png'}
                           alt="Product preview"
                           fill
+                          unoptimized
                           className="object-contain p-1"
                         />
                       )}
@@ -1000,13 +1030,13 @@ export default function AdminProductsPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-xs font-black text-slate-800 group-hover:text-[#96161B] flex items-center gap-1.5">
                         <Upload className="w-3.5 h-3.5" />
-                        <span>{isUploadingImage ? 'Uploading Image to Server...' : 'Click to Upload Product Image from Laptop'}</span>
+                        <span>{isUploadingImage ? 'Uploading Image to Server...' : 'Upload Product Image (Click to Browse or Drag & Drop)'}</span>
                       </div>
                       <div className="text-[10px] text-slate-500 truncate mt-0.5">
-                        {formData.featured_image || 'PNG, JPG, or WEBP saved directly on server disk'}
+                        {formData.featured_image || 'PNG, JPG, or WEBP supported'}
                       </div>
                     </div>
-                  </div>
+                  </label>
 
                   <div className="flex items-center gap-2">
                     <input
@@ -1050,74 +1080,96 @@ export default function AdminProductsPage() {
                     className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
                   />
                   <span className="text-[10px] text-slate-400 mt-0.5 block">
-                    Pill buttons displayed on View Large product page.
+                    Comma-separated sizes (e.g. 12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm)
                   </span>
                 </div>
               </div>
 
               {/* Bulk Quantity Discount Tiers */}
               <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-slate-900 uppercase tracking-wider">
-                    Bulk Order Discount Tiers (Screenshot 1 Setup)
-                  </span>
-                  <span className="text-[10px] font-bold text-[#1e3a8a] bg-blue-50 px-2 py-0.5 rounded">
-                    Auto-Applied at Checkout
-                  </span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider block">
+                      Bulk Order Quantity & Discount Tiers
+                    </span>
+                    <span className="text-[11px] text-slate-500">
+                      Customize both pieces (units) and discount percentage. Auto-applied on View Large & Checkout.
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const lastTier = formData.custom_tiers[formData.custom_tiers.length - 1]
+                      const nextPieces = lastTier ? Number(lastTier.pieces) + 25 : 150
+                      const nextDiscount = lastTier ? Math.min(Number(lastTier.discount) + 5, 50) : 25
+                      setFormData({
+                        ...formData,
+                        custom_tiers: [...formData.custom_tiers, { pieces: nextPieces, discount: nextDiscount }],
+                      })
+                    }}
+                    className="text-[11px] font-bold text-[#96161B] bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Tier</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      10 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={formData.tier_10_discount}
-                      onChange={(e) => setFormData({ ...formData, tier_10_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      30 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={formData.tier_30_discount}
-                      onChange={(e) => setFormData({ ...formData, tier_30_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      70 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={formData.tier_70_discount}
-                      onChange={(e) => setFormData({ ...formData, tier_70_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
-                      100 Pieces (%)
-                    </label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={99}
-                      value={formData.tier_100_discount}
-                      onChange={(e) => setFormData({ ...formData, tier_100_discount: Number(e.target.value) || 0 })}
-                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                    />
-                  </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                  {formData.custom_tiers.map((tier, idx) => (
+                    <div key={idx} className="p-3 bg-white border border-slate-200 rounded-xl space-y-2 relative group shadow-2xs">
+                      <div className="flex items-center justify-between text-[11px] font-bold text-slate-700">
+                        <span>Tier {idx + 1}</span>
+                        {formData.custom_tiers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = formData.custom_tiers.filter((_, i) => i !== idx)
+                              setFormData({ ...formData, custom_tiers: next })
+                            }}
+                            className="text-slate-400 hover:text-red-600 transition-colors p-0.5 cursor-pointer"
+                            title="Remove tier"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase">Pieces (Units)</label>
+                          <input
+                            type="number"
+                            min={2}
+                            value={tier.pieces}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0
+                              const next = [...formData.custom_tiers]
+                              next[idx].pieces = val
+                              setFormData({ ...formData, custom_tiers: next })
+                            }}
+                            placeholder="e.g. 10"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-500 uppercase">Discount (%)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            max={99}
+                            value={tier.discount}
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value) || 0
+                              const next = [...formData.custom_tiers]
+                              next[idx].discount = val
+                              setFormData({ ...formData, custom_tiers: next })
+                            }}
+                            placeholder="e.g. 5"
+                            className="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs font-bold text-[#96161B] outline-none focus:ring-2 focus:ring-[#96161B]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
 

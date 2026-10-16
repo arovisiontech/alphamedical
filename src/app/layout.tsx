@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { GeoLocationProvider } from "@/src/context/GeoLocationContext";
 import InquiryModal from "@/src/components/public/InquiryModal";
+import FloatingContactCTA from "@/src/components/public/FloatingContactCTA";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GeoLocationProvider>
           {children}
           <InquiryModal />
+          <FloatingContactCTA />
         </GeoLocationProvider>
       </body>
     </html>
