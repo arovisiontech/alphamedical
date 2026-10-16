@@ -4,10 +4,14 @@ export interface CatalogueItem {
   id: string
   category_id: string | null
   title: string
-  slug: string
+  slug?: string
+  catalog_number?: string
+  category?: string
   description: string | null
   cover_image: string | null
   pdf_url: string
+  pages?: number
+  file_size?: string
   is_published: boolean
   sort_order: number
   created_at: string

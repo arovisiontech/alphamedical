@@ -5,8 +5,8 @@ export interface CategoryItem {
   parent_id: string | null
   name: string
   slug: string
-  description: string | null
-  image_url: string | null
+  description?: string | null
+  image_url?: string | null
   card_image?: string | null
   icon?: string | null
   sort_order: number

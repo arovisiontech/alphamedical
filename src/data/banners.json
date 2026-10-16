@@ -1,0 +1,41 @@
+[
+  {
+    "id": "banner-ent-instruments-1",
+    "title": "ENT Surgery Instruments",
+    "subtitle": "Precision instruments for advanced ENT procedures.",
+    "tagline": "PRECISION CARE BETTER OUTCOMES",
+    "image_url": "/images/banners/image-392.svg",
+    "link_url": "/products?cat=ent-surgery",
+    "button_text": "SHOP NOW",
+    "badges": [
+      "Premium Quality / Built to Last",
+      "Worldwide Shipping / Global Reach",
+      "Wide Range / 1000+ Instruments",
+      "Expert Support / Always Here to Help"
+    ],
+    "display_mode": "overlay_text",
+    "is_active": true,
+    "sort_order": 1,
+    "created_at": "2026-10-14T00:00:00.000Z",
+    "updated_at": "2026-10-14T00:00:00.000Z"
+  },
+  {
+    "id": "banner-kerrison-rongeur-1",
+    "title": "Kerrison Rongeur Instruments",
+    "subtitle": "Engineered for Precision. Trusted in Every Procedure.",
+    "tagline": "PRECISION / QUALITY / BETTER CARE",
+    "image_url": "/images/banners/hero-banner-kerrison.jpg",
+    "link_url": "/products?cat=surgical-instruments",
+    "button_text": "SHOP NOW",
+    "badges": [
+      "SURGICAL GRADE STEEL",
+      "PRECISION ENGINEERED",
+      "DURABLE PERFORMANCE"
+    ],
+    "display_mode": "full_image",
+    "is_active": true,
+    "sort_order": 2,
+    "created_at": "2026-10-14T00:00:00.000Z",
+    "updated_at": "2026-10-14T00:00:00.000Z"
+  }
+]

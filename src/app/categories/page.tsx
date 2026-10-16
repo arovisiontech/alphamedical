@@ -3,76 +3,88 @@
 import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import PublicHeader from '@/src/components/public/PublicHeader'
+import TopBar from '@/src/components/public/TopBar'
+import HeaderNav from '@/src/components/public/HeaderNav'
+import MainRedNavbar from '@/src/components/public/MainRedNavbar'
+import EntSurgeryBanner from '@/src/components/public/EntSurgeryBanner'
 import PublicFooter from '@/src/components/public/PublicFooter'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import CartQuoteModal from '@/src/components/public/CartQuoteModal'
 import { getStoredCategories } from '@/src/lib/dataStore'
 import { CategoryItem } from '@/src/types/category'
 import { ProductItem } from '@/src/types/product'
-import { Layers, ArrowRight, ShieldCheck } from 'lucide-react'
+import { ArrowRight, Layers } from 'lucide-react'
 
 export default function CategoriesOverviewPage() {
   const [categories, setCategories] = useState<CategoryItem[]>([])
   const [isSearchOpen, setIsSearchOpen] = useState(false)
-  const [isQuoteOpen, setIsQuoteOpen] = useState(false)
-  const [quoteItems, setQuoteItems] = useState<ProductItem[]>([])
+  const [isCartOpen, setIsCartOpen] = useState(false)
+  const [cartItems, setCartItems] = useState<ProductItem[]>([])
 
   useEffect(() => {
     setCategories(getStoredCategories().filter((c) => c.is_published))
+
+    const handleUpdate = () => {
+      setCategories(getStoredCategories().filter((c) => c.is_published))
+    }
+    window.addEventListener('alpha_content_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+
+    return () => {
+      window.removeEventListener('alpha_content_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
   }, [])
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <PublicHeader
+      <TopBar />
+      <HeaderNav
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenQuote={() => setIsQuoteOpen(true)}
-        quoteCount={quoteItems.length}
+        onOpenCart={() => setIsCartOpen(true)}
+        cartCount={cartItems.length}
+      />
+      <MainRedNavbar />
+      <EntSurgeryBanner
+        customTitle="ALPHA SURGICAL & MEDICAL DIVISIONS"
+        customSubtitle="Explore German stainless steel procedure sets, orthopedic bone instruments, titanium precision gear, and neuro instrumentation."
       />
 
-      <div className="bg-[#18355E] text-white py-12 px-4 sm:px-8 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto space-y-2">
-          <div className="inline-flex items-center gap-1.5 bg-[#B92025] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Product Divisions</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold">ALPHA Product Categories</h1>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
-            Browse our specialized medical supply divisions and product lines.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-12 flex-1 w-full">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="w-full max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 py-12 flex-1">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 2xl:gap-8">
           {categories.map((cat) => (
             <Link
               key={cat.id}
-              href={`/categories/${cat.slug}`}
-              className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 group flex flex-col justify-between"
+              href={`/products?cat=${cat.slug}`}
+              className="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-sm hover:shadow-xl hover:border-red-200 hover-card-3d transition-all duration-300 group flex flex-col justify-between p-5 sm:p-6"
             >
-              <div className="relative aspect-[16/9] w-full bg-slate-100 overflow-hidden">
+              <div className="relative aspect-[4/3] w-full bg-slate-50 rounded-2xl overflow-hidden p-3 mb-4">
                 <Image
-                  src={cat.image_url || '/images/extracted/image_7.png'}
+                  src={cat.card_image || cat.image_url || '/images/categories/image_376.png'}
                   alt={cat.name}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="object-contain p-2 group-hover:scale-105 transition-transform duration-500"
                 />
+                {cat.icon && (
+                  <span className="absolute top-3 left-3 bg-[#96161B] text-white text-xs font-bold w-7 h-7 rounded-lg flex items-center justify-center shadow">
+                    {cat.icon}
+                  </span>
+                )}
               </div>
 
-              <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+              <div className="space-y-3 flex-1 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-[#18355E] group-hover:text-[#B92025] transition-colors">
+                  <h3 className="text-sm 2xl:text-base font-extrabold text-slate-900 uppercase group-hover:text-[#96161B] transition-colors leading-snug">
                     {cat.name}
                   </h3>
-                  <p className="text-slate-500 text-xs mt-2 leading-relaxed">
+                  <p className="text-slate-500 text-xs mt-1.5 line-clamp-2 leading-relaxed">
                     {cat.description}
                   </p>
                 </div>
 
-                <div className="flex items-center text-xs font-semibold text-[#B92025] group-hover:translate-x-1 transition-transform pt-3 border-t border-slate-100">
-                  <span>Explore Products</span>
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                <div className="flex items-center justify-between text-xs font-bold text-[#96161B] pt-3 border-t border-slate-100">
+                  <span>Explore Instruments ({cat.product_count || 42})</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                 </div>
               </div>
             </Link>
@@ -84,11 +96,11 @@ export default function CategoriesOverviewPage() {
 
       <PublicSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       <CartQuoteModal
-        isOpen={isQuoteOpen}
-        onClose={() => setIsQuoteOpen(false)}
-        quoteItems={quoteItems}
-        onRemoveItem={(id) => setQuoteItems((prev) => prev.filter((i) => i.id !== id))}
-        onClearAll={() => setQuoteItems([])}
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        quoteItems={cartItems}
+        onRemoveItem={(id) => setCartItems((prev) => prev.filter((i) => i.id !== id))}
+        onClearAll={() => setCartItems([])}
       />
     </div>
   )

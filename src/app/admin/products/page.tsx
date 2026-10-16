@@ -62,11 +62,43 @@ export default function AdminProductsPage() {
     is_published: true,
   })
 
-  const loadData = () => {
+  const loadData = async () => {
+    // 1. Instant optimistic load from localStorage / memory
     const prods = getStoredProducts()
     const cats = getStoredCategories()
     setProducts(prods)
     setCategories(cats)
+
+    // 2. Authoritative sync with server disk JSON file
+    try {
+      const res = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
+      if (res.ok) {
+        const serverProds = await res.json()
+        if (Array.isArray(serverProds) && serverProds.length > 0) {
+          setProducts(serverProds)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('alpha_products_v2', JSON.stringify(serverProds))
+            localStorage.setItem('alpha_products', JSON.stringify(serverProds))
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Could not sync products from API:', err)
+    }
+
+    try {
+      const catRes = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' })
+      if (catRes.ok) {
+        const serverCats = await catRes.json()
+        if (Array.isArray(serverCats) && serverCats.length > 0) {
+          setCategories(serverCats)
+          if (typeof window !== 'undefined') {
+            localStorage.setItem('alpha_categories_v2', JSON.stringify(serverCats))
+            localStorage.setItem('alpha_categories', JSON.stringify(serverCats))
+          }
+        }
+      }
+    } catch (err) {}
   }
 
   useEffect(() => {
@@ -131,40 +163,56 @@ export default function AdminProductsPage() {
     setIsModalOpen(true)
   }
 
-  const handleDelete = (id: string) => {
+  const syncProductsToServer = async (prods: ProductItem[]) => {
+    try {
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prods),
+      })
+    } catch (e) {
+      console.warn('Error saving to /api/products:', e)
+    }
+  }
+
+  const handleDelete = async (id: string) => {
     const target = products.find((p) => p.id === id)
-    if (confirm(`Are you sure you want to delete "${target?.title || 'this product'}"? This action will immediately update the live store.`)) {
+    if (confirm(`Are you sure you want to delete "${target?.title || 'this product'}"? This action will immediately update the live store and persist on reload.`)) {
       const updated = products.filter((p) => p.id !== id)
       setProducts(updated)
       saveStoredProducts(updated)
+      await syncProductsToServer(updated)
       showToast('Product successfully deleted! Storefront updated.')
     }
   }
 
-  const handleToggleBestSeller = (prod: ProductItem) => {
+  const handleToggleBestSeller = async (prod: ProductItem) => {
     const updated = products.map((p) =>
-      p.id === prod.id ? { ...p, is_best_seller: !p.is_best_seller } : p
+      p.id === prod.id ? { ...p, is_best_seller: !p.is_best_seller, is_featured: !p.is_best_seller } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
+    await syncProductsToServer(updated)
     showToast(`"${prod.title}" Best Seller status updated!`)
   }
 
-  const handleToggleNewArrival = (prod: ProductItem) => {
+  const handleToggleNewArrival = async (prod: ProductItem) => {
     const updated = products.map((p) =>
       p.id === prod.id ? { ...p, is_new_arrival: !p.is_new_arrival } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
+    await syncProductsToServer(updated)
     showToast(`"${prod.title}" New Arrival status updated!`)
   }
 
-  const handleToggleInStock = (prod: ProductItem) => {
+  const handleToggleInStock = async (prod: ProductItem) => {
     const updated = products.map((p) =>
       p.id === prod.id ? { ...p, in_stock: !(p.in_stock !== false) } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
+    await syncProductsToServer(updated)
     showToast(`"${prod.title}" stock status updated!`)
   }
 
@@ -183,14 +231,15 @@ export default function AdminProductsPage() {
     reader.readAsDataURL(file)
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title.trim()) return
 
     const catObj = categories.find((c) => c.id === formData.category_id)
 
+    let updated: ProductItem[] = []
     if (editingProduct) {
-      const updated = products.map((p) =>
+      updated = products.map((p) =>
         p.id === editingProduct.id
           ? {
               ...p,
@@ -209,12 +258,14 @@ export default function AdminProductsPage() {
               is_new_arrival: formData.is_new_arrival,
               is_featured: formData.is_featured,
               is_published: formData.is_published,
+              specifications: {
+                ...(p.specifications || {}),
+                Subcategory: catObj?.name || p.specifications?.Subcategory || '',
+              },
               updated_at: new Date().toISOString(),
             }
           : p
       )
-      setProducts(updated)
-      saveStoredProducts(updated)
       showToast('Product updated successfully! Live on website & saved across reload.')
     } else {
       const newProd: ProductItem = {
@@ -232,8 +283,9 @@ export default function AdminProductsPage() {
         featured_image: formData.featured_image,
         features: ['German Grade Stainless Steel', 'Autoclavable & Durable', 'ISO 13485 Certified'],
         specifications: {
+          Subcategory: catObj?.name || '',
           'Quality Grade': 'Medical Grade German Stainless Steel',
-          'Sterilization': 'Autoclavable (134°C)',
+          Sterilization: 'Autoclavable (134°C)',
         },
         catalogue_pdf: null,
         in_stock: formData.in_stock,
@@ -247,12 +299,13 @@ export default function AdminProductsPage() {
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }
-      const updated = [newProd, ...products]
-      setProducts(updated)
-      saveStoredProducts(updated)
+      updated = [newProd, ...products]
       showToast('New product created! Live on website & saved across reload.')
     }
 
+    setProducts(updated)
+    saveStoredProducts(updated)
+    await syncProductsToServer(updated)
     setIsModalOpen(false)
   }
 
@@ -337,7 +390,7 @@ export default function AdminProductsPage() {
             onClick={() => setViewTab('all')}
             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
               viewTab === 'all'
-                ? 'bg-[#18355E] text-white shadow-md'
+                ? 'bg-[#96161B] text-white shadow-md'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >

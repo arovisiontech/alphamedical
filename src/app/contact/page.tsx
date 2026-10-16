@@ -1,7 +1,9 @@
 'use client'
 
 import React, { useState, use } from 'react'
-import PublicHeader from '@/src/components/public/PublicHeader'
+import TopBar from '@/src/components/public/TopBar'
+import HeaderNav from '@/src/components/public/HeaderNav'
+import MainRedNavbar from '@/src/components/public/MainRedNavbar'
 import PublicFooter from '@/src/components/public/PublicFooter'
 import ContactForm from '@/src/components/public/ContactForm'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
@@ -23,20 +25,24 @@ export default function ContactPage({ searchParams }: { searchParams?: Promise<{
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
-      <PublicHeader
+      <TopBar />
+      <HeaderNav
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenQuote={() => setIsQuoteOpen(true)}
-        quoteCount={quoteItems.length}
+        onOpenCart={() => setIsQuoteOpen(true)}
+        cartCount={quoteItems.length}
       />
+      <MainRedNavbar />
 
-      <div className="bg-[#18355E] text-white py-12 px-4 sm:px-8 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto space-y-2">
-          <div className="inline-flex items-center gap-1.5 bg-[#B92025] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5" />
+      <div className="bg-white border-b border-slate-200 py-10 px-4 sm:px-8">
+        <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2500px] 4xl:max-w-[3200px] mx-auto space-y-2">
+          <div className="inline-flex items-center gap-1.5 bg-red-50 text-[#B92025] text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-red-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-[#B92025]" />
             <span>24/7 Procurement Desk</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold">Contact & Quotation Desk</h1>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
+          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">
+            <span className="text-[#B92025]">Contact</span> & Quotation Desk
+          </h1>
+          <p className="text-slate-600 text-xs sm:text-sm max-w-xl">
             Get official pricing, tech specs, and hospital bulk quotes directly from our sales engineers.
           </p>
         </div>
@@ -46,7 +52,7 @@ export default function ContactPage({ searchParams }: { searchParams?: Promise<{
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-5 space-y-6">
             <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
-              <h3 className="font-extrabold text-lg text-[#18355E]">Contact Details</h3>
+              <h3 className="font-extrabold text-lg text-slate-900">Contact Details</h3>
               <div className="space-y-4 text-xs text-slate-700">
                 <div className="flex items-start gap-3">
                   <div className="w-8 h-8 rounded-xl bg-red-50 text-[#B92025] flex items-center justify-center shrink-0">

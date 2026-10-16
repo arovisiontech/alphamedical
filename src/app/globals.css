@@ -213,3 +213,23 @@ body {
 .delay-300 { transition-delay: 300ms; }
 .delay-400 { transition-delay: 400ms; }
 .delay-500 { transition-delay: 500ms; }
+
+/* 64-inch Display (4K & Ultra-wide 2560px / 3840px) Responsive Optimization */
+@media (min-width: 2560px) {
+  html {
+    font-size: 17px;
+  }
+  .max-w-7xl {
+    max-width: 2400px !important;
+  }
+}
+
+@media (min-width: 3840px) {
+  html {
+    font-size: 19px;
+  }
+  .max-w-7xl {
+    max-width: 3400px !important;
+  }
+}
+

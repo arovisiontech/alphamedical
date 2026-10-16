@@ -284,7 +284,7 @@ export default function AdminCategoriesPage() {
               <Sparkles className="w-4 h-4 text-[#B92025]" />
               <span>ALPHA Categories Collection Management</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#18355E]">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               Homepage Category Cards & Slider
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm max-w-xl">
@@ -364,7 +364,7 @@ export default function AdminCategoriesPage() {
         {/* CATEGORY CARDS GRID MANAGEMENT */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-base font-extrabold text-[#18355E]">
+            <h3 className="text-base font-extrabold text-slate-900">
               Configured Categories ({categories.length})
             </h3>
             <span className="text-xs text-slate-500">
@@ -468,7 +468,7 @@ export default function AdminCategoriesPage() {
 
                       <button
                         onClick={() => handleOpenEdit(cat)}
-                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#18355E] flex items-center justify-center transition-colors"
+                        className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-[#B92025] flex items-center justify-center transition-colors"
                         title="Edit Category"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
@@ -495,7 +495,7 @@ export default function AdminCategoriesPage() {
             <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl border border-slate-200 animate-scale-up my-8">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
-                  <h3 className="text-xl font-black text-[#18355E]">
+                  <h3 className="text-xl font-black text-slate-900">
                     {editingCategory ? 'Edit Category Card' : 'Add New Category Card'}
                   </h3>
                   <p className="text-xs text-slate-500">

@@ -49,12 +49,16 @@ export default function AdminBannersContentPage() {
   // Quick Preset Images
   const PRESET_IMAGES = [
     {
-      name: 'Kerrison Rongeur (Official Screenshot 3 Banner)',
+      name: 'ENT Surgery Instruments Surgical Tray (Screenshot 2 / image 392)',
+      url: '/images/banners/image-392.svg',
+    },
+    {
+      name: 'Kerrison Rongeur Hero Banner',
       url: '/images/banners/hero-banner-kerrison.jpg',
     },
     {
-      name: 'Alpha Retractor Tool (German Stainless)',
-      url: '/images/image-399.png',
+      name: 'Alpha Retractor Tool (Image 399 Ortho Weitlaner)',
+      url: '/images/products/image-399.png',
     },
     {
       name: 'Surgical Dissection Instruments Master Set',
@@ -73,6 +77,16 @@ export default function AdminBannersContentPage() {
   useEffect(() => {
     setBanners(getStoredBanners())
     setIsLoaded(true)
+
+    fetch(`/api/banners?t=${Date.now()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setBanners(data)
+          localStorage.setItem('alpha_banners', JSON.stringify(data))
+        }
+      })
+      .catch(() => {})
   }, [])
 
   const showNotification = (msg: string) => {

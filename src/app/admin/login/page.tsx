@@ -28,10 +28,10 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#18355E] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
       {/* BACKGROUND DECORATION */}
-      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#B92025]/20 rounded-full blur-3xl" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl" />
+      <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#B92025]/25 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-[#96161B]/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-md w-full bg-white rounded-3xl p-8 sm:p-10 shadow-2xl relative z-10 border border-slate-200 space-y-6">
         <div className="text-center space-y-2">
@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>Administrator Access Portal</span>
           </div>
-          <h2 className="text-2xl font-extrabold text-[#18355E]">Sign In to Management</h2>
+          <h2 className="text-2xl font-extrabold text-slate-900">Sign In to Management</h2>
           <p className="text-slate-500 text-xs">
             Manage ALPHA medical supplies catalog, hospital inquiries, categories, and settings.
           </p>
@@ -89,7 +89,7 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#18355E] hover:bg-[#B92025] text-white font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-slate-900/10"
+            className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white font-bold py-3.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg shadow-red-950/20 active:scale-95 cursor-pointer"
           >
             <span>{loading ? 'Authenticating...' : 'Sign In to Dashboard'}</span>
             <ArrowRight className="w-4 h-4" />

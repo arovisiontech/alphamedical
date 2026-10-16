@@ -187,8 +187,11 @@ export default function DiscountProductsSection({
                     </span>
                   </div>
 
-                  {/* Centered Product Image */}
-                  <div className="relative w-full h-44 sm:h-48 2xl:h-56 my-3 flex items-center justify-center p-2 bg-slate-50/50 rounded-xl group-hover:bg-slate-50 transition-colors">
+                  {/* Centered Product Image (Clickable Link) */}
+                  <Link
+                    href={`/products/${item.slug || item.id}`}
+                    className="block relative w-full h-44 sm:h-48 2xl:h-56 my-3 flex items-center justify-center p-2 bg-slate-50/50 rounded-xl group-hover:bg-slate-50 transition-colors cursor-pointer overflow-hidden"
+                  >
                     <Image
                       src={item.featured_image || '/images/products/image-399.png'}
                       alt={item.title}
@@ -196,12 +199,15 @@ export default function DiscountProductsSection({
                       sizes="(max-width: 640px) 280px, (max-width: 1024px) 320px, 400px"
                       className="object-contain p-2 group-hover:scale-105 transition-transform duration-300"
                     />
-                  </div>
+                  </Link>
 
-                  {/* Product Title */}
-                  <h3 className="text-xs sm:text-sm 2xl:text-base font-extrabold text-slate-900 uppercase leading-snug line-clamp-2 min-h-[38px] group-hover:text-[#96161B] transition-colors mb-1">
+                  {/* Product Title (Clickable Link) */}
+                  <Link
+                    href={`/products/${item.slug || item.id}`}
+                    className="text-xs sm:text-sm 2xl:text-base font-extrabold text-slate-900 uppercase leading-snug line-clamp-2 min-h-[38px] group-hover:text-[#96161B] transition-colors mb-1 block cursor-pointer"
+                  >
                     {item.title}
-                  </h3>
+                  </Link>
 
                   {/* SKU */}
                   <div className="text-[11px] 2xl:text-xs font-semibold text-slate-400 mb-2">

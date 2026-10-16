@@ -46,7 +46,10 @@ export default function CartQuoteModal({
   const total = subtotal + shipping
 
   const handleStartCheckout = () => {
-    setCheckoutStep('checkout')
+    onClose()
+    if (typeof window !== 'undefined') {
+      window.location.href = '/checkout'
+    }
   }
 
   const handleProcessOrder = (e: React.FormEvent) => {

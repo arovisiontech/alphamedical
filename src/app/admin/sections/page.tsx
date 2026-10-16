@@ -326,7 +326,7 @@ export default function AdminSectionsPage() {
             onClick={() => setActiveTab('video')}
             className={`px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer ${
               activeTab === 'video'
-                ? 'bg-[#18355E] text-white shadow-md'
+                ? 'bg-[#96161B] text-white shadow-md'
                 : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
             }`}
           >
@@ -1284,7 +1284,7 @@ export default function AdminSectionsPage() {
                     — {compliancesData.compliance_badge} —
                   </div>
                   <div className="text-xl sm:text-2xl font-black">
-                    <span className="text-[#18355E]">{compliancesData.compliance_title_line1} </span>
+                    <span className="text-slate-900">{compliancesData.compliance_title_line1} </span>
                     <span className="text-[#96161B]">{compliancesData.compliance_title_line2}</span>
                   </div>
                   <div className="text-xs text-slate-500 truncate">{compliancesData.compliance_description}</div>
@@ -1748,7 +1748,7 @@ export default function AdminSectionsPage() {
               <span className="text-xs text-slate-500 font-semibold">Changes are saved live across page reload.</span>
               <button
                 type="submit"
-                className="flex items-center gap-2 bg-[#18355E] hover:bg-[#122847] text-white px-8 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer"
+                className="flex items-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white px-8 py-3 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wider cursor-pointer"
               >
                 <Save className="w-4 h-4" />
                 <span>Save Video Section</span>

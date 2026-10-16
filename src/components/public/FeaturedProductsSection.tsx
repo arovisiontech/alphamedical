@@ -39,6 +39,15 @@ export default function FeaturedProductsSection({
   useEffect(() => {
     loadData()
 
+    fetch('/api/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setProducts(data)
+        }
+      })
+      .catch(() => {})
+
     const handleUpdate = () => {
       loadData()
     }
@@ -178,8 +187,11 @@ export default function FeaturedProductsSection({
                   )}
                 </div>
 
-                {/* Main Product Image Container */}
-                <div className="relative aspect-[4/3] w-full my-2 flex items-center justify-center">
+                {/* Main Product Image Container (Clickable Link) */}
+                <Link
+                  href={`/products/${prod.slug || prod.id}`}
+                  className="block relative aspect-[4/3] w-full my-2 flex items-center justify-center cursor-pointer"
+                >
                   <Image
                     src={imageSrc}
                     alt={prod.title}
@@ -188,14 +200,17 @@ export default function FeaturedProductsSection({
                     className="object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out"
                     priority={false}
                   />
-                </div>
+                </Link>
 
                 {/* Content & Details */}
                 <div className="space-y-3 pt-3">
-                  {/* Title */}
-                  <h3 className="font-extrabold text-slate-900 text-xs sm:text-sm 2xl:text-base uppercase tracking-tight line-clamp-2 leading-snug group-hover:text-[#96161B] transition-colors">
+                  {/* Title (Clickable Link) */}
+                  <Link
+                    href={`/products/${prod.slug || prod.id}`}
+                    className="font-extrabold text-slate-900 text-xs sm:text-sm 2xl:text-base uppercase tracking-tight line-clamp-2 leading-snug group-hover:text-[#96161B] transition-colors block cursor-pointer"
+                  >
                     {prod.title}
-                  </h3>
+                  </Link>
 
                   {/* SKU */}
                   <div className="text-[11px] sm:text-xs font-semibold text-slate-400">

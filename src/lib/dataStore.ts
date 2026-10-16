@@ -40,505 +40,18 @@ export type {
   ProcessOrderSectionData,
 }
 
-// INITIAL CATEGORIES FOR ALPHA MEDICAL SUPPLIES STORE (CARDS 376, 377, 378, 379)
-export const INITIAL_CATEGORIES_SEED: CategoryItem[] = [
-  {
-    id: 'cat-gen-surg',
-    parent_id: null,
-    name: 'SET BY PROCEDURE',
-    slug: 'set-by-procedure',
-    description: 'Precision Japanese & German stainless steel dissection scissors, hemostatic forceps, scalpels, and tray sets.',
-    card_image: '/images/categories/image_376.png',
-    image_url: '/images/categories/image_376.png',
-    icon: '✂️',
-    sort_order: 1,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 42,
-    level: 0,
-  },
-  {
-    id: 'cat-ortho',
-    parent_id: null,
-    name: 'ORTHOPEDIC INSTRUMENTS',
-    slug: 'orthopedic-instruments',
-    description: 'High-leverage bone rongeurs, osteotomes, chisels, mallets, bone holding forceps, and retractors.',
-    card_image: '/images/categories/image_377.png',
-    image_url: '/images/categories/image_377.png',
-    icon: '🦴',
-    sort_order: 2,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 68,
-    level: 0,
-  },
-  {
-    id: 'cat-titanium',
-    parent_id: null,
-    name: 'TITANIUM INSTRUMENTS',
-    slug: 'titanium-instruments',
-    description: 'Ultra-lightweight, non-magnetic grade 22 Ti micro forceps, titanium scissors, and vascular clamps.',
-    card_image: '/images/categories/image_378.png',
-    image_url: '/images/categories/image_378.png',
-    icon: 'Ti',
-    sort_order: 3,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 35,
-    level: 0,
-  },
-  {
-    id: 'cat-neuro',
-    parent_id: null,
-    name: 'NEURO & SPINE INSTRUMENTS',
-    slug: 'neuro-spine-instruments',
-    description: 'German grade Kerrison punches, laminectomy rongeurs, pituitary forceps, and delicate micro dissectors.',
-    card_image: '/images/categories/image_379.png',
-    image_url: '/images/categories/image_379.png',
-    icon: '🧠',
-    sort_order: 4,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 54,
-    level: 0,
-  },
-  {
-    id: 'cat-med-equip',
-    parent_id: null,
-    name: 'MEDICAL EQUIPMENT & ICU',
-    slug: 'medical-equipment',
-    description: 'Advanced ICU ventilators, multiparameter patient monitors, anesthesia workstations, and infusion pumps.',
-    card_image: '/images/extracted/image_7.png',
-    image_url: '/images/extracted/image_7.png',
-    icon: '🩺',
-    sort_order: 5,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 24,
-    level: 0,
-  },
-  {
-    id: 'cat-hosp-furn',
-    parent_id: null,
-    name: 'HOSPITAL WARD FURNITURE',
-    slug: 'hospital-furniture',
-    description: 'Electric ICU hospital beds, MAYO instrument trolleys, stainless steel IV poles, and transport stretchers.',
-    card_image: '/images/extracted/image_9.png',
-    image_url: '/images/extracted/image_9.png',
-    icon: '🛏️',
-    sort_order: 6,
-    is_published: true,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    product_count: 18,
-    level: 0,
-  },
-]
+import initialCategoriesData from '@/src/data/categories.json'
+import initialProductsData from '@/src/data/products.json'
+import initialCataloguesData from '@/src/data/catalogues.json'
 
-// INITIAL PRODUCTS SEED FOR ALPHA MEDICAL SUPPLIES STORE
-export const INITIAL_PRODUCTS_SEED: ProductItem[] = [
-  {
-    id: 'prod-weitlaner-1',
-    category_id: 'cat-ortho',
-    title: 'ORTHO WEITLANER RETRACTOR SHARP',
-    slug: 'ortho-weitlaner-retractor-sharp-1001-1',
-    sku: '1001',
-    short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German grade stainless steel with ratchet lock mechanism.',
-    full_description: 'Self-retaining Ortho Weitlaner Retractor Sharp is designed for plastic, spinal, and orthopedic surgery to hold back tissue and muscle layers. Features 3x4 sharp prongs, ergonomic finger rings, and a multi-position ratchet locking bar.',
-    featured_image: '/images/products/image-399.png',
-    price: 55.95,
-    original_price: 64.95,
-    badge: 'New',
-    is_best_seller: true,
-    is_new_arrival: true,
-    in_stock: true,
-    features: [
-      'German Medical Grade Stainless Steel (DIN 1.4021)',
-      'Sharp 3x4 Prongs for Secure Tissue Hold',
-      'Smooth Precision Ratchet Locking Mechanism',
-      'Autoclavable and Corrosion Resistant',
-    ],
-    specifications: {
-      'Instrument Type': 'Self-Retaining Retractor',
-      'Prong Style': 'Sharp (3 x 4 Prongs)',
-      'Length': '130 mm (5 1/8")',
-      'Material': 'Surgical Grade Stainless Steel',
-      'Finish': 'Satin Anti-Glare Finish',
-    },
-    catalogue_pdf: null,
-    is_featured: true,
-    is_published: true,
-    seo_title: 'Ortho Weitlaner Retractor Sharp - SKU 1001',
-    seo_description: 'Ortho Weitlaner Retractor Sharp German Stainless Steel SKU 1001 on sale for $55.95.',
-    sort_order: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'ORTHOPEDIC INSTRUMENTS',
-  },
-  {
-    id: 'prod-weitlaner-2',
-    category_id: 'cat-ortho',
-    title: 'ORTHO WEITLANER RETRACTOR SHARP',
-    slug: 'ortho-weitlaner-retractor-sharp-1001-2',
-    sku: '1001',
-    short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German grade stainless steel with ratchet lock mechanism.',
-    full_description: 'Self-retaining Ortho Weitlaner Retractor Sharp is designed for plastic, spinal, and orthopedic surgery to hold back tissue and muscle layers. Features 3x4 sharp prongs, ergonomic finger rings, and a multi-position ratchet locking bar.',
-    featured_image: '/images/products/image-399.png',
-    price: 55.95,
-    original_price: 64.95,
-    badge: 'New',
-    is_best_seller: true,
-    is_new_arrival: true,
-    in_stock: true,
-    features: [
-      'German Medical Grade Stainless Steel (DIN 1.4021)',
-      'Sharp 3x4 Prongs for Secure Tissue Hold',
-      'Smooth Precision Ratchet Locking Mechanism',
-      'Autoclavable and Corrosion Resistant',
-    ],
-    specifications: {
-      'Instrument Type': 'Self-Retaining Retractor',
-      'Prong Style': 'Sharp (3 x 4 Prongs)',
-      'Length': '165 mm (6 1/2")',
-      'Material': 'Surgical Grade Stainless Steel',
-      'Finish': 'Satin Anti-Glare Finish',
-    },
-    catalogue_pdf: null,
-    is_featured: true,
-    is_published: true,
-    seo_title: 'Ortho Weitlaner Retractor Sharp - SKU 1001',
-    seo_description: 'Ortho Weitlaner Retractor Sharp German Stainless Steel SKU 1001 on sale for $55.95.',
-    sort_order: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'ORTHOPEDIC INSTRUMENTS',
-  },
-  {
-    id: 'prod-weitlaner-3',
-    category_id: 'cat-ortho',
-    title: 'ORTHO WEITLANER RETRACTOR SHARP',
-    slug: 'ortho-weitlaner-retractor-sharp-1001-3',
-    sku: '1001',
-    short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German grade stainless steel with ratchet lock mechanism.',
-    full_description: 'Self-retaining Ortho Weitlaner Retractor Sharp is designed for plastic, spinal, and orthopedic surgery to hold back tissue and muscle layers. Features 3x4 sharp prongs, ergonomic finger rings, and a multi-position ratchet locking bar.',
-    featured_image: '/images/products/image-399.png',
-    price: 55.95,
-    original_price: 64.95,
-    badge: 'New',
-    is_best_seller: true,
-    is_new_arrival: true,
-    in_stock: true,
-    features: [
-      'German Medical Grade Stainless Steel (DIN 1.4021)',
-      'Sharp 3x4 Prongs for Secure Tissue Hold',
-      'Smooth Precision Ratchet Locking Mechanism',
-      'Autoclavable and Corrosion Resistant',
-    ],
-    specifications: {
-      'Instrument Type': 'Self-Retaining Retractor',
-      'Prong Style': 'Sharp (3 x 4 Prongs)',
-      'Length': '200 mm (8")',
-      'Material': 'Surgical Grade Stainless Steel',
-      'Finish': 'Satin Anti-Glare Finish',
-    },
-    catalogue_pdf: null,
-    is_featured: true,
-    is_published: true,
-    seo_title: 'Ortho Weitlaner Retractor Sharp - SKU 1001',
-    seo_description: 'Ortho Weitlaner Retractor Sharp German Stainless Steel SKU 1001 on sale for $55.95.',
-    sort_order: 3,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'ORTHOPEDIC INSTRUMENTS',
-  },
-  {
-    id: 'prod-weitlaner-4',
-    category_id: 'cat-ortho',
-    title: 'ORTHO WEITLANER RETRACTOR SHARP',
-    slug: 'ortho-weitlaner-retractor-sharp-1001-4',
-    sku: '1001',
-    short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German grade stainless steel with ratchet lock mechanism.',
-    full_description: 'Self-retaining Ortho Weitlaner Retractor Sharp is designed for plastic, spinal, and orthopedic surgery to hold back tissue and muscle layers. Features 3x4 sharp prongs, ergonomic finger rings, and a multi-position ratchet locking bar.',
-    featured_image: '/images/products/image-399.png',
-    price: 55.95,
-    original_price: 64.95,
-    badge: 'New',
-    is_best_seller: true,
-    is_new_arrival: true,
-    in_stock: true,
-    features: [
-      'German Medical Grade Stainless Steel (DIN 1.4021)',
-      'Sharp 3x4 Prongs for Secure Tissue Hold',
-      'Smooth Precision Ratchet Locking Mechanism',
-      'Autoclavable and Corrosion Resistant',
-    ],
-    specifications: {
-      'Instrument Type': 'Self-Retaining Retractor',
-      'Prong Style': 'Sharp (3 x 4 Prongs)',
-      'Length': '250 mm (10")',
-      'Material': 'Surgical Grade Stainless Steel',
-      'Finish': 'Satin Anti-Glare Finish',
-    },
-    catalogue_pdf: null,
-    is_featured: true,
-    is_published: true,
-    seo_title: 'Ortho Weitlaner Retractor Sharp - SKU 1001',
-    seo_description: 'Ortho Weitlaner Retractor Sharp German Stainless Steel SKU 1001 on sale for $55.95.',
-    sort_order: 4,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'ORTHOPEDIC INSTRUMENTS',
-  },
-  {
-    id: 'alpha-prod-1',
-    category_id: 'cat-med-equip',
-    title: 'ALPHA Pro-Care 12" Multiparameter Patient Monitor',
-    slug: 'alpha-pro-care-12-multiparameter-patient-monitor',
-    sku: 'ALPHA-MON-12',
-    short_description: '12-inch high resolution color TFT monitor for ECG, SpO2, NIBP, Respiration, Temp, and PR.',
-    full_description: 'The ALPHA Pro-Care 12 Patient Monitor provides comprehensive real-time patient monitoring for ICUs, operating rooms, and emergency departments. Features anti-interference technology, 120-hour trend data storage, adjustable audible and visual alarms, and built-in rechargeable lithium battery.',
-    featured_image: '/images/extracted/image_11.png',
-    price: 499.00,
-    original_price: 580.00,
-    badge: 'New',
-    is_best_seller: false,
-    is_new_arrival: true,
-    in_stock: true,
-    features: [
-      '12.1-inch High-Resolution Color TFT Display with Multi-Lead ECG Waveform',
-      'Accurate SpO2 Anti-Motion Measurement & Low Perfusion Tech',
-      'Dual-IBP & EtCO2 Modular Expansion Capable',
-      'Built-in Rechargeable Lithium Battery (4+ hours continuous operation)',
-      'ISO 13485:2016 & CE Mark Certified Medical Device',
-    ],
-    specifications: {
-      'Display': '12.1" TFT Color LCD (1024x768)',
-      'Parameters': 'ECG, SpO2, NIBP, RESP, 2-TEMP, PR',
-      'Battery': 'Rechargeable Li-ion 4400mAh',
-      'Alarm': '3-Level Audible & Visual Alarms',
-      'Certification': 'CE / ISO 13485 / FDA Approved',
-    },
-    catalogue_pdf: '/pdf/alpha-medical-equipment-catalogue.pdf',
-    is_featured: true,
-    is_published: true,
-    seo_title: 'ALPHA Pro-Care 12 Patient Monitor - Alpha Medical Supplies',
-    seo_description: 'Buy high quality multiparameter patient monitor for ICUs & surgical theaters nationwide.',
-    sort_order: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Medical Equipment',
-    gallery_images: [
-      { id: 'g1', image_url: '/images/extracted/image_11.png', alt_text: 'ALPHA Patient Monitor Front View', sort_order: 1 },
-      { id: 'g2', image_url: '/images/extracted/image_7.png', alt_text: 'ALPHA Patient Monitor Angle View', sort_order: 2 },
-    ],
-  },
-  {
-    id: 'alpha-prod-2',
-    category_id: 'cat-med-equip',
-    title: 'ALPHA Vent-Master ICU Turbine Ventilator',
-    slug: 'alpha-vent-master-icu-turbine-ventilator',
-    sku: 'ALPHA-VENT-100',
-    short_description: 'High-end invasive & non-invasive mechanical ICU ventilator suitable for adult, pediatric, and neonatal care.',
-    full_description: 'Engineered for critical care environments, the ALPHA Vent-Master offers precise volume and pressure controlled ventilation modes. Equipped with quiet high-performance turbine technology, 15-inch touchscreen interface, and comprehensive lung mechanics monitoring.',
-    featured_image: '/images/extracted/image_7.png',
-    features: [
-      'Comprehensive Invasive & Non-Invasive Modes (VCV, PCV, SIMV, CPAP, PSV)',
-      'High-Speed Turbine Driven Air Delivery (No external compressor needed)',
-      '15" HD Touchscreen with 360-degree visible alarm light',
-      'Intelligent Target Tidal Volume Control (20ml - 2000ml)',
-    ],
-    specifications: {
-      'Tidal Volume': '20 - 2000 ml',
-      'Ventilation Modes': 'VCV, PCV, SIMV-V, SIMV-P, CPAP/PSV, Bi-level',
-      'Screen': '15" Color Touchscreen LCD',
-      'Power Backup': 'Integrated Li-ion Battery (3 Hours)',
-    },
-    catalogue_pdf: '/pdf/alpha-icu-ventilator-catalogue.pdf',
-    is_featured: true,
-    is_published: true,
-    seo_title: 'ALPHA Vent-Master ICU Ventilator - Critical Care Solutions',
-    seo_description: 'Advanced turbine driven ICU mechanical ventilator with intuitive touchscreen.',
-    sort_order: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Medical Equipment',
-  },
-  {
-    id: 'alpha-prod-3',
-    category_id: 'cat-surg-inst',
-    title: 'ALPHA Master-Cut Surgical Scissors & Forceps Set (50 Pcs)',
-    slug: 'alpha-master-cut-surgical-scissors-forceps-set',
-    sku: 'ALPHA-SURG-SET50',
-    short_description: 'Complete general surgery instrument set crafted from premium AISI 420 Japanese Stainless Steel.',
-    full_description: 'The ALPHA Master-Cut 50-Piece Surgical Set includes Mayo scissors, Metzenbaum dissecting scissors, Crile & Mosquito hemostatic clamps, towel clamps, scalpel handles (#3 & #4), and Adson tissue forceps. Nitric passivated and heat treated for lifetime corrosion resistance.',
-    featured_image: '/images/extracted/image_8.png',
-    features: [
-      'Forged from German & Japanese Grade Surgical Stainless Steel',
-      'Precision Satin Finish - Non-Reflective for OR Operating Lights',
-      'Autoclavable up to 134°C / 273°F without loss of edge sharpness',
-      'Includes Stainless Steel Sterilization Box with Lid',
-    ],
-    specifications: {
-      'Material': 'AISI 420 Japanese Stainless Steel',
-      'Finish': 'Anti-glare Satin Finish',
-      'Sterilization': 'Autoclavable 134°C',
-      'Quantity': '50 Precision Surgical Instruments',
-    },
-    catalogue_pdf: '/pdf/alpha-surgical-instruments-catalogue.pdf',
-    is_featured: true,
-    is_published: true,
-    seo_title: 'ALPHA Master-Cut Surgical Instrument Set - 50 Pcs Stainless Steel',
-    seo_description: 'Professional grade 50-piece surgical instrument set for operating theaters.',
-    sort_order: 3,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Surgical Instruments',
-  },
-  {
-    id: 'alpha-prod-4',
-    category_id: 'cat-hosp-furn',
-    title: 'ALPHA Deluxe Electric 5-Function ICU Hospital Bed',
-    slug: 'alpha-deluxe-electric-5-function-icu-bed',
-    sku: 'ALPHA-BED-ELE5',
-    short_description: 'Full electric 5-function ICU bed with trendelenburg, cardiac chair position, CPR quick release, and central locking.',
-    full_description: 'Designed for optimal patient comfort and nursing efficiency. Features LINAK electric actuators, tuck-away ABS side rails, built-in weight scale, dual control panels on side rails, and heavy-duty 125mm dust-proof casters.',
-    featured_image: '/images/extracted/image_9.png',
-    features: [
-      '5 Electric Motor Functions: Backrest, Kneerest, Height Adjustment, Trendelenburg & Reverse Trendelenburg',
-      'LINAK Heavy Duty Whisper-Quiet Actuators',
-      'Integrated CPR Emergency Release Lever (Mechanical & Electric)',
-      'Removable Molded Head/Foot Boards & Seamless ABS Side Rails',
-    ],
-    specifications: {
-      'Dimensions': '2180mm x 1060mm x 480-780mm',
-      'Safe Load': '250 kg (550 lbs)',
-      'Functions': 'Backrest 0-75°, Legrest 0-45°, Height 480-780mm, Trendelenburg ±12°',
-      'Motors': 'LINAK Medical Actuators',
-    },
-    catalogue_pdf: '/pdf/alpha-hospital-furniture-catalogue.pdf',
-    is_featured: true,
-    is_published: true,
-    seo_title: 'ALPHA Deluxe Electric 5-Function ICU Hospital Bed',
-    seo_description: 'Electric 5-function ICU hospital bed with LINAK motors and central brake system.',
-    sort_order: 4,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Hospital Furniture',
-  },
-  {
-    id: 'alpha-prod-5',
-    category_id: 'cat-lab-diag',
-    title: 'ALPHA Lab-Bio Binocular Clinical Microscope 2000x',
-    slug: 'alpha-lab-bio-binocular-clinical-microscope-2000x',
-    sku: 'ALPHA-MIC-2000',
-    short_description: 'Ergonomic clinical laboratory microscope with infinity achromatic optics and LED illumination.',
-    full_description: 'High-precision lab microscope featuring Siedentopf binocular head, 4x, 10x, 40x, 100x oil immersion infinity plan objectives, coaxial coarse and fine focusing knobs, and variable intensity 3W LED Kohler illumination.',
-    featured_image: '/images/extracted/image_10.png',
-    features: [
-      'Infinity Corrected Optical System with Crisp High Contrast Imaging',
-      'Quadruple Reversing Nosepiece with Achromatic Plan Objectives',
-      'Double-Layer Mechanical Stage (140mm x 140mm)',
-      'Long-Life 3W Eco LED Kohler Illumination System',
-    ],
-    specifications: {
-      'Magnification': '40x - 2000x',
-      'Objectives': '4x, 10x, 40x (S), 100x (S, Oil)',
-      'Head': 'Siedentopf Binocular 30° Inclined',
-      'Illumination': '3W LED Variable Brightness',
-    },
-    catalogue_pdf: '/pdf/alpha-lab-diagnostics-catalogue.pdf',
-    is_featured: true,
-    is_published: true,
-    seo_title: 'ALPHA Lab-Bio Binocular Microscope - Clinical Laboratory Diagnostics',
-    seo_description: 'High precision binocular laboratory microscope for pathology & diagnostics.',
-    sort_order: 5,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Lab Supplies & Diagnostics',
-  },
-  {
-    id: 'alpha-prod-6',
-    category_id: 'cat-disposables',
-    title: 'ALPHA Sterile Latex Surgical Gloves (Box of 50 Pairs)',
-    slug: 'alpha-sterile-latex-surgical-gloves-box',
-    sku: 'ALPHA-GLV-ST50',
-    short_description: 'Powder-free anatomical fit sterile latex surgical gloves with textured fingertips.',
-    full_description: 'Manufactured from 100% natural rubber latex, ALPHA Sterile Surgical Gloves feature micro-textured palm and fingers for superior wet and dry grip. Micro-thin wall design provides high tactile sensitivity for delicate surgical procedures.',
-    featured_image: '/images/extracted/image_7.png',
-    features: [
-      'Gamma Radiation Sterilized & Individually Peel-Packed',
-      'Conforms to EN 455 Parts 1, 2, 3 & ASTM D3577 Standards',
-      'AQL 1.0 Pin-hole Level Inspection Guarantee',
-      'Anatomical Curved Finger Design Reduces Hand Fatigue',
-    ],
-    specifications: {
-      'Material': 'Medical Grade Natural Rubber Latex',
-      'Sizes': '6.0, 6.5, 7.0, 7.5, 8.0, 8.5',
-      'Sterilization': 'Gamma Radiation (R)',
-      'Packaging': '50 Pairs / Box, 10 Boxes / Carton',
-    },
-    catalogue_pdf: '/pdf/alpha-disposables-catalogue.pdf',
-    is_featured: false,
-    is_published: true,
-    seo_title: 'ALPHA Sterile Latex Surgical Gloves - Powder Free',
-    seo_description: 'Sterile surgical gloves with superior grip and high tactile sensitivity.',
-    sort_order: 6,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Disposables & Single-Use',
-  },
-]
+// INITIAL CATEGORIES SEED (LOADED FROM src/data/categories.json)
+export const INITIAL_CATEGORIES_SEED: CategoryItem[] = initialCategoriesData as unknown as CategoryItem[]
 
-// INITIAL CATALOGUES SEED
-export const INITIAL_CATALOGUES_SEED: CatalogueItem[] = [
-  {
-    id: 'alpha-cat-pdf-1',
-    category_id: 'cat-med-equip',
-    title: 'ALPHA Medical Equipment & Critical Care Catalogue 2026',
-    slug: 'alpha-medical-equipment-catalogue-2026',
-    description: 'Complete product lines of ICU ventilators, multiparameter patient monitors, syringe pumps, and defibrillators.',
-    cover_image: '/images/extracted/image_1.png',
-    pdf_url: '/pdf/alpha-medical-equipment-catalogue.pdf',
-    is_published: true,
-    sort_order: 1,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Medical Equipment',
-  },
-  {
-    id: 'alpha-cat-pdf-2',
-    category_id: 'cat-surg-inst',
-    title: 'ALPHA Precision Surgical Instruments Master Catalogue',
-    slug: 'alpha-surgical-instruments-master-catalogue',
-    description: 'Comprehensive catalogue of German & Japanese stainless steel dissection tools, hemostats, and retractors.',
-    cover_image: '/images/extracted/image_2.png',
-    pdf_url: '/pdf/alpha-surgical-instruments-catalogue.pdf',
-    is_published: true,
-    sort_order: 2,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Surgical Instruments',
-  },
-  {
-    id: 'alpha-cat-pdf-3',
-    category_id: 'cat-hosp-furn',
-    title: 'ALPHA Hospital Furniture & Ward Solutions Catalogue',
-    slug: 'alpha-hospital-furniture-solutions-catalogue',
-    description: 'Electric ICU beds, MAYO trolleys, stretchers, examination couches, and stainless steel ward furniture.',
-    cover_image: '/images/extracted/image_4.png',
-    pdf_url: '/pdf/alpha-hospital-furniture-catalogue.pdf',
-    is_published: true,
-    sort_order: 3,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    category_name: 'Hospital Furniture',
-  },
-]
+// INITIAL PRODUCTS SEED (LOADED FROM src/data/products.json)
+export const INITIAL_PRODUCTS_SEED: ProductItem[] = initialProductsData as unknown as ProductItem[]
+
+// INITIAL CATALOGUES SEED (LOADED FROM src/data/catalogues.json)
+export const INITIAL_CATALOGUES_SEED: CatalogueItem[] = initialCataloguesData as unknown as CatalogueItem[]
 
 // INITIAL CONTACT MESSAGES SEED
 export const INITIAL_CONTACT_MESSAGES_SEED: ContactMessage[] = [
@@ -564,20 +77,37 @@ export const INITIAL_CONTACT_MESSAGES_SEED: ContactMessage[] = [
   },
 ]
 
-// DATA ACCESSORS WITH LOCALSTORAGE & INDEXEDDB SYNC
+// DATA ACCESSORS WITH LOCALSTORAGE & INDEXEDDB SYNC & SERVER DISK API
+
+let isCategoriesSyncInitiated = false
 
 export function getStoredCategories(): CategoryItem[] {
   if (typeof window === 'undefined') return INITIAL_CATEGORIES_SEED
   try {
+    if (!isCategoriesSyncInitiated) {
+      isCategoriesSyncInitiated = true
+      fetch('/api/categories')
+        .then((res) => res.json())
+        .then((serverCats) => {
+          if (Array.isArray(serverCats) && serverCats.length > 0) {
+            const localStr = localStorage.getItem('alpha_categories_v2')
+            const serverStr = JSON.stringify(serverCats)
+            if (localStr !== serverStr) {
+              localStorage.setItem('alpha_categories_v2', serverStr)
+              localStorage.setItem('alpha_categories', serverStr)
+              window.dispatchEvent(new Event('alpha_content_updated'))
+            }
+          }
+        })
+        .catch(() => {})
+    }
+
     const dataV2 = getLocalStorageSync<CategoryItem[] | null>('alpha_categories_v2', null)
-    if (Array.isArray(dataV2) && dataV2.length > 0) return dataV2
+    if (Array.isArray(dataV2)) return dataV2
 
     const data = getLocalStorageSync<CategoryItem[] | null>('alpha_categories', null)
-    if (Array.isArray(data) && data.length > 0) {
-      const hasCards = data.some(
-        (c) => c.card_image?.includes('376') || c.image_url?.includes('376')
-      )
-      if (hasCards) return data
+    if (Array.isArray(data)) {
+      return data
     }
   } catch (e) {
     console.error('Failed to read alpha_categories:', e)
@@ -590,24 +120,50 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
     try {
       localStorage.setItem('alpha_categories_v2', JSON.stringify(categories))
       localStorage.setItem('alpha_categories', JSON.stringify(categories))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(categories),
+      }).catch((e) => console.warn('Failed to sync categories to API:', e))
     } catch (e) {}
   }
   savePersistentData('alpha_categories_v2', categories)
   savePersistentData('alpha_categories', categories)
 }
 
+let isProductsSyncInitiated = false
+
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
     const dataV2 = getLocalStorageSync<ProductItem[] | null>('alpha_products_v2', null)
-    if (Array.isArray(dataV2) && dataV2.length > 0) return dataV2
+
+    // Background sync with API file storage once on client
+    if (!isProductsSyncInitiated) {
+      isProductsSyncInitiated = true
+      fetch('/api/products')
+        .then((res) => res.json())
+        .then((serverProds) => {
+          if (Array.isArray(serverProds)) {
+            const localStr = localStorage.getItem('alpha_products_v2')
+            const serverStr = JSON.stringify(serverProds)
+            if (localStr !== serverStr) {
+              localStorage.setItem('alpha_products_v2', serverStr)
+              localStorage.setItem('alpha_products', serverStr)
+              window.dispatchEvent(new Event('alpha_content_updated'))
+            }
+          }
+        })
+        .catch(() => {})
+    }
+
+    if (Array.isArray(dataV2)) return dataV2
 
     const data = getLocalStorageSync<ProductItem[] | null>('alpha_products', null)
-    if (Array.isArray(data) && data.length > 0) {
-      const hasRetractor = data.some(
-        (p) => p.featured_image?.includes('399') || p.sku === '1001'
-      )
-      if (hasRetractor) return data
+    if (Array.isArray(data)) {
+      return data
     }
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
@@ -620,15 +176,42 @@ export function saveStoredProducts(products: ProductItem[]): void {
     try {
       localStorage.setItem('alpha_products_v2', JSON.stringify(products))
       localStorage.setItem('alpha_products', JSON.stringify(products))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      // Immediately sync with server disk JSON file
+      fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(products),
+      }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
   savePersistentData('alpha_products_v2', products)
   savePersistentData('alpha_products', products)
 }
 
+let isCataloguesSyncInitiated = false
+
 export function getStoredCatalogues(): CatalogueItem[] {
   if (typeof window === 'undefined') return INITIAL_CATALOGUES_SEED
   try {
+    if (!isCataloguesSyncInitiated) {
+      isCataloguesSyncInitiated = true
+      fetch('/api/catalogues')
+        .then((res) => res.json())
+        .then((serverCats) => {
+          if (Array.isArray(serverCats) && serverCats.length > 0) {
+            const localStr = localStorage.getItem('alpha_catalogues')
+            const serverStr = JSON.stringify(serverCats)
+            if (localStr !== serverStr) {
+              localStorage.setItem('alpha_catalogues', serverStr)
+              window.dispatchEvent(new Event('alpha_content_updated'))
+            }
+          }
+        })
+        .catch(() => {})
+    }
+
     const data = getLocalStorageSync<CatalogueItem[]>('alpha_catalogues', INITIAL_CATALOGUES_SEED)
     if (Array.isArray(data) && data.length > 0) return data
   } catch (e) {
@@ -638,6 +221,18 @@ export function getStoredCatalogues(): CatalogueItem[] {
 }
 
 export function saveStoredCatalogues(catalogues: CatalogueItem[]): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_catalogues', JSON.stringify(catalogues))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      fetch('/api/catalogues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(catalogues),
+      }).catch((e) => console.warn('Failed to sync catalogues to API:', e))
+    } catch (e) {}
+  }
   savePersistentData('alpha_catalogues', catalogues)
 }
 
@@ -656,8 +251,28 @@ export function saveStoredContactMessages(messages: ContactMessage[]): void {
   savePersistentData('alpha_contact_messages', messages)
 }
 
-// INITIAL BANNERS SEED (KERRISON RONGEUR HERO BANNER AS DEFAULT ACTIVE)
+// INITIAL BANNERS SEED (MATCHING SCREENSHOT 2 AND STOREFRONT)
 export const INITIAL_BANNERS_SEED: BannerItem[] = [
+  {
+    id: 'banner-ent-instruments-1',
+    title: 'ENT Surgery Instruments',
+    subtitle: 'Precision instruments for advanced ENT procedures.',
+    tagline: 'PRECISION CARE BETTER OUTCOMES',
+    image_url: '/images/banners/image-392.svg',
+    link_url: '/products',
+    button_text: 'EXPLORE INSTRUMENTS',
+    badges: [
+      'Premium Quality / Built to Last',
+      'Worldwide Shipping / Global Reach',
+      'Wide Range / 1000+ Instruments',
+      'Expert Support / Always Here to Help',
+    ],
+    display_mode: 'overlay_text',
+    is_active: true,
+    sort_order: 1,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  },
   {
     id: 'banner-kerrison-rongeur-1',
     title: 'Kerrison Rongeur Instruments',
@@ -669,15 +284,34 @@ export const INITIAL_BANNERS_SEED: BannerItem[] = [
     badges: ['SURGICAL GRADE STEEL', 'PRECISION ENGINEERED', 'DURABLE PERFORMANCE'],
     display_mode: 'full_image',
     is_active: true,
-    sort_order: 1,
+    sort_order: 2,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   },
 ]
 
+let isBannersSyncInitiated = false
+
 export function getStoredBanners(): BannerItem[] {
   if (typeof window === 'undefined') return INITIAL_BANNERS_SEED
   try {
+    if (!isBannersSyncInitiated) {
+      isBannersSyncInitiated = true
+      fetch('/api/banners')
+        .then((res) => res.json())
+        .then((serverBanners) => {
+          if (Array.isArray(serverBanners) && serverBanners.length > 0) {
+            const localStr = localStorage.getItem('alpha_banners')
+            const serverStr = JSON.stringify(serverBanners)
+            if (localStr !== serverStr) {
+              localStorage.setItem('alpha_banners', serverStr)
+              window.dispatchEvent(new Event('alpha_content_updated'))
+            }
+          }
+        })
+        .catch(() => {})
+    }
+
     const data = getLocalStorageSync<BannerItem[]>('alpha_banners', INITIAL_BANNERS_SEED)
     if (Array.isArray(data) && data.length > 0) return data
   } catch (e) {
@@ -687,6 +321,13 @@ export function getStoredBanners(): BannerItem[] {
 }
 
 export function saveStoredBanners(banners: BannerItem[]): void {
+  if (typeof window !== 'undefined') {
+    fetch('/api/banners', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(banners),
+    }).catch(() => {})
+  }
   savePersistentData('alpha_banners', banners)
 }
 

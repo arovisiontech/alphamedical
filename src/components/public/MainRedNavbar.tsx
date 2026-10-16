@@ -16,6 +16,7 @@ import {
   Flame,
   ArrowRight,
   Sparkles,
+  Building,
 } from 'lucide-react'
 
 interface NavItem {
@@ -65,7 +66,7 @@ export default function MainRedNavbar() {
       hasDropdown: true,
       columns: [
         {
-          title: 'General Surgery',
+          title: 'Dental & Oral Surgery',
           items: ['Bone Rongeurs', 'Dissecting Scissors', 'Extraction Forceps', 'Surgical Needle Holders', 'Cheek Retractors'],
         },
         {
@@ -95,7 +96,7 @@ export default function MainRedNavbar() {
     },
     {
       name: 'PPE',
-      href: '/products?cat=disposables-single-use',
+      href: '/products?cat=ppe',
       hasDropdown: true,
       columns: [
         {
@@ -127,9 +128,40 @@ export default function MainRedNavbar() {
       ],
     },
     { name: 'Sale', href: '/products?sale=true' },
-    { name: 'Resources', href: '/resources' },
+    {
+      name: 'Resources',
+      href: '/production',
+      hasDropdown: true,
+      columns: [
+        {
+          title: 'Manufacturing & About',
+          items: ['Our Production Process', 'Facility & Quality Standards', 'About Us Overview'],
+        },
+        {
+          title: 'Catalogues & Guides',
+          items: ['2026 Master PDF Catalogues', 'Surgical Instrument Specs', 'Hospital Equipment Guides'],
+        },
+        {
+          title: 'Support & Inquiries',
+          items: ['Help & FAQs', 'B2B Wholesale Inquiries', 'Global Export Support'],
+        },
+      ],
+    },
     { name: 'Contact Us', href: '/contact' },
   ]
+
+  const getDropdownItemHref = (parentName: string, itemTitle: string) => {
+    if (parentName === 'Resources') {
+      if (itemTitle.includes('Production')) return '/production'
+      if (itemTitle.includes('Facility') || itemTitle.includes('About')) return '/about'
+      if (itemTitle.includes('Catalogue') || itemTitle.includes('Specs') || itemTitle.includes('Guides')) return '/catalogues'
+      if (itemTitle.includes('FAQ') || itemTitle.includes('Help')) return '/faq'
+      if (itemTitle.includes('B2B') || itemTitle.includes('Inquir')) return '/contact'
+      if (itemTitle.includes('Export')) return '/about#export'
+      return '/production'
+    }
+    return `/products?query=${encodeURIComponent(itemTitle)}`
+  }
 
   return (
     <>
@@ -156,7 +188,15 @@ export default function MainRedNavbar() {
 
                 {/* MEGA MENU DROPDOWN */}
                 {item.hasDropdown && activeDropdown === item.name && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 w-[650px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 z-50 animate-fade-in grid grid-cols-3 gap-6">
+                  <div
+                    className={`absolute top-full w-[650px] 2xl:w-[720px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 z-50 animate-fade-in grid grid-cols-3 gap-6 ${
+                      item.name === 'Surgical Instruments'
+                        ? 'left-0'
+                        : item.name === 'Brands' || item.name === 'Equipment' || item.name === 'Resources'
+                        ? 'right-0'
+                        : 'left-1/2 -translate-x-1/2'
+                    }`}
+                  >
                     {item.columns?.map((col, idx) => (
                       <div key={idx} className="space-y-3">
                         <h4 className="font-extrabold text-xs text-[#96161B] uppercase tracking-wider border-b border-red-100 pb-1.5">
@@ -166,7 +206,7 @@ export default function MainRedNavbar() {
                           {col.items.map((sub, sIdx) => (
                             <li key={sIdx}>
                               <Link
-                                href={`/products?query=${encodeURIComponent(sub)}`}
+                                href={getDropdownItemHref(item.name, sub)}
                                 className="hover:text-[#96161B] hover:underline block py-0.5"
                               >
                                 • {sub}
@@ -218,7 +258,7 @@ export default function MainRedNavbar() {
               Supplies
             </Link>
             <Link
-              href="/products?cat=disposables-single-use"
+              href="/products?cat=ppe"
               className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
             >
               PPE
@@ -344,7 +384,7 @@ export default function MainRedNavbar() {
                                 {col.items.map((sub, sIdx) => (
                                   <li key={sIdx}>
                                     <Link
-                                      href={`/products?query=${encodeURIComponent(sub)}`}
+                                      href={getDropdownItemHref(item.name, sub)}
                                       onClick={() => setIsMobileDrawerOpen(false)}
                                       className="block py-1 hover:text-[#B92025] transition-colors"
                                     >
@@ -398,6 +438,22 @@ export default function MainRedNavbar() {
                 </div>
                 <div className="space-y-1 text-xs font-bold text-slate-700">
                   <Link
+                    href="/production"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 hover:text-[#B92025]"
+                  >
+                    <Sparkles className="w-4 h-4 text-[#B92025]" />
+                    <span>Our Production Process</span>
+                  </Link>
+                  <Link
+                    href="/about"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 hover:text-[#B92025]"
+                  >
+                    <Building className="w-4 h-4 text-[#B92025]" />
+                    <span>About Us Overview</span>
+                  </Link>
+                  <Link
                     href="/catalogues"
                     onClick={() => setIsMobileDrawerOpen(false)}
                     className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 hover:text-[#B92025]"
@@ -406,12 +462,12 @@ export default function MainRedNavbar() {
                     <span>2026 Product Catalogues (PDF)</span>
                   </Link>
                   <Link
-                    href="/about"
+                    href="/faq"
                     onClick={() => setIsMobileDrawerOpen(false)}
                     className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 hover:text-[#B92025]"
                   >
-                    <Sparkles className="w-4 h-4 text-[#B92025]" />
-                    <span>About Us</span>
+                    <ShieldCheck className="w-4 h-4 text-[#B92025]" />
+                    <span>Help & FAQs</span>
                   </Link>
                   <Link
                     href="/dealer-locator"

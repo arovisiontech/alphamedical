@@ -9,7 +9,7 @@ export default function AdminStatisticsPage() {
     <AdminShell>
       <div className="space-y-6 animate-fade-in">
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-          <h1 className="text-2xl font-extrabold text-[#18355E]">Analytics & System Reports</h1>
+          <h1 className="text-2xl font-extrabold text-slate-900">Analytics & System Reports</h1>
           <p className="text-slate-500 text-xs mt-1">
             Track catalog views, quotation submissions, and hospital engagement.
           </p>
@@ -18,13 +18,13 @@ export default function AdminStatisticsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-2">
             <div className="text-xs font-bold text-slate-400 uppercase">Monthly Quotation Requests</div>
-            <div className="text-3xl font-extrabold text-[#18355E]">48 Inquiries</div>
+            <div className="text-3xl font-extrabold text-[#96161B]">48 Inquiries</div>
             <div className="text-[11px] text-emerald-600 font-semibold">+18.5% vs last month</div>
           </div>
 
           <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-2">
             <div className="text-xs font-bold text-slate-400 uppercase">Catalogue Downloads</div>
-            <div className="text-3xl font-extrabold text-[#18355E]">312 Downloads</div>
+            <div className="text-3xl font-extrabold text-slate-900">312 Downloads</div>
             <div className="text-[11px] text-emerald-600 font-semibold">+24.0% PDF views</div>
           </div>
 

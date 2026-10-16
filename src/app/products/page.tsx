@@ -17,29 +17,7 @@ export default function ProductsPage() {
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState<ProductItem[]>([])
 
-  const handleAddToCart = (alphaProd: AlphaProduct, qty: number) => {
-    const item: ProductItem = {
-      id: alphaProd.id,
-      category_id: null,
-      title: alphaProd.title,
-      slug: alphaProd.slug,
-      sku: alphaProd.sku,
-      short_description: alphaProd.description,
-      full_description: alphaProd.description,
-      featured_image: alphaProd.image,
-      features: ['German Stainless Steel', 'ISO 13485 Approved'],
-      specifications: alphaProd.specs,
-      catalogue_pdf: null,
-      is_featured: true,
-      is_published: true,
-      seo_title: alphaProd.title,
-      seo_description: alphaProd.description,
-      sort_order: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      category_name: alphaProd.category,
-    }
-
+  const handleAddToCart = (item: ProductItem, qty: number) => {
     if (!cartItems.some((i) => i.id === item.id)) {
       setCartItems((prev) => [...prev, item])
     }
