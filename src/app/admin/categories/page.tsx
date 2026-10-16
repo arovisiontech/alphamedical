@@ -83,12 +83,37 @@ export default function AdminCategoriesPage() {
       defaultTitle: 'HOSPITAL FURNITURE',
     },
   ]
+  const [isUploading, setIsUploading] = useState(false)
+  const categoryFileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Load categories from persistent storage
-  useEffect(() => {
+  const loadData = async () => {
     const data = getStoredCategories()
     setCategories(data)
     setIsLoaded(true)
+
+    try {
+      const res = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' })
+      if (res.ok) {
+        const serverCats = await res.json()
+        if (Array.isArray(serverCats) && serverCats.length > 0) {
+          setCategories(serverCats)
+          localStorage.setItem('alpha_categories_v2', JSON.stringify(serverCats))
+          localStorage.setItem('alpha_categories', JSON.stringify(serverCats))
+        }
+      }
+    } catch (err) {}
+  }
+
+  // Load categories from persistent storage and server disk
+  useEffect(() => {
+    loadData()
+    const handleUpdate = () => loadData()
+    window.addEventListener('alpha_content_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('alpha_content_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
   }, [])
 
   const showNotification = (msg: string) => {
@@ -126,18 +151,34 @@ export default function AdminCategoriesPage() {
     setShowModal(true)
   }
 
-  // Image upload via FileReader
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image upload via /api/upload to server disk
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setFormCardImage(event.target.result as string)
+    setIsUploading(true)
+    try {
+      const data = new FormData()
+      data.append('file', file)
+      data.append('type', 'category')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+      const json = await res.json()
+      if (json.success) {
+        setFormCardImage(json.url)
+        showNotification('Category card image uploaded & saved to server disk!')
+      } else {
+        showNotification(`Upload failed: ${json.error || 'Server error'}`)
       }
+    } catch (err) {
+      console.error('Error uploading category image:', err)
+      showNotification('Error uploading category image file')
+    } finally {
+      setIsUploading(false)
     }
-    reader.readAsDataURL(file)
   }
 
   // Auto-generate slug from name
@@ -603,18 +644,42 @@ export default function AdminCategoriesPage() {
                     </div>
                   </div>
 
-                  {/* COMPUTER UPLOAD OPTION */}
+                  {/* COMPUTER UPLOAD DROPZONE PLACEHOLDER */}
                   <div className="pt-2">
-                    <label className="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-2 rounded-xl cursor-pointer transition-colors border border-slate-200">
-                      <Upload className="w-3.5 h-3.5 text-[#B92025]" />
-                      <span>Upload Card Image from Computer</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <input
+                      type="file"
+                      ref={categoryFileInputRef}
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+
+                    <div
+                      onClick={() => categoryFileInputRef.current?.click()}
+                      className="border-2 border-dashed border-[#B92025]/40 hover:border-[#B92025] bg-red-50/30 hover:bg-red-50/70 rounded-2xl p-4 flex items-center gap-4 cursor-pointer transition-all group"
+                    >
+                      <div className="relative w-12 h-14 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center shadow-xs">
+                        {isUploading ? (
+                          <div className="w-5 h-5 border-2 border-[#B92025] border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Image
+                            src={formCardImage || '/images/categories/image_376.png'}
+                            alt="Category preview"
+                            fill
+                            className="object-cover"
+                          />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-black text-slate-800 group-hover:text-[#B92025] flex items-center gap-1.5">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{isUploading ? 'Uploading Image to Server...' : 'Click to Upload Category Image from Laptop'}</span>
+                        </div>
+                        <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                          {formCardImage || 'JPG, PNG, or WEBP saved directly on server disk'}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

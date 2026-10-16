@@ -32,11 +32,14 @@ function CheckoutContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const productSlug = searchParams.get('product') || ''
+  const queryQty = searchParams.get('qty') ? Math.max(1, parseInt(searchParams.get('qty') || '1')) : null
+  const querySize = searchParams.get('size') || ''
+  const queryPrice = searchParams.get('price') ? parseFloat(searchParams.get('price') || '') : null
 
   // Product state
   const [orderedProduct, setOrderedProduct] = useState<ProductItem | null>(null)
-  const [quantity, setQuantity] = useState<number>(1)
-  const [selectedLength, setSelectedLength] = useState<string>('15.5cm')
+  const [quantity, setQuantity] = useState<number>(queryQty || 1)
+  const [selectedLength, setSelectedLength] = useState<string>(querySize || '15.5cm')
   const [selectedType, setSelectedType] = useState<string>('2x3 Teeth')
 
   // Form selections matching screenshot
@@ -68,6 +71,11 @@ function CheckoutContent() {
   const [orderNumber, setOrderNumber] = useState('')
 
   useEffect(() => {
+    if (queryQty) setQuantity(queryQty)
+    if (querySize) setSelectedLength(querySize)
+  }, [queryQty, querySize])
+
+  useEffect(() => {
     const products = getStoredProducts()
     let match: ProductItem | undefined
     if (productSlug) {
@@ -78,7 +86,6 @@ function CheckoutContent() {
       )
     }
     if (!match && products.length > 0) {
-      // Find Adlerkreutz Tissue Forceps or default first surgical item
       match =
         products.find((p) => p.title.toLowerCase().includes('tissue forceps') || p.title.toLowerCase().includes('adlerkreutz')) ||
         products[0]
@@ -88,9 +95,9 @@ function CheckoutContent() {
     }
   }, [productSlug])
 
-  const productPrice = orderedProduct?.price ?? 69.99
-  const shippingCost = 30.99
+  const productPrice = queryPrice !== null && !isNaN(queryPrice) ? queryPrice : (orderedProduct?.price ?? 53.90)
   const subTotal = productPrice * quantity
+  const shippingCost = (quantity >= 10 || subTotal >= 100) ? 0.00 : 30.99
   const total = Math.max(0, subTotal + shippingCost - discountAmount)
 
   const handleApplyCoupon = (e: React.FormEvent) => {

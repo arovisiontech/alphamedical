@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import AdminShell from '@/src/components/admin/AdminShell'
-import { FileText, Plus, Edit2, Trash2, Download, X, Eye, CheckCircle2, Sparkles } from 'lucide-react'
+import { FileText, Plus, Edit2, Trash2, Download, X, Eye, CheckCircle2, Sparkles, Upload } from 'lucide-react'
 import { getStoredCatalogues, saveStoredCatalogues } from '@/src/lib/dataStore'
 import { CatalogueItem } from '@/src/types/catalogue'
 
@@ -24,6 +24,76 @@ export default function AdminCataloguesPage() {
     file_size: '2.8 MB',
     is_published: true,
   })
+
+  const pdfInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false)
+  const [isUploadingCover, setIsUploadingCover] = useState(false)
+
+  const handlePdfUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingPdf(true)
+    try {
+      const data = new FormData()
+      data.append('file', file)
+      data.append('type', 'catalogue')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+      const json = await res.json()
+      if (json.success) {
+        setFormData((prev) => ({
+          ...prev,
+          pdf_url: json.url,
+          file_size: json.size || prev.file_size,
+        }))
+        showToast(`PDF uploaded successfully: ${json.filename}`)
+      } else {
+        showToast(`Upload failed: ${json.error || 'Server error'}`)
+      }
+    } catch (err: any) {
+      console.error('PDF upload error:', err)
+      showToast('Error uploading PDF file')
+    } finally {
+      setIsUploadingPdf(false)
+    }
+  }
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setIsUploadingCover(true)
+    try {
+      const data = new FormData()
+      data.append('file', file)
+      data.append('type', 'category')
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: data,
+      })
+      const json = await res.json()
+      if (json.success) {
+        setFormData((prev) => ({
+          ...prev,
+          cover_image: json.url,
+        }))
+        showToast('Cover image uploaded successfully!')
+      } else {
+        showToast(`Cover upload failed: ${json.error || 'Server error'}`)
+      }
+    } catch (err: any) {
+      console.error('Cover upload error:', err)
+      showToast('Error uploading cover image')
+    } finally {
+      setIsUploadingCover(false)
+    }
+  }
 
   const loadData = async () => {
     // Optimistic local load
@@ -322,16 +392,115 @@ export default function AdminCataloguesPage() {
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  PDF Download File URL
+              {/* COVER IMAGE UPLOAD PLACEHOLDER */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Catalogue Cover Image (Click to Upload or Select)
                 </label>
                 <input
-                  type="text"
-                  value={formData.pdf_url}
-                  onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#B92025]"
+                  type="file"
+                  ref={coverInputRef}
+                  accept="image/*"
+                  onChange={handleCoverUpload}
+                  className="hidden"
                 />
+                <div
+                  onClick={() => coverInputRef.current?.click()}
+                  className="border-2 border-dashed border-slate-300 hover:border-[#B92025] rounded-2xl p-3.5 flex items-center gap-3.5 cursor-pointer bg-slate-50/70 hover:bg-red-50/30 transition-all group"
+                >
+                  <div className="w-12 h-16 bg-white rounded-lg border border-slate-200 overflow-hidden relative shrink-0 shadow-sm">
+                    <Image
+                      src={formData.cover_image || '/images/categories/image_376.png'}
+                      alt="Cover Preview"
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-slate-800 group-hover:text-[#B92025] flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingCover ? 'Uploading cover...' : 'Click to Upload Cover Image from Laptop'}</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 truncate mt-0.5">
+                      {formData.cover_image || 'JPG, PNG, or WEBP brochure cover thumbnail'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* PDF FILE UPLOAD PLACEHOLDER (SCREENSHOT 2 ENHANCEMENT) */}
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  PDF Download File * (Click to Upload from Laptop Gallery)
+                </label>
+                
+                <input
+                  type="file"
+                  ref={pdfInputRef}
+                  accept=".pdf,application/pdf"
+                  onChange={handlePdfUpload}
+                  className="hidden"
+                />
+
+                {/* CLICKABLE DROPZONE / PLACEHOLDER */}
+                <div
+                  onClick={() => pdfInputRef.current?.click()}
+                  className="border-2 border-dashed border-[#B92025]/40 hover:border-[#B92025] bg-red-50/40 hover:bg-red-50/80 rounded-2xl p-5 text-center cursor-pointer transition-all space-y-2 group"
+                >
+                  <div className="w-12 h-12 rounded-full bg-white shadow-sm border border-red-200 flex items-center justify-center mx-auto text-[#B92025] group-hover:scale-110 transition-transform">
+                    {isUploadingPdf ? (
+                      <div className="w-5 h-5 border-2 border-[#B92025] border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Upload className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="space-y-0.5">
+                    <div className="text-xs font-extrabold text-slate-900 group-hover:text-[#B92025]">
+                      {isUploadingPdf ? 'Uploading PDF to Server...' : 'Click to Browse & Upload PDF from Laptop'}
+                    </div>
+                    <div className="text-[10px] text-slate-500">
+                      Supports PDF brochures up to 50MB. File is saved directly to server disk.
+                    </div>
+                  </div>
+                </div>
+
+                {/* ACTIVE UPLOADED FILE STATUS BADGE */}
+                {formData.pdf_url && (
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+                    <div className="flex items-center gap-2.5 overflow-hidden">
+                      <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
+                      <div className="overflow-hidden">
+                        <div className="font-bold text-emerald-900 truncate max-w-[280px]">
+                          {formData.pdf_url.split('/').pop()}
+                        </div>
+                        <div className="text-[10px] text-emerald-600 font-medium">
+                          {formData.file_size} • Saved on disk
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => pdfInputRef.current?.click()}
+                      className="text-[11px] font-bold text-emerald-700 hover:text-emerald-900 hover:underline shrink-0 ml-2"
+                    >
+                      Change File
+                    </button>
+                  </div>
+                )}
+
+                {/* MANUAL URL INPUT (OPTIONAL OVERRIDE) */}
+                <div className="pt-1">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Or Enter PDF URL Manually
+                  </div>
+                  <input
+                    type="text"
+                    value={formData.pdf_url}
+                    onChange={(e) => setFormData({ ...formData, pdf_url: e.target.value })}
+                    placeholder="/catalogues/Artery-Forceps-Section4.pdf"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#B92025]"
+                  />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

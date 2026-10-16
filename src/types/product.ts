@@ -40,6 +40,16 @@ export interface ProductItem {
   is_best_seller?: boolean
   is_new_arrival?: boolean
   in_stock?: boolean
+  sizes?: string[]
+  stock_quantity?: number
+  quantity_discounts?: QuantityDiscountTier[]
+}
+
+export interface QuantityDiscountTier {
+  quantity: number
+  discount_percentage: number
+  badge?: string
+  free_shipping?: boolean
 }
 
 export const productGalleryImageSchema = z.object({

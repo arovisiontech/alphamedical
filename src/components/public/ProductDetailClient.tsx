@@ -22,6 +22,12 @@ import {
   Award,
   Sparkles,
   CheckCircle2,
+  Edit2,
+  Trash2,
+  Sliders,
+  Settings,
+  Save,
+  AlertCircle,
 } from 'lucide-react'
 import TopBar from '@/src/components/public/TopBar'
 import HeaderNav from '@/src/components/public/HeaderNav'
@@ -52,33 +58,247 @@ export default function ProductDetailClient({
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0)
   const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'sterilization' | 'certifications'>('overview')
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Sizes selection & Customization
+  const [availableSizes, setAvailableSizes] = useState<string[]>(
+    product.sizes && product.sizes.length > 0
+      ? product.sizes
+      : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']
+  )
+  const [selectedSize, setSelectedSize] = useState<string>(
+    (product.sizes && product.sizes[0]) || '15.5cm'
+  )
+  const [isCustomSizeOpen, setIsCustomSizeOpen] = useState<boolean>(false)
+  const [customSizeInput, setCustomSizeInput] = useState<string>('')
+
+  // Tiered Quantity Discounts matching Screenshot 1 (PeakSurgicals)
+  const defaultDiscountTiers = [
+    { quantity: 1, discount_percentage: 0, badge: 'Standard price', free_shipping: false },
+    { quantity: 10, discount_percentage: 5, badge: 'Save 5%', free_shipping: true },
+    { quantity: 30, discount_percentage: 10, badge: 'Save 10%', free_shipping: true },
+    { quantity: 70, discount_percentage: 15, badge: 'Save 15%', free_shipping: true },
+    { quantity: 100, discount_percentage: 20, badge: 'Save 20%', free_shipping: true },
+  ]
+
+  const discountTiers =
+    product.quantity_discounts && product.quantity_discounts.length > 0
+      ? product.quantity_discounts
+      : defaultDiscountTiers
+
+  const [selectedTierQty, setSelectedTierQty] = useState<number>(1)
+  const [quantity, setQuantity] = useState<number>(1)
+
+  // Stock inventory tracking
+  const stockRemaining = typeof product.stock_quantity === 'number' ? product.stock_quantity : 142
+  const unitsSold = 58
+
+  // Base price calculation
+  const basePrice = Number(product.price) || 53.90
+  const originalPrice = product.original_price ?? (basePrice * 1.2)
+
+  // Dynamic calculations based on selected quantity
+  const sortedTiers = [...discountTiers].sort((a, b) => b.quantity - a.quantity)
+  const activeTier =
+    sortedTiers.find((t) => quantity >= t.quantity) || {
+      quantity: 1,
+      discount_percentage: 0,
+      badge: 'Standard price',
+      free_shipping: false,
+    }
+  const discountPercent = activeTier.discount_percentage
+  const unitPrice = basePrice * (1 - discountPercent / 100)
+  const totalPrice = unitPrice * quantity
+  const totalRegularPrice = basePrice * quantity
+  const totalSavings = totalRegularPrice - totalPrice
 
   // Variant selections
   const [selectedLength, setSelectedLength] = useState<string>('15.5cm (Standard)')
   const [selectedType, setSelectedType] = useState<string>('3x4 Sharp Prongs')
-  const [quantity, setQuantity] = useState<number>(1)
   const [isAddedToCart, setIsAddedToCart] = useState<boolean>(false)
+
+  // Admin Quick Edit Modal state
+  const [isQuickEditOpen, setIsQuickEditOpen] = useState(false)
+  const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const [quickEditForm, setQuickEditForm] = useState({
+    price: product.price ?? 53.90,
+    original_price: product.original_price ?? 64.95,
+    stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
+    sizes: (product.sizes && product.sizes.length > 0 ? product.sizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+    tier_10_discount: discountTiers.find((t) => t.quantity === 10)?.discount_percentage ?? 5,
+    tier_30_discount: discountTiers.find((t) => t.quantity === 30)?.discount_percentage ?? 10,
+    tier_70_discount: discountTiers.find((t) => t.quantity === 70)?.discount_percentage ?? 15,
+    tier_100_discount: discountTiers.find((t) => t.quantity === 100)?.discount_percentage ?? 20,
+  })
 
   // Modals
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false)
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false)
-  const [cartItems, setCartItems] = useState<ProductItem[]>([])
+  const [cartItems, setCartItems] = useState<any[]>([])
+
+  const showToast = (msg: string) => {
+    setToastMessage(msg)
+    setTimeout(() => setToastMessage(null), 3500)
+  }
+
+  // Handle tier selection
+  const handleSelectTier = (tQty: number) => {
+    setSelectedTierQty(tQty)
+    setQuantity(tQty)
+  }
+
+  // Handle quantity changes
+  const handleQuantityChange = (newQty: number) => {
+    const val = Math.max(1, Math.min(newQty, stockRemaining))
+    setQuantity(val)
+    const exactMatch = discountTiers.find((t) => t.quantity === val)
+    if (exactMatch) {
+      setSelectedTierQty(val)
+    } else {
+      const highestBelow = [...discountTiers]
+        .sort((a, b) => b.quantity - a.quantity)
+        .find((t) => val >= t.quantity)
+      setSelectedTierQty(highestBelow ? highestBelow.quantity : 1)
+    }
+  }
+
+  // Handle custom size add
+  const handleAddCustomSize = () => {
+    if (!customSizeInput.trim()) return
+    const formatted = customSizeInput.trim()
+    if (!availableSizes.includes(formatted)) {
+      setAvailableSizes((prev) => [...prev, formatted])
+    }
+    setSelectedSize(formatted)
+    setCustomSizeInput('')
+    setIsCustomSizeOpen(false)
+    showToast(`Custom size "${formatted}" selected!`)
+  }
+
+  // Handle Admin Quick Edit Save
+  const handleSaveQuickEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingProduct(true)
+
+    try {
+      const parsedSizes = quickEditForm.sizes
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+
+      const updatedTiers = [
+        { quantity: 1, discount_percentage: 0, badge: 'Standard price', free_shipping: false },
+        {
+          quantity: 10,
+          discount_percentage: Number(quickEditForm.tier_10_discount) || 5,
+          badge: `Save ${quickEditForm.tier_10_discount}%`,
+          free_shipping: true,
+        },
+        {
+          quantity: 30,
+          discount_percentage: Number(quickEditForm.tier_30_discount) || 10,
+          badge: `Save ${quickEditForm.tier_30_discount}%`,
+          free_shipping: true,
+        },
+        {
+          quantity: 70,
+          discount_percentage: Number(quickEditForm.tier_70_discount) || 15,
+          badge: `Save ${quickEditForm.tier_70_discount}%`,
+          free_shipping: true,
+        },
+        {
+          quantity: 100,
+          discount_percentage: Number(quickEditForm.tier_100_discount) || 20,
+          badge: `Save ${quickEditForm.tier_100_discount}%`,
+          free_shipping: true,
+        },
+      ]
+
+      const updatedProduct: ProductItem = {
+        ...product,
+        price: Number(quickEditForm.price) || 53.90,
+        original_price: Number(quickEditForm.original_price) || 64.95,
+        stock_quantity: Number(quickEditForm.stock_quantity) || 142,
+        sizes: parsedSizes.length > 0 ? parsedSizes : availableSizes,
+        quantity_discounts: updatedTiers,
+        updated_at: new Date().toISOString(),
+      }
+
+      setProduct(updatedProduct)
+      setAvailableSizes(updatedProduct.sizes || availableSizes)
+
+      const allStored = getStoredProducts()
+      const updatedAll = allStored.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      localStorage.setItem('alpha_products_v2', JSON.stringify(updatedAll))
+      localStorage.setItem('alpha_products', JSON.stringify(updatedAll))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'saveSingle', product: updatedProduct }),
+      })
+
+      if (res.ok) {
+        showToast('Product pricing, discounts & sizes saved to disk!')
+        setIsQuickEditOpen(false)
+      } else {
+        showToast('Saved locally, server returned notice.')
+      }
+    } catch (err) {
+      console.error('Error saving product:', err)
+      showToast('Error saving product.')
+    } finally {
+      setIsSavingProduct(false)
+    }
+  }
+
+  // Handle direct product delete
+  const handleDeleteProductDirect = async () => {
+    if (!confirm(`Are you sure you want to delete "${product.title}"? This will remove it from the store.`)) return
+    try {
+      const allStored = getStoredProducts()
+      const updatedAll = allStored.filter((p) => p.id !== product.id)
+      localStorage.setItem('alpha_products_v2', JSON.stringify(updatedAll))
+      localStorage.setItem('alpha_products', JSON.stringify(updatedAll))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', id: product.id }),
+      })
+
+      showToast('Product deleted from server disk!')
+      router.push('/products')
+    } catch (err) {
+      alert('Error deleting product')
+    }
+  }
 
   // Immediate update on prop change
   useEffect(() => {
     setProduct(initialProduct)
     setActiveImageIndex(0)
+    if (initialProduct.sizes && initialProduct.sizes.length > 0) {
+      setAvailableSizes(initialProduct.sizes)
+      setSelectedSize(initialProduct.sizes[0])
+    }
   }, [initialProduct])
 
   // Live client sync with API and localStorage
   useEffect(() => {
-    // Check client storage / API for real-time updates
     const syncClient = () => {
       const stored = getStoredProducts()
       if (stored && stored.length > 0) {
         setProducts(stored)
         const match = stored.find((p) => p.id === initialProduct.id || p.slug === initialProduct.slug)
-        if (match) setProduct(match)
+        if (match) {
+          setProduct(match)
+          if (match.sizes && match.sizes.length > 0) {
+            setAvailableSizes(match.sizes)
+          }
+        }
       }
     }
 
@@ -90,7 +310,12 @@ export default function ProductDetailClient({
         if (Array.isArray(data) && data.length > 0) {
           setProducts(data)
           const match = data.find((p) => p.id === initialProduct.id || p.slug === initialProduct.slug)
-          if (match) setProduct(match)
+          if (match) {
+            setProduct(match)
+            if (match.sizes && match.sizes.length > 0) {
+              setAvailableSizes(match.sizes)
+            }
+          }
         }
       })
       .catch(() => {})
@@ -116,8 +341,6 @@ export default function ProductDetailClient({
   const currentImage = gallery[activeImageIndex] || mainImage
 
   // Pricing & Badges
-  const price = product.price ?? 59.0
-  const originalPrice = product.original_price ?? 69.95
   const badge = product.badge || 'New'
   const inStock = product.in_stock !== false
   const sku = product.sku || 'NMD020146'
@@ -128,9 +351,19 @@ export default function ProductDetailClient({
     .slice(0, 4)
 
   const handleAddToCart = () => {
-    if (!cartItems.some((i) => i.id === product.id)) {
-      setCartItems((prev) => [...prev, product])
+    const itemToAdd = {
+      ...product,
+      price: unitPrice,
+      selected_size: selectedSize,
+      selected_quantity: quantity,
+      selected_length: selectedLength,
+      selected_type: selectedType,
     }
+    setCartItems((prev) => {
+      const exists = prev.some((i) => i.id === product.id)
+      if (exists) return prev.map((i) => (i.id === product.id ? itemToAdd : i))
+      return [...prev, itemToAdd]
+    })
     setIsAddedToCart(true)
     setTimeout(() => setIsAddedToCart(false), 2200)
     setIsCartOpen(true)
@@ -138,7 +371,11 @@ export default function ProductDetailClient({
 
   const handleBuyNow = () => {
     handleAddToCart()
-    router.push(`/checkout?product=${encodeURIComponent(product.slug || product.id)}`)
+    router.push(
+      `/checkout?product=${encodeURIComponent(product.slug || product.id)}&qty=${quantity}&size=${encodeURIComponent(
+        selectedSize
+      )}&price=${unitPrice.toFixed(2)}`
+    )
   }
 
   const handleInquiryClick = () => {
@@ -147,6 +384,14 @@ export default function ProductDetailClient({
 
   return (
     <div className="min-h-screen bg-[#fafbfc] flex flex-col font-sans text-slate-900 selection:bg-[#96161B] selection:text-white">
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed top-6 right-6 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-3 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
+          <CheckCircle2 className="w-4 h-4 text-white" />
+          <span>{toastMessage}</span>
+        </div>
+      )}
+
       {/* 1. TOP BAR */}
       <TopBar />
 
@@ -174,7 +419,6 @@ export default function ProductDetailClient({
               priority
               className="object-cover object-right-top"
             />
-            {/* Soft gradient to smoothly transition text into the crisp white background */}
             <div className="absolute inset-0 bg-gradient-to-r from-white via-white/80 sm:via-white/45 to-transparent" />
           </div>
         </div>
@@ -206,7 +450,7 @@ export default function ProductDetailClient({
                 'Precision instruments for advanced surgical, dental, orthopedic, and operating room procedures.'}
             </p>
 
-            {/* VALUE BADGES PILL ROW (ALL IN BRAND RED, NO BLUE) */}
+            {/* VALUE BADGES PILL ROW */}
             <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-5 text-[11px] sm:text-xs font-bold text-slate-800">
               <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-full shadow-xs">
                 <CheckCircle2 className="w-4 h-4 text-[#B92025]" />
@@ -242,9 +486,62 @@ export default function ProductDetailClient({
       </section>
 
       {/* =========================================================================
-          MAIN PRODUCT STAGE: 3-COLUMN VIEW LARGE DESIGN (MATCHING SCREENSHOT 1)
+          MAIN PRODUCT STAGE: 3-COLUMN VIEW LARGE DESIGN
       ========================================================================= */}
-      <main className="flex-1 max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full space-y-12">
+      <main className="flex-1 max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 w-full space-y-8">
+        
+        {/* CLIENT / ADMIN QUICK EDIT ACTION BAR */}
+        <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-4 rounded-3xl border border-slate-700 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-red-600/30 border border-red-500/50 flex items-center justify-center text-red-400">
+              <Settings className="w-5 h-5 animate-spin-slow" />
+            </div>
+            <div>
+              <div className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
+                <span>Product Management Controls</span>
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                  Live Disk Sync
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Directly adjust price, discount tiers, custom sizes, and inventory stock for this item.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            <button
+              type="button"
+              onClick={() => {
+                setQuickEditForm({
+                  price: product.price ?? 53.90,
+                  original_price: product.original_price ?? 64.95,
+                  stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
+                  sizes: (availableSizes && availableSizes.length > 0 ? availableSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+                  tier_10_discount: discountTiers.find((t) => t.quantity === 10)?.discount_percentage ?? 5,
+                  tier_30_discount: discountTiers.find((t) => t.quantity === 30)?.discount_percentage ?? 10,
+                  tier_70_discount: discountTiers.find((t) => t.quantity === 70)?.discount_percentage ?? 15,
+                  tier_100_discount: discountTiers.find((t) => t.quantity === 100)?.discount_percentage ?? 20,
+                })
+                setIsQuickEditOpen(true)
+              }}
+              className="flex-1 sm:flex-none bg-[#96161B] hover:bg-[#b92025] text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Quick Edit Price, Discounts & Sizes</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleDeleteProductDirect}
+              className="bg-red-950/60 hover:bg-red-900 text-red-200 border border-red-800 text-xs font-bold px-3 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1 cursor-pointer"
+              title="Delete Product"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Delete</span>
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 2xl:gap-12 items-start">
           
           {/* -------------------------------------------------------------
@@ -321,7 +618,7 @@ export default function ProductDetailClient({
                 />
               </div>
 
-              {/* ANNOTATION CALLOUT 1: TOP RIGHT (SERRATED PLATFORM / JAW DETAIL) */}
+              {/* ANNOTATION CALLOUT 1 */}
               <div className="hidden sm:flex items-center gap-3 absolute top-12 right-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none">
                 <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
                   <Image
@@ -337,7 +634,7 @@ export default function ProductDetailClient({
                 </div>
               </div>
 
-              {/* ANNOTATION CALLOUT 2: BOTTOM RIGHT (PRECISION CRAFTSMANSHIP) */}
+              {/* ANNOTATION CALLOUT 2 */}
               <div className="hidden sm:flex items-center gap-3 absolute bottom-12 left-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none">
                 <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
                   <Image
@@ -354,7 +651,6 @@ export default function ProductDetailClient({
               </div>
             </div>
 
-            {/* Quick Note Below Image */}
             <div className="text-center text-xs text-slate-500 flex items-center justify-center gap-2">
               <Sparkles className="w-3.5 h-3.5 text-[#96161B]" />
               <span>Hover or click expand button to view high-resolution precision detailing.</span>
@@ -364,44 +660,16 @@ export default function ProductDetailClient({
           {/* -------------------------------------------------------------
               COLUMN 3 (RIGHT): PRODUCT INFO & ORDER PANEL (SCREENSHOT 1)
           ------------------------------------------------------------- */}
-          <div className="lg:col-span-5 order-3 space-y-6 bg-white rounded-3xl border border-slate-200/90 shadow-lg p-6 sm:p-8">
+          <div className="lg:col-span-5 order-3 space-y-5 bg-white rounded-3xl border border-slate-200/90 shadow-lg p-6 sm:p-8">
             
-            {/* CATEGORY & SUBTITLE */}
+            {/* CATEGORY & TITLE */}
             <div>
               <span className="text-xs font-black text-[#96161B] uppercase tracking-widest block mb-1">
                 {product.category_name || 'SURGICAL INSTRUMENTS'}
               </span>
-              <h2 className="text-2xl sm:text-3xl 2xl:text-4xl font-black text-slate-900 tracking-tight leading-snug">
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight leading-snug">
                 {product.title}
               </h2>
-            </div>
-
-            {/* CLINICAL CHECKLIST (MATCHING EXACT SCREENSHOT 1 BULLETS) */}
-            <div className="space-y-2 border-y border-slate-100 py-4 text-xs 2xl:text-sm text-slate-700">
-              {(product.features && product.features.length > 0
-                ? product.features
-                : [
-                    '15.5cm and 20.5cm in overall lengths.',
-                    'Features a straight precision profile.',
-                    'Serrated platforms for non-slip secure grip.',
-                    'Allows delicate and precise anatomical dissection.',
-                    'Ergonomic finger loops assure comfortable handling.',
-                    'Prevents tissue trauma during deep incision hold.',
-                    'Fully approved to be used in Hospital Operating Rooms.',
-                    'Certified by FDA, CE, and ISO 13485:2016.',
-                    'Crafted with Surgical-Grade German Stainless Steel.',
-                    'Fully Reusable and Autoclavable up to 134°C.',
-                    'Lifetime Corrosion & Craftsmanship Warranty.',
-                    'Insured Worldwide Shipping Available.',
-                  ]
-              ).map((bullet, bIdx) => (
-                <div key={bIdx} className="flex items-start gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-red-100 text-[#96161B] flex items-center justify-center shrink-0 mt-0.5">
-                    <Check className="w-2.5 h-2.5 stroke-[3]" />
-                  </div>
-                  <span>{bullet}</span>
-                </div>
-              ))}
             </div>
 
             {/* RATINGS ROW */}
@@ -413,147 +681,307 @@ export default function ProductDetailClient({
               </div>
               <span className="text-slate-500 font-medium">Based on 18 reviews</span>
               <span className="text-slate-300">|</span>
-              <button
-                type="button"
-                className="text-[#96161B] font-bold hover:underline cursor-pointer"
-              >
-                Write a review
-              </button>
+              <span className="font-mono text-slate-500 font-bold">Model: {sku}</span>
             </div>
 
-            {/* PRICE & IN-STOCK STATUS */}
-            <div className="flex items-baseline justify-between border-t border-slate-100 pt-4">
-              <div>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-3xl sm:text-4xl 2xl:text-5xl font-black text-[#96161B]">
-                    ${price.toFixed(2)}
+            {/* SCREENSHOT 1: TIERED QUANTITY DISCOUNT RADIO CARDS */}
+            <div className="space-y-2.5 pt-1">
+              <div className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                <span>Select Quantity & Save:</span>
+                <span className="text-[11px] font-bold text-[#1e3a8a] bg-blue-50 px-2 py-0.5 rounded-md">
+                  Up to 20% Off Bulk Orders
+                </span>
+              </div>
+
+              {discountTiers.map((tier) => {
+                const isSelected = selectedTierQty === tier.quantity
+                const tierUnitPrice = basePrice * (1 - tier.discount_percentage / 100)
+                const tierTotal = tierUnitPrice * tier.quantity
+                const tierOriginalTotal = basePrice * tier.quantity
+
+                return (
+                  <div
+                    key={tier.quantity}
+                    onClick={() => handleSelectTier(tier.quantity)}
+                    className={`relative flex items-center justify-between p-3.5 sm:p-4 rounded-2xl cursor-pointer transition-all duration-200 border-2 select-none ${
+                      isSelected
+                        ? 'border-[#1e3a8a] bg-blue-50/20 shadow-md ring-2 ring-blue-500/10'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                    }`}
+                  >
+                    {/* LEFT: RADIO + PIECES + BADGES */}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          isSelected ? 'border-[#1e3a8a]' : 'border-slate-300'
+                        }`}
+                      >
+                        {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-[#1e3a8a]" />}
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-black text-sm sm:text-base text-slate-900">
+                            {tier.quantity} {tier.quantity === 1 ? 'piece' : 'pieces'}
+                          </span>
+                          {tier.quantity === 1 ? (
+                            <span className="bg-slate-100 text-slate-600 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded">
+                              Standard price
+                            </span>
+                          ) : (
+                            <>
+                              <span className="bg-[#1e3a8a] text-white text-[10px] sm:text-[11px] font-black px-2 py-0.5 rounded shadow-xs">
+                                Save {tier.discount_percentage}%
+                              </span>
+                              {tier.free_shipping !== false && (
+                                <span className="border border-slate-300 text-slate-700 text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded bg-white">
+                                  Free shipping
+                                </span>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* RIGHT: TIER TOTAL & PER PIECE */}
+                    <div className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        {tier.discount_percentage > 0 && (
+                          <span className="text-xs text-slate-400 line-through font-semibold hidden sm:inline">
+                            ${tierOriginalTotal.toFixed(2)}
+                          </span>
+                        )}
+                        <span className="text-sm sm:text-base font-black text-slate-900">
+                          ${tierTotal.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-medium">
+                        ${tierUnitPrice.toFixed(2)} each
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* FREE SHIPPING THRESHOLD NOTIFICATION (SCREENSHOT 1) */}
+            <div className="text-center text-xs font-bold py-0.5">
+              {totalPrice >= 100 || activeTier.free_shipping ? (
+                <span className="text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Qualified for Free Worldwide Express Shipping!</span>
+                </span>
+              ) : (
+                <span className="text-slate-500">
+                  ${(100 - totalPrice).toFixed(2)} more for free shipping
+                </span>
+              )}
+            </div>
+
+            {/* TRUST BADGES ROW (SCREENSHOT 1: SECURE CHECKOUT, QUALITY INSPECTED, WORLDWIDE SUPPLY) */}
+            <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 text-center text-[10px] font-bold text-slate-700">
+              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <ShieldCheck className="w-4 h-4 text-[#1e3a8a]" />
+                <span>Secure Checkout</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <Award className="w-4 h-4 text-[#1e3a8a]" />
+                <span>Quality Inspected</span>
+              </div>
+              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100">
+                <Truck className="w-4 h-4 text-[#1e3a8a]" />
+                <span>Worldwide Supply</span>
+              </div>
+            </div>
+
+            {/* PRODUCT SIZES SECTION WITH CUSTOMIZE SIZE BUTTON */}
+            <div className="space-y-2 border-t border-slate-100 pt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black uppercase tracking-wider text-slate-800">
+                    Product Size:
                   </span>
-                  {originalPrice && originalPrice > price && (
-                    <span className="text-lg sm:text-xl font-bold text-slate-400 line-through">
-                      ${originalPrice.toFixed(2)}
-                    </span>
-                  )}
+                  <span className="text-xs font-bold text-[#96161B] bg-red-50 px-2 py-0.5 rounded-md">
+                    {selectedSize}
+                  </span>
                 </div>
-                <div className="text-[11px] text-slate-400 font-semibold mt-0.5">
-                  Taxes and shipping calculated at checkout
-                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomSizeOpen(!isCustomSizeOpen)}
+                  className="text-xs font-bold text-[#96161B] hover:text-[#7d1216] flex items-center gap-1 cursor-pointer bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded-lg transition-colors"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>+ Customize Size</span>
+                </button>
               </div>
 
-              <div className="text-right">
-                <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-extrabold border border-emerald-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{inStock ? 'IN STOCK' : 'PRE-ORDER'}</span>
-                </div>
-                <div className="text-xs font-mono text-slate-500 font-bold mt-1">
-                  Model: {sku}
-                </div>
+              {/* Selectable Size Pills */}
+              <div className="flex flex-wrap gap-2">
+                {availableSizes.map((size) => {
+                  const isSelected = selectedSize === size
+                  return (
+                    <button
+                      key={size}
+                      type="button"
+                      onClick={() => setSelectedSize(size)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all cursor-pointer border ${
+                        isSelected
+                          ? 'bg-[#96161B] text-white border-[#96161B] shadow-sm ring-2 ring-[#96161B]/20 scale-105'
+                          : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  )
+                })}
               </div>
+
+              {/* Custom Size Inline Input Box */}
+              {isCustomSizeOpen && (
+                <div className="p-3 bg-red-50/70 border border-red-200 rounded-2xl space-y-2 animate-fade-in">
+                  <div className="text-[11px] font-bold text-slate-700">
+                    Specify Custom Length / Dimensions / Specifications:
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={customSizeInput}
+                      onChange={(e) => setCustomSizeInput(e.target.value)}
+                      placeholder="e.g. 16.5cm (Custom Length) or 18mm Diameter"
+                      className="flex-1 px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddCustomSize}
+                      className="px-4 py-2 bg-[#96161B] text-white text-xs font-bold rounded-xl hover:bg-[#7d1216] transition-colors shrink-0 shadow-sm cursor-pointer"
+                    >
+                      Apply Custom Size
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* VARIANT DROPDOWNS (MATCHING SCREENSHOT 1 SELECTORS) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-100 pt-4">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Please Select Length *
-                </label>
-                <select
-                  value={selectedLength}
-                  onChange={(e) => setSelectedLength(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs 2xl:text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] cursor-pointer"
-                >
-                  <option value="130mm (5 1/8 inches)">130mm (5 1/8&quot;)</option>
-                  <option value="15.5cm (Standard)">15.5cm (Standard)</option>
-                  <option value="165mm (6 1/2 inches)">165mm (6 1/2&quot;)</option>
-                  <option value="20.5cm (Long Reach)">20.5cm (Long Reach)</option>
-                </select>
+            {/* LIVE STOCK & AUTO QUANTITY TRACKER */}
+            <div className="space-y-3 border-t border-slate-100 pt-4">
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="text-slate-800">Remaining Inventory:</span>
+                    <span className="text-[#96161B] font-black">{stockRemaining} units in stock</span>
+                  </div>
+                  <span className="text-slate-500 text-[11px] font-semibold">{unitsSold} units sold</span>
+                </div>
+
+                {/* Inventory visual bar */}
+                <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-emerald-500 via-amber-400 to-[#96161B] rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, Math.max(10, (stockRemaining / (stockRemaining + unitsSold)) * 100))}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Auto-tracked live warehouse inventory</span>
+                  <span className="font-bold text-amber-700">High demand in surgery centers</span>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-                  Please Select Type *
-                </label>
-                <select
-                  value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs 2xl:text-sm font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] cursor-pointer"
-                >
-                  <option value="3x4 Sharp Prongs">3x4 Sharp Prongs</option>
-                  <option value="2x3 Delicate Teeth">2x3 Delicate Teeth</option>
-                  <option value="4x5 Fine Platform">4x5 Fine Platform</option>
-                  <option value="Blunt Atraumatic">Blunt Atraumatic</option>
-                </select>
-              </div>
-            </div>
-
-            {/* QUANTITY & ACTIONS */}
-            <div className="space-y-3 pt-2">
+              {/* Quantity counter + Total summary */}
               <div className="flex items-center gap-3">
-                {/* QUANTITY SELECTOR */}
-                <div className="flex items-center justify-between border-2 border-slate-300 rounded-2xl px-3 py-2 w-32 shrink-0 bg-white">
+                <div className="flex items-center justify-between border-2 border-slate-300 rounded-2xl px-2.5 py-1.5 w-36 shrink-0 bg-white shadow-xs">
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-[#96161B] cursor-pointer font-black"
+                    onClick={() => handleQuantityChange(quantity - 1)}
+                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-[#96161B] cursor-pointer font-black rounded-lg hover:bg-slate-100"
                   >
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="font-black text-sm text-slate-900">{quantity}</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={stockRemaining}
+                    value={quantity}
+                    onChange={(e) => handleQuantityChange(Number(e.target.value) || 1)}
+                    className="w-12 text-center font-black text-sm text-slate-900 outline-none"
+                  />
                   <button
                     type="button"
-                    onClick={() => setQuantity((q) => q + 1)}
-                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-[#96161B] cursor-pointer font-black"
+                    onClick={() => handleQuantityChange(quantity + 1)}
+                    className="w-7 h-7 flex items-center justify-center text-slate-600 hover:text-[#96161B] cursor-pointer font-black rounded-lg hover:bg-slate-100"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
                 </div>
 
-                {/* ADD TO CART BUTTON (BIG BRAND RED) */}
+                <div className="flex-1 text-right">
+                  <div className="text-xs text-slate-400 font-semibold">
+                    {quantity} × ${unitPrice.toFixed(2)}
+                    {discountPercent > 0 && (
+                      <span className="ml-1 text-emerald-600 font-bold">({discountPercent}% OFF)</span>
+                    )}
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-[#96161B]">
+                    ${totalPrice.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+
+              {/* ADD TO CART & BUY NOW BUTTONS */}
+              <div className="space-y-2.5 pt-1">
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="flex-1 bg-[#96161B] hover:bg-[#7d1216] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shimmer-effect"
+                  className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shimmer-effect"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  <span>{isAddedToCart ? 'Added to Cart ✓' : 'Add to Cart'}</span>
-                </button>
-              </div>
-
-              {/* SECONDARY ACTION ROW: BUY NOW + ASK ABOUT THIS PRODUCT */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={handleBuyNow}
-                  className="bg-slate-900 hover:bg-black text-white py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
-                >
-                  <Zap className="w-4 h-4 text-amber-400" />
-                  <span>Buy Now</span>
+                  <span>{isAddedToCart ? 'Added to Cart ✓' : `Add ${quantity} to Cart • $${totalPrice.toFixed(2)}`}</span>
                 </button>
 
-                <button
-                  type="button"
-                  onClick={handleInquiryClick}
-                  className="bg-white hover:bg-slate-50 text-[#96161B] border-2 border-[#96161B] py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Ask About This Product</span>
-                </button>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handleBuyNow}
+                    className="bg-slate-900 hover:bg-black text-white py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                  >
+                    <Zap className="w-4 h-4 text-amber-400" />
+                    <span>Buy Now • $${totalPrice.toFixed(2)}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleInquiryClick}
+                    className="bg-white hover:bg-slate-50 text-[#96161B] border-2 border-[#96161B] py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>Inquire Bulk Quote</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* TRUST GUARANTEES (3 ICONS) */}
-            <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4 text-center text-[10px] 2xl:text-xs text-slate-600 font-bold">
-              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50">
-                <Truck className="w-4 h-4 text-[#96161B]" />
-                <span>Shipping Worldwide</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50">
-                <ShieldCheck className="w-4 h-4 text-[#96161B]" />
-                <span>FDA, CE & ISO Certified</span>
-              </div>
-              <div className="flex flex-col items-center gap-1 p-2 rounded-xl bg-slate-50">
-                <Headphones className="w-4 h-4 text-[#96161B]" />
-                <span>Expert Support</span>
-              </div>
+            {/* CLINICAL BULLET HIGHLIGHTS */}
+            <div className="space-y-2 border-t border-slate-100 pt-4 text-xs text-slate-700">
+              {(product.features && product.features.length > 0
+                ? product.features
+                : [
+                    'Precision engineered for operating theater procedures.',
+                    'Crafted with Surgical-Grade German Stainless Steel.',
+                    'Fully Reusable and Autoclavable up to 134°C.',
+                    'Certified by FDA, CE, and ISO 13485:2016.',
+                    'Lifetime Corrosion & Craftsmanship Warranty.',
+                  ]
+              ).slice(0, 5).map((bullet, bIdx) => (
+                <div key={bIdx} className="flex items-start gap-2.5">
+                  <div className="w-4 h-4 rounded-full bg-red-100 text-[#96161B] flex items-center justify-center shrink-0 mt-0.5">
+                    <Check className="w-2.5 h-2.5 stroke-[3]" />
+                  </div>
+                  <span>{bullet}</span>
+                </div>
+              ))}
             </div>
 
           </div>
@@ -837,6 +1265,202 @@ export default function ProductDetailClient({
               className="object-contain"
               priority
             />
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          ADMIN QUICK EDIT MODAL (LIVE DISK SYNC)
+      ========================================================================= */}
+      {isQuickEditOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in font-sans">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setIsQuickEditOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-[#96161B] bg-red-50 px-2 py-0.5 rounded-md">
+                Live Product Customizer
+              </span>
+            </div>
+            <h3 className="text-xl font-black text-slate-900 mb-1">
+              Adjust Pricing, Discounts, Sizes & Stock
+            </h3>
+            <p className="text-xs text-slate-500 mb-5">
+              Changes will be saved directly to the database file on server disk and will persist across all page refreshes.
+            </p>
+
+            <form onSubmit={handleSaveQuickEdit} className="space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Product Title
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  value={product.title}
+                  className="w-full px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-not-allowed"
+                />
+              </div>
+
+              {/* Pricing Rows */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Base Price ($) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    value={quickEditForm.price}
+                    onChange={(e) => setQuickEditForm({ ...quickEditForm, price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Original / Compare Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={quickEditForm.original_price}
+                    onChange={(e) => setQuickEditForm({ ...quickEditForm, original_price: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                  />
+                </div>
+              </div>
+
+              {/* Stock & Inventory */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Remaining Stock Quantity (Units) *
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  required
+                  value={quickEditForm.stock_quantity}
+                  onChange={(e) => setQuickEditForm({ ...quickEditForm, stock_quantity: parseInt(e.target.value) || 0 })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                />
+              </div>
+
+              {/* Available Sizes List */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Available Sizes (Comma Separated) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={quickEditForm.sizes}
+                  onChange={(e) => setQuickEditForm({ ...quickEditForm, sizes: e.target.value })}
+                  placeholder="12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  Each comma separates a size pill shown on the product page.
+                </span>
+              </div>
+
+              {/* Bulk Tier Discounts */}
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
+                <div className="text-xs font-black text-slate-900 uppercase tracking-wider">
+                  Bulk Quantity Discount Percentages (%)
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      10 Pieces (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={quickEditForm.tier_10_discount}
+                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_10_discount: Number(e.target.value) || 0 })}
+                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      30 Pieces (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={quickEditForm.tier_30_discount}
+                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_30_discount: Number(e.target.value) || 0 })}
+                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      70 Pieces (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={quickEditForm.tier_70_discount}
+                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_70_discount: Number(e.target.value) || 0 })}
+                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-1">
+                      100 Pieces (%)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      value={quickEditForm.tier_100_discount}
+                      onChange={(e) => setQuickEditForm({ ...quickEditForm, tier_100_discount: Number(e.target.value) || 0 })}
+                      className="w-full px-2.5 py-2 rounded-lg border border-slate-300 text-xs font-bold text-center text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Buttons */}
+              <div className="pt-3 flex items-center justify-between border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleDeleteProductDirect}
+                  className="text-xs font-bold text-red-600 hover:text-red-700 hover:underline flex items-center gap-1 cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Product</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsQuickEditOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProduct}
+                    className="px-5 py-2 rounded-xl bg-[#96161B] hover:bg-[#7d1216] text-white text-xs font-bold shadow-md cursor-pointer transition-colors flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>{isSavingProduct ? 'Saving to Disk...' : 'Save Changes'}</span>
+                  </button>
+                </div>
+              </div>
+            </form>
           </div>
         </div>
       )}
