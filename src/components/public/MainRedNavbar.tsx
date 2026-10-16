@@ -17,7 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   Building,
-  Home as HomeIcon,
+  Home,
 } from 'lucide-react'
 
 interface NavItem {
@@ -184,7 +184,7 @@ export default function MainRedNavbar() {
                   href={item.href}
                   className="flex items-center gap-1.5 py-3.5 text-white hover:text-white/80 transition-colors whitespace-nowrap cursor-pointer"
                 >
-                  {item.name === 'Home' && <HomeIcon className="w-3.5 h-3.5 text-white/90 shrink-0" />}
+                  {item.name === 'Home' && <Home className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                   <span>{item.name}</span>
                   {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                 </Link>
@@ -248,6 +248,13 @@ export default function MainRedNavbar() {
             className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
+            <Link
+              href="/"
+              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-[11px] font-bold text-white shrink-0 transition-colors flex items-center gap-1"
+            >
+              <Home className="w-3 h-3 text-white" />
+              <span>Home</span>
+            </Link>
             <Link
               href="/products?cat=surgical-instruments"
               className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
@@ -426,7 +433,7 @@ export default function MainRedNavbar() {
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      {item.name === 'Home' && <HomeIcon className="w-4 h-4 text-[#B92025]" />}
+                      {item.name === 'Home' && <Home className="w-4 h-4 text-[#B92025]" />}
                       {item.isBadge && <Flame className="w-4 h-4 text-[#B92025]" />}
                       <span>{item.name}</span>
                     </div>
