@@ -18,6 +18,7 @@ import {
   LogOut,
   ShieldCheck,
   Globe,
+  HelpCircle,
 } from 'lucide-react'
 
 export default function AdminSidebar() {
@@ -29,6 +30,7 @@ export default function AdminSidebar() {
     { name: 'Categories', href: '/admin/categories', icon: Layers },
     { name: 'Subcategories (PDFs)', href: '/admin/subcategories', icon: Sliders },
     { name: 'PDF Catalogues', href: '/admin/catalogues', icon: FileText },
+    { name: 'FAQs Knowledgebase', href: '/admin/faqs', icon: HelpCircle },
     { name: 'Media Library', href: '/admin/media', icon: ImageIcon },
     { name: 'Inquiries & Messages', href: '/admin/contact-messages', icon: MessageSquare },
     { name: 'Content & Banners', href: '/admin/content', icon: Sparkles },

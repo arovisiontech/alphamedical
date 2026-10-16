@@ -17,6 +17,7 @@ import {
   ArrowRight,
   Sparkles,
   Building,
+  Home as HomeIcon,
 } from 'lucide-react'
 
 interface NavItem {
@@ -60,6 +61,7 @@ export default function MainRedNavbar() {
   }
 
   const navItems: NavItem[] = [
+    { name: 'Home', href: '/' },
     {
       name: 'Surgical Instruments',
       href: '/products?cat=surgical-instruments',
@@ -182,6 +184,7 @@ export default function MainRedNavbar() {
                   href={item.href}
                   className="flex items-center gap-1.5 py-3.5 text-white hover:text-white/80 transition-colors whitespace-nowrap cursor-pointer"
                 >
+                  {item.name === 'Home' && <HomeIcon className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                   <span>{item.name}</span>
                   {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                 </Link>
@@ -422,7 +425,8 @@ export default function MainRedNavbar() {
                         : 'text-slate-800 hover:text-[#B92025] hover:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-2">
+                      {item.name === 'Home' && <HomeIcon className="w-4 h-4 text-[#B92025]" />}
                       {item.isBadge && <Flame className="w-4 h-4 text-[#B92025]" />}
                       <span>{item.name}</span>
                     </div>

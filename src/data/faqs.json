@@ -1,0 +1,74 @@
+[
+  {
+    "id": "faq-1",
+    "category": "General & Payments",
+    "question": "What Does Alpha Medical Wholesale Supplies Offer?",
+    "answer": "Alpha Medical Wholesale Supplies specializes in premium surgical instruments, diagnostic equipment, tungsten carbide (TC) scissors, titanium microsurgical forceps, and hospital-grade reusable medical devices manufactured from German stainless steel (DIN 1.4021 / AISI 420)."
+  },
+  {
+    "id": "faq-2",
+    "category": "General & Payments",
+    "question": "Which Surgical Specialties Do You Support?",
+    "answer": "We provide comprehensive procedure sets and individual instruments for ENT Surgery, Plastic & Reconstructive Surgery, Dental & Oral Surgery, Orthopedics, Cardiovascular, General Surgery, Gynecology, and Ophthalmic procedures."
+  },
+  {
+    "id": "faq-3",
+    "category": "Quality & Certifications",
+    "question": "Are all instruments ISO 13485 and CE certified?",
+    "answer": "Yes. 100% of Alpha Medical instruments comply with ISO 13485:2016 Medical Device Quality Management System, European CE marking directives, and FDA registration requirements. Official Certificates of Conformity (CoC) and lot traceability documents accompany every consignment."
+  },
+  {
+    "id": "faq-4",
+    "category": "Quality & Certifications",
+    "question": "What grade of stainless steel is used in your surgical instruments?",
+    "answer": "We exclusively forge instruments from medical-grade German and Japanese stainless steel alloys (AISI 410, 420, 440A, and ASTM F899 standards) featuring specialized vacuum heat treatment for optimal Rockwell hardness (HRC 48-52) and corrosion resistance."
+  },
+  {
+    "id": "faq-5",
+    "category": "OEM & Custom Manufacturing",
+    "question": "Do you provide custom OEM manufacturing and private labeling?",
+    "answer": "Yes. We offer complete OEM/ODM solutions including custom precision CNC machining, custom laser marking of your brand logo, custom catalog numbering, sterile barrier pouch packaging, and tailored procedure set assembly for medical device distributors."
+  },
+  {
+    "id": "faq-6",
+    "category": "OEM & Custom Manufacturing",
+    "question": "What is the Minimum Order Quantity (MOQ) for custom manufactured instruments?",
+    "answer": "Standard catalog items require no MOQ. For customized modifications or custom-branded OEM production runs, our typical MOQ starts at just 25 to 50 pieces per reference depending on the tool complexity."
+  },
+  {
+    "id": "faq-7",
+    "category": "Orders & Shipping",
+    "question": "What are your international shipping times and courier partners?",
+    "answer": "Orders within the USA ship via DHL Express or FedEx Air (1-3 business days). International B2B consignments are dispatched with full export documentation and tracking via DHL Air Cargo (3-6 business days) or sea freight container lines for large volume hospital contracts."
+  },
+  {
+    "id": "faq-8",
+    "category": "Orders & Shipping",
+    "question": "Is free shipping available for wholesale orders?",
+    "answer": "Yes! All wholesale orders exceeding $350 USD qualify for free expedited delivery across the continental United States and preferred discounted freight rates internationally."
+  },
+  {
+    "id": "faq-9",
+    "category": "Warranty & Sterilization",
+    "question": "What warranty is provided on tungsten carbide (TC) inserts?",
+    "answer": "All Alpha Medical instruments feature a comprehensive limited lifetime warranty against material defects and craftsmanship failures, plus a 3-year guarantee on gold-handled tungsten carbide (TC) jaw inserts and cutting edges."
+  },
+  {
+    "id": "faq-10",
+    "category": "Warranty & Sterilization",
+    "question": "Are your instruments autoclave safe and reusable?",
+    "answer": "Absolutely. All our surgical instruments undergo multi-stage chemical passivation and ultrasonic cleaning, rendering them 100% compliant with standard hospital steam autoclave sterilization cycles (up to 134°C / 273°F) and chemical cold sterilization."
+  },
+  {
+    "id": "faq-11",
+    "category": "General & Payments",
+    "question": "What payment methods do you accept for USA vs International orders?",
+    "answer": "We accept major corporate credit cards (Visa, MasterCard, Amex), PayPal, ACH Bank Transfer, and International Wire Transfer (SWIFT / TT). Verified healthcare systems, universities, and government hospitals can also apply for Net-30 invoicing terms."
+  },
+  {
+    "id": "faq-12",
+    "category": "Quality & Certifications",
+    "question": "How do you test corrosion resistance and passivation?",
+    "answer": "Every production lot undergoes rigorous boil testing (ASTM F1089) and copper sulfate testing to verify chromium oxide passive layer integrity, ensuring total rust immunity during repeated clinical use."
+  }
+]
