@@ -45,15 +45,17 @@ export default function AdminProductsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductItem | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const galleryFileInputRef = useRef<HTMLInputElement>(null)
   const [isUploadingImage, setIsUploadingImage] = useState(false)
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false)
 
   const [formData, setFormData] = useState({
     title: '',
     sku: '',
     category_id: '',
-    price: 55.95,
-    original_price: 64.95,
-    stock_quantity: 142,
+    price: 49.50,
+    original_price: 59.50,
+    stock_quantity: 100,
     sizes: '12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm',
     custom_tiers: [
       { pieces: 10, discount: 5 },
@@ -64,11 +66,12 @@ export default function AdminProductsPage() {
     badge: 'New',
     short_description: '',
     full_description: '',
-    featured_image: '/images/products/image-399.png',
+    featured_image: '',
+    gallery_images: [] as string[],
     in_stock: true,
-    is_best_seller: true,
+    is_best_seller: false,
     is_new_arrival: true,
-    is_featured: true,
+    is_featured: false,
     is_published: true,
   })
 
@@ -102,12 +105,12 @@ export default function AdminProductsPage() {
   const handleOpenAdd = () => {
     setEditingProduct(null)
     setFormData({
-      title: 'ORTHO WEITLANER RETRACTOR SHARP',
-      sku: '1001',
-      category_id: categories.find((c) => c.slug.includes('ortho'))?.id || categories[0]?.id || '',
-      price: 55.95,
-      original_price: 64.95,
-      stock_quantity: 142,
+      title: '',
+      sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
+      category_id: categories[0]?.id || '',
+      price: 49.50,
+      original_price: 59.50,
+      stock_quantity: 100,
       sizes: '12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm',
       custom_tiers: [
         { pieces: 10, discount: 5 },
@@ -116,13 +119,14 @@ export default function AdminProductsPage() {
         { pieces: 100, discount: 20 },
       ],
       badge: 'New',
-      short_description: 'Self-retaining orthopedic retractor with sharp prongs (3x4), German stainless steel.',
-      full_description: 'German medical grade stainless steel retractor for spinal, orthopedic, and plastic surgery.',
-      featured_image: '/images/products/image-399.png',
+      short_description: '',
+      full_description: '',
+      featured_image: '',
+      gallery_images: [],
       in_stock: true,
-      is_best_seller: true,
+      is_best_seller: false,
       is_new_arrival: true,
-      is_featured: true,
+      is_featured: false,
       is_published: true,
     })
     setIsModalOpen(true)
@@ -141,6 +145,10 @@ export default function AdminProductsPage() {
             { pieces: 100, discount: 20 },
           ]
 
+    const rawGallery: string[] = Array.isArray(prod.gallery_images)
+      ? prod.gallery_images.map((g: any) => (typeof g === 'string' ? g : g?.image_url)).filter(Boolean)
+      : []
+
     setFormData({
       title: prod.title,
       sku: prod.sku || '',
@@ -153,7 +161,8 @@ export default function AdminProductsPage() {
       badge: prod.badge || '',
       short_description: prod.short_description || '',
       full_description: prod.full_description || '',
-      featured_image: prod.featured_image || '/images/products/image-399.png',
+      featured_image: prod.featured_image || '',
+      gallery_images: rawGallery,
       in_stock: prod.in_stock !== false,
       is_best_seller: !!prod.is_best_seller,
       is_new_arrival: !!prod.is_new_arrival,
@@ -161,6 +170,58 @@ export default function AdminProductsPage() {
       is_published: prod.is_published,
     })
     setIsModalOpen(true)
+  }
+
+  // Gallery multi-angle image upload handler with instant canvas compression
+  const handleGalleryImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploadingGallery(true)
+    try {
+      const newUrls: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const { dataUrl } = await compressImageFile(file, 800, 800, 0.85)
+        if (dataUrl) {
+          newUrls.push(dataUrl)
+        }
+      }
+      setFormData((prev) => ({
+        ...prev,
+        gallery_images: [...(prev.gallery_images || []), ...newUrls],
+      }))
+      showToast(`Added ${newUrls.length} view/angle image(s)!`)
+    } catch (err) {
+      console.error('Error uploading gallery image:', err)
+      showToast('Error uploading view image')
+    } finally {
+      setIsUploadingGallery(false)
+      if (galleryFileInputRef.current) galleryFileInputRef.current.value = ''
+    }
+  }
+
+  const handleRemoveGalleryImage = (indexToRemove: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      gallery_images: (prev.gallery_images || []).filter((_, i) => i !== indexToRemove),
+    }))
+  }
+
+  // Clear old dummy products handler
+  const handleClearDummyProducts = async () => {
+    if (!confirm('Do you want to delete old initial dummy products and keep only your newly uploaded products?')) return
+    const cleaned = products.filter(
+      (p) =>
+        !p.id.startsWith('prod-weitlaner') &&
+        p.id !== 'prod-1' &&
+        p.id !== 'prod-2' &&
+        !p.title.toLowerCase().includes('weitlaner')
+    )
+    setProducts(cleaned)
+    saveStoredProducts(cleaned)
+    await syncProductsToServer(cleaned)
+    showToast(`Old dummy products removed! ${cleaned.length} products active & live.`)
   }
 
   const syncProductsToServer = async (prods: ProductItem[]) => {
@@ -311,6 +372,7 @@ export default function AdminProductsPage() {
               short_description: formData.short_description,
               full_description: formData.full_description,
               featured_image: formData.featured_image,
+              gallery_images: formData.gallery_images,
               stock_quantity: Number(formData.stock_quantity) || 142,
               sizes: parsedSizes.length > 0 ? parsedSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm'],
               quantity_discounts: discountTiers,
@@ -343,6 +405,7 @@ export default function AdminProductsPage() {
         short_description: formData.short_description,
         full_description: formData.full_description,
         featured_image: formData.featured_image,
+        gallery_images: formData.gallery_images,
         stock_quantity: Number(formData.stock_quantity) || 142,
         sizes: parsedSizes.length > 0 ? parsedSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm'],
         quantity_discounts: discountTiers,
@@ -439,10 +502,19 @@ export default function AdminProductsPage() {
                 loadData()
                 showToast('Refreshed data from storage!')
               }}
-              className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
+              className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all cursor-pointer"
               title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+            <button
+              id="admin-clear-old-dummy-btn"
+              onClick={handleClearDummyProducts}
+              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs sm:text-sm px-4 py-3.5 rounded-2xl transition-all shadow-xs cursor-pointer"
+              title="Delete all initial dummy products so only your new uploads remain"
+            >
+              <Trash2 className="w-4 h-4 text-amber-700" />
+              <span>Clear Old Dummy Products</span>
             </button>
             <button
               id="admin-save-all-live-btn"
@@ -1089,6 +1161,72 @@ export default function AdminProductsPage() {
                       className="flex-1 px-4 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
                     />
                   </div>
+                </div>
+
+                {/* ADDITIONAL VIEWS / MULTI-ANGLES (SMALL GALLERY VIEWS) */}
+                <div className="space-y-3 pt-3 p-4 bg-slate-50/80 rounded-2xl border border-slate-200">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider">
+                        Additional Views / Angles (Small Thumbnail Views)
+                      </label>
+                      <p className="text-[11px] text-slate-500">
+                        Upload multi-angle photos (side view, angle view, tip detail). Users can click thumbnails on View Large page to switch views!
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => galleryFileInputRef.current?.click()}
+                      className="bg-[#96161B] hover:bg-[#b92025] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-colors w-fit"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{isUploadingGallery ? 'Compressing...' : 'Add Another View / Angle'}</span>
+                    </button>
+                  </div>
+
+                  <input
+                    type="file"
+                    ref={galleryFileInputRef}
+                    onChange={handleGalleryImageUpload}
+                    accept="image/*"
+                    multiple
+                    className="sr-only"
+                  />
+
+                  {/* GALLERY THUMBNAILS LIST */}
+                  {formData.gallery_images && formData.gallery_images.length > 0 ? (
+                    <div className="flex flex-wrap gap-2.5 pt-1">
+                      {formData.gallery_images.map((imgUrl, gIdx) => (
+                        <div
+                          key={gIdx}
+                          className="relative group w-16 h-16 rounded-xl bg-white border border-slate-300 p-1 flex items-center justify-center shadow-xs overflow-hidden"
+                        >
+                          <Image
+                            src={imgUrl}
+                            alt={`Angle ${gIdx + 1}`}
+                            fill
+                            unoptimized
+                            className="object-contain p-0.5"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveGalleryImage(gIdx)}
+                            className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full p-1 opacity-90 hover:opacity-100 hover:scale-110 transition-all cursor-pointer shadow-md z-10"
+                            title="Remove this angle"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          <span className="absolute bottom-0 inset-x-0 bg-slate-900/70 text-white text-[9px] font-bold text-center py-0.5">
+                            Angle {gIdx + 2}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-[11px] text-slate-400 italic py-1">
+                      No additional angles yet. Click &quot;Add Another View / Angle&quot; to upload extra views.
+                    </div>
+                  )}
                 </div>
               </div>
 

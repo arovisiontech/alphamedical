@@ -41,20 +41,67 @@ import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { getStoredProducts } from '@/src/lib/dataStore'
 
 interface ProductDetailClientProps {
-  initialProduct: ProductItem
+  initialProduct: ProductItem | null
   allProducts: ProductItem[]
+  targetSlug?: string
 }
 
 export default function ProductDetailClient({
   initialProduct,
   allProducts: propProducts,
+  targetSlug,
 }: ProductDetailClientProps) {
   const router = useRouter()
   const { isUsaStore, openInquiryModal } = useGeoLocation()
 
   // State
   const [products, setProducts] = useState<ProductItem[]>(propProducts)
-  const [product, setProduct] = useState<ProductItem>(initialProduct)
+
+  // Dynamically resolve target product from localStorage matching targetSlug
+  const resolveTargetProduct = (): ProductItem => {
+    if (typeof window !== 'undefined' && targetSlug) {
+      try {
+        const stored = getStoredProducts()
+        const match = stored.find(
+          (p) =>
+            p.slug?.toLowerCase() === targetSlug ||
+            p.id?.toLowerCase() === targetSlug ||
+            p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
+        )
+        if (match) return match
+      } catch (e) {}
+    }
+    if (initialProduct) return initialProduct
+    if (targetSlug && propProducts && propProducts.length > 0) {
+      const match = propProducts.find(
+        (p) =>
+          p.slug?.toLowerCase() === targetSlug ||
+          p.id?.toLowerCase() === targetSlug ||
+          p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
+      )
+      if (match) return match
+    }
+    return (
+      propProducts[0] || {
+        id: 'prod-placeholder',
+        title: targetSlug ? targetSlug.replace(/-/g, ' ').toUpperCase() : 'SURGICAL PRODUCT',
+        slug: targetSlug || 'surgical-product',
+        sku: 'SKU-1001',
+        price: 55.95,
+        original_price: 64.95,
+        featured_image: '/images/products/image-399.png',
+        features: ['German Grade Stainless Steel', 'Autoclavable (134°C)', 'ISO 13485 Certified'],
+        specifications: { Category: 'Surgical Instruments' },
+        sort_order: 1,
+        is_published: true,
+        is_featured: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    )
+  }
+
+  const [product, setProduct] = useState<ProductItem>(resolveTargetProduct)
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0)
   const [isZoomOpen, setIsZoomOpen] = useState<boolean>(false)
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'sterilization' | 'certifications'>('overview')
@@ -265,15 +312,35 @@ export default function ProductDetailClient({
     }
   }
 
-  // Immediate update on prop change
+  // Immediate update on prop or targetSlug change
   useEffect(() => {
-    setProduct(initialProduct)
-    setActiveImageIndex(0)
-    if (initialProduct.sizes && initialProduct.sizes.length > 0) {
-      setAvailableSizes(initialProduct.sizes)
-      setSelectedSize(initialProduct.sizes[0])
+    if (targetSlug && typeof window !== 'undefined') {
+      const stored = getStoredProducts()
+      const match = stored.find(
+        (p) =>
+          p.slug?.toLowerCase() === targetSlug ||
+          p.id?.toLowerCase() === targetSlug ||
+          p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
+      )
+      if (match) {
+        setProduct(match)
+        setActiveImageIndex(0)
+        if (match.sizes && match.sizes.length > 0) {
+          setAvailableSizes(match.sizes)
+          setSelectedSize(match.sizes[0])
+        }
+        return
+      }
     }
-  }, [initialProduct])
+    if (initialProduct) {
+      setProduct(initialProduct)
+      setActiveImageIndex(0)
+      if (initialProduct.sizes && initialProduct.sizes.length > 0) {
+        setAvailableSizes(initialProduct.sizes)
+        setSelectedSize(initialProduct.sizes[0])
+      }
+    }
+  }, [initialProduct, targetSlug])
 
   // Live client sync with API and localStorage
   useEffect(() => {
@@ -281,11 +348,21 @@ export default function ProductDetailClient({
       const stored = getStoredProducts()
       if (stored && stored.length > 0) {
         setProducts(stored)
-        const match = stored.find((p) => p.id === initialProduct.id || p.slug === initialProduct.slug)
-        if (match) {
-          setProduct(match)
-          if (match.sizes && match.sizes.length > 0) {
-            setAvailableSizes(match.sizes)
+        const match = targetSlug
+          ? stored.find(
+              (p) =>
+                p.slug?.toLowerCase() === targetSlug ||
+                p.id?.toLowerCase() === targetSlug ||
+                p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
+            )
+          : null
+        const finalMatch =
+          match ||
+          stored.find((p) => p.id === product?.id || p.slug === product?.slug)
+        if (finalMatch) {
+          setProduct(finalMatch)
+          if (finalMatch.sizes && finalMatch.sizes.length > 0) {
+            setAvailableSizes(finalMatch.sizes)
           }
         }
       }
@@ -300,18 +377,30 @@ export default function ProductDetailClient({
       window.removeEventListener('alpha_content_updated', syncClient)
       window.removeEventListener('storage', syncClient)
     }
-  }, [initialProduct.id, initialProduct.slug])
+  }, [targetSlug, product?.id, product?.slug])
 
-  // Gallery images array
-  const mainImage = product.featured_image || '/images/products/image-399.png'
-  const gallery = [
-    mainImage,
-    '/images/products/image-399.png',
-    '/images/categories/image_376.png',
-    '/images/categories/image_377.png',
-    '/images/extracted/image_8.png',
-  ]
-  const currentImage = gallery[activeImageIndex] || mainImage
+  // Dynamic Gallery images array - ONLY product's own images & angles, NEVER dummy retractor images!
+  const extractGalleryUrls = (prod: ProductItem): string[] => {
+    const urls: string[] = []
+    if (prod.featured_image) {
+      urls.push(prod.featured_image)
+    }
+    if (Array.isArray(prod.gallery_images)) {
+      prod.gallery_images.forEach((item: any) => {
+        const url = typeof item === 'string' ? item : item?.image_url
+        if (url && typeof url === 'string' && !urls.includes(url)) {
+          urls.push(url)
+        }
+      })
+    }
+    if (urls.length === 0) {
+      urls.push('/images/products/image-399.png')
+    }
+    return urls
+  }
+
+  const gallery = extractGalleryUrls(product)
+  const currentImage = gallery[activeImageIndex] || gallery[0] || '/images/products/image-399.png'
 
   // Pricing & Badges
   const badge = product.badge || 'New'
@@ -597,34 +686,40 @@ export default function ProductDetailClient({
               </div>
 
               {/* ANNOTATION CALLOUT 1 */}
-              <div className="hidden sm:flex items-center gap-3 absolute top-12 right-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none">
-                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
+              <div className="hidden sm:flex items-center gap-3 absolute top-12 right-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none max-w-[200px]">
+                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
                   <Image
                     src={gallery[1] || currentImage}
-                    alt="Serrated Jaw Detail"
+                    alt={product.title}
                     fill
-                    className="object-cover p-0.5"
+                    unoptimized
+                    className="object-contain p-0.5"
                   />
                 </div>
-                <div className="text-[11px] leading-tight pr-1">
-                  <span className="font-extrabold text-slate-900 block">Serrated Jaws</span>
-                  <span className="text-slate-500 text-[10px]">Secure tissue hold</span>
+                <div className="text-[11px] leading-tight pr-1 truncate">
+                  <span className="font-extrabold text-slate-900 block truncate">
+                    {product.features?.[0] || 'Medical Grade Steel'}
+                  </span>
+                  <span className="text-slate-500 text-[10px]">Precision crafted</span>
                 </div>
               </div>
 
               {/* ANNOTATION CALLOUT 2 */}
-              <div className="hidden sm:flex items-center gap-3 absolute bottom-12 left-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none">
-                <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
+              <div className="hidden sm:flex items-center gap-3 absolute bottom-12 left-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none max-w-[200px]">
+                <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
                   <Image
-                    src={gallery[3] || currentImage}
-                    alt="Precision Craftsmanship"
+                    src={gallery[2] || gallery[0] || currentImage}
+                    alt={product.title}
                     fill
-                    className="object-cover p-0.5"
+                    unoptimized
+                    className="object-contain p-0.5"
                   />
                 </div>
-                <div className="text-[11px] leading-tight pr-1">
-                  <span className="font-extrabold text-slate-900 block">German DIN Steel</span>
-                  <span className="text-slate-500 text-[10px]">Precision crafted</span>
+                <div className="text-[11px] leading-tight pr-1 truncate">
+                  <span className="font-extrabold text-slate-900 block truncate">
+                    {product.specifications?.['Quality Grade'] || 'German Stainless'}
+                  </span>
+                  <span className="text-slate-500 text-[10px]">Autoclavable (134°C)</span>
                 </div>
               </div>
             </div>

@@ -33,7 +33,7 @@ export interface ProductItem {
   created_at: string
   updated_at: string
   category_name?: string | null
-  gallery_images?: ProductImageItem[]
+  gallery_images?: (ProductImageItem | string)[]
   price?: number | null
   original_price?: number | null
   badge?: string | null

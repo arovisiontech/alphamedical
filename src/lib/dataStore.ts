@@ -177,14 +177,19 @@ export function getStoredProducts(): ProductItem[] {
     if (existingStr) {
       try {
         const parsed = JSON.parse(existingStr)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed
+        if (Array.isArray(parsed)) {
+          if (parsed.length > 0) {
+            return parsed
+          }
+          if (localStorage.getItem('alpha_products_user_managed') === 'true') {
+            return []
+          }
         }
       } catch (err) {}
     }
 
     // Only populate from server on initial visit when local storage is empty
-    if (!isProductsSyncInitiated) {
+    if (!isProductsSyncInitiated && localStorage.getItem('alpha_products_user_managed') !== 'true') {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
@@ -213,6 +218,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
       const serialized = JSON.stringify(products)
       localStorage.setItem('alpha_products_v2', serialized)
       localStorage.setItem('alpha_products', serialized)
+      localStorage.setItem('alpha_products_user_managed', 'true')
       window.dispatchEvent(new Event('alpha_content_updated'))
 
       // Broadcast to other open tabs
