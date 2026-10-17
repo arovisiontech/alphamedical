@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -28,6 +28,7 @@ import {
   Settings,
   Save,
   AlertCircle,
+  Upload,
 } from 'lucide-react'
 import TopBar from '@/src/components/public/TopBar'
 import HeaderNav from '@/src/components/public/HeaderNav'
@@ -39,11 +40,53 @@ import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { getStoredProducts } from '@/src/lib/dataStore'
+import { compressImageFile } from '@/src/lib/imageCompressor'
 
 interface ProductDetailClientProps {
   initialProduct: ProductItem | null
   allProducts: ProductItem[]
   targetSlug?: string
+}
+
+const normalizeSlugStr = (s: string) =>
+  decodeURIComponent(s || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+const findProductMatch = (slugOrId: string, list: ProductItem[]): ProductItem | null => {
+  if (!slugOrId || !Array.isArray(list) || list.length === 0) return null
+  const norm = normalizeSlugStr(slugOrId)
+  const lower = slugOrId.toLowerCase().trim()
+
+  // 1. Exact ID or slug match
+  const exact = list.find(
+    (p) =>
+      p.id?.toLowerCase() === lower ||
+      p.slug?.toLowerCase() === lower ||
+      normalizeSlugStr(p.slug) === norm ||
+      normalizeSlugStr(p.id) === norm
+  )
+  if (exact) return exact
+
+  // 2. Normalized title match
+  const titleMatch = list.find((p) => normalizeSlugStr(p.title) === norm)
+  if (titleMatch) return titleMatch
+
+  // 3. SKU match
+  const skuMatch = list.find((p) => p.sku && normalizeSlugStr(p.sku) === norm)
+  if (skuMatch) return skuMatch
+
+  // 4. Substring contains match
+  const containsMatch = list.find(
+    (p) =>
+      (p.slug && (norm.includes(normalizeSlugStr(p.slug)) || normalizeSlugStr(p.slug).includes(norm))) ||
+      (p.title && (norm.includes(normalizeSlugStr(p.title)) || normalizeSlugStr(p.title).includes(norm)))
+  )
+  if (containsMatch) return containsMatch
+
+  return null
 }
 
 export default function ProductDetailClient({
@@ -62,37 +105,75 @@ export default function ProductDetailClient({
     if (typeof window !== 'undefined' && targetSlug) {
       try {
         const stored = getStoredProducts()
-        const match = stored.find(
-          (p) =>
-            p.slug?.toLowerCase() === targetSlug ||
-            p.id?.toLowerCase() === targetSlug ||
-            p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
-        )
+        const match = findProductMatch(targetSlug, stored)
         if (match) return match
       } catch (e) {}
     }
     if (initialProduct) return initialProduct
     if (targetSlug && propProducts && propProducts.length > 0) {
-      const match = propProducts.find(
-        (p) =>
-          p.slug?.toLowerCase() === targetSlug ||
-          p.id?.toLowerCase() === targetSlug ||
-          p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
-      )
+      const match = findProductMatch(targetSlug, propProducts)
       if (match) return match
     }
-    return (
-      propProducts[0] || {
-        id: 'prod-placeholder',
-        title: targetSlug ? targetSlug.replace(/-/g, ' ').toUpperCase() : 'SURGICAL PRODUCT',
-        slug: targetSlug || 'surgical-product',
+
+    if (targetSlug) {
+      const cleanTitle = targetSlug
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+      return {
+        id: `prod-${targetSlug}`,
+        title: cleanTitle.toUpperCase(),
+        slug: targetSlug,
         sku: 'SKU-1001',
+        category_id: 'cat-surg-inst',
+        category_name: 'Surgical Instruments',
+        short_description: 'Precision surgical instrument engineered for high durability.',
+        full_description: 'German grade surgical steel instrument designed for hospital and operating room procedures.',
+        catalogue_pdf: null,
+        seo_title: `${cleanTitle} - ALPHA Medical Supplies`,
+        seo_description: `Buy ${cleanTitle} surgical instrument online.`,
         price: 55.95,
         original_price: 64.95,
+        badge: 'New',
         featured_image: '/images/products/image-399.png',
+        gallery_images: ['/images/products/image-399.png'],
         features: ['German Grade Stainless Steel', 'Autoclavable (134°C)', 'ISO 13485 Certified'],
         specifications: { Category: 'Surgical Instruments' },
         sort_order: 1,
+        in_stock: true,
+        is_best_seller: false,
+        is_new_arrival: true,
+        is_published: true,
+        is_featured: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }
+    }
+
+    return (
+      propProducts[0] || {
+        id: 'prod-placeholder',
+        title: 'SURGICAL PRODUCT',
+        slug: 'surgical-product',
+        sku: 'SKU-1001',
+        category_id: 'cat-surg-inst',
+        category_name: 'Surgical Instruments',
+        short_description: 'Precision surgical instrument engineered for high durability.',
+        full_description: 'German grade surgical steel instrument designed for hospital and operating room procedures.',
+        catalogue_pdf: null,
+        seo_title: 'Surgical Product - ALPHA Medical Supplies',
+        seo_description: 'Precision surgical instruments.',
+        price: 55.95,
+        original_price: 64.95,
+        badge: 'New',
+        featured_image: '/images/products/image-399.png',
+        gallery_images: ['/images/products/image-399.png'],
+        features: ['German Grade Stainless Steel', 'Autoclavable (134°C)', 'ISO 13485 Certified'],
+        specifications: { Category: 'Surgical Instruments' },
+        sort_order: 1,
+        in_stock: true,
+        is_best_seller: false,
+        is_new_arrival: false,
         is_published: true,
         is_featured: true,
         created_at: new Date().toISOString(),
@@ -167,11 +248,18 @@ export default function ProductDetailClient({
   // Admin Quick Edit Modal state
   const [isQuickEditOpen, setIsQuickEditOpen] = useState(false)
   const [isSavingProduct, setIsSavingProduct] = useState(false)
+  const quickImageInputRef = useRef<HTMLInputElement>(null)
+  const quickGalleryInputRef = useRef<HTMLInputElement>(null)
+  const [isUploadingQuickImage, setIsUploadingQuickImage] = useState(false)
+  const [isUploadingQuickGallery, setIsUploadingQuickGallery] = useState(false)
+
   const [quickEditForm, setQuickEditForm] = useState({
     price: product.price ?? 53.90,
     original_price: product.original_price ?? 64.95,
     stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
     sizes: (product.sizes && product.sizes.length > 0 ? product.sizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+    featured_image: product.featured_image || '',
+    gallery_images: (product.gallery_images || []).map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean) as string[],
     custom_tiers: discountTiers.filter((t) => t.quantity > 1).length > 0
       ? discountTiers.filter((t) => t.quantity > 1).map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
       : [
@@ -181,6 +269,75 @@ export default function ProductDetailClient({
           { pieces: 100, discount: 20 },
         ],
   })
+
+  const handleOpenQuickEdit = () => {
+    const existingCustomTiers = discountTiers
+      .filter((t) => t.quantity > 1)
+      .map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
+    setQuickEditForm({
+      price: product.price ?? 53.90,
+      original_price: product.original_price ?? 64.95,
+      stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
+      sizes: (availableSizes && availableSizes.length > 0 ? availableSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+      featured_image: product.featured_image || '',
+      gallery_images: (product.gallery_images || []).map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean) as string[],
+      custom_tiers: existingCustomTiers.length > 0 ? existingCustomTiers : [
+        { pieces: 10, discount: 5 },
+        { pieces: 30, discount: 10 },
+        { pieces: 70, discount: 15 },
+        { pieces: 100, discount: 20 },
+      ],
+    })
+    setIsQuickEditOpen(true)
+  }
+
+  const handleQuickFeaturedImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setIsUploadingQuickImage(true)
+    try {
+      const { dataUrl } = await compressImageFile(file, 800, 800, 0.85)
+      if (dataUrl) {
+        setQuickEditForm((prev) => ({ ...prev, featured_image: dataUrl }))
+        showToast('Main view image updated & ready!')
+      }
+    } catch (err) {
+      console.error(err)
+      showToast('Error uploading image')
+    } finally {
+      setIsUploadingQuickImage(false)
+    }
+  }
+
+  const handleQuickGalleryUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+    setIsUploadingQuickGallery(true)
+    try {
+      const newUrls: string[] = []
+      for (let i = 0; i < files.length; i++) {
+        const { dataUrl } = await compressImageFile(files[i], 800, 800, 0.85)
+        if (dataUrl) newUrls.push(dataUrl)
+      }
+      setQuickEditForm((prev) => ({
+        ...prev,
+        gallery_images: [...prev.gallery_images, ...newUrls],
+      }))
+      showToast(`Added ${newUrls.length} angle/view image(s)!`)
+    } catch (err) {
+      console.error(err)
+      showToast('Error uploading angle image')
+    } finally {
+      setIsUploadingQuickGallery(false)
+    }
+  }
+
+  const handleRemoveQuickGalleryImage = (idxToRemove: number) => {
+    setQuickEditForm((prev) => ({
+      ...prev,
+      gallery_images: prev.gallery_images.filter((_, i) => i !== idxToRemove),
+    }))
+  }
 
   // Modals
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false)
@@ -256,6 +413,8 @@ export default function ProductDetailClient({
         original_price: Number(quickEditForm.original_price) || 64.95,
         stock_quantity: Number(quickEditForm.stock_quantity) || 142,
         sizes: parsedSizes.length > 0 ? parsedSizes : availableSizes,
+        featured_image: quickEditForm.featured_image || product.featured_image,
+        gallery_images: quickEditForm.gallery_images,
         quantity_discounts: updatedTiers,
         updated_at: new Date().toISOString(),
       }
@@ -276,7 +435,7 @@ export default function ProductDetailClient({
       })
 
       if (res.ok) {
-        showToast('Product pricing, discounts & sizes saved to disk!')
+        showToast('Product pricing, photos & sizes saved live!')
         setIsQuickEditOpen(false)
       } else {
         showToast('Saved locally, server returned notice.')
@@ -316,12 +475,7 @@ export default function ProductDetailClient({
   useEffect(() => {
     if (targetSlug && typeof window !== 'undefined') {
       const stored = getStoredProducts()
-      const match = stored.find(
-        (p) =>
-          p.slug?.toLowerCase() === targetSlug ||
-          p.id?.toLowerCase() === targetSlug ||
-          p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
-      )
+      const match = findProductMatch(targetSlug, stored)
       if (match) {
         setProduct(match)
         setActiveImageIndex(0)
@@ -331,6 +485,23 @@ export default function ProductDetailClient({
         }
         return
       }
+
+      fetch(`/api/products?t=${Date.now()}`)
+        .then((res) => res.json())
+        .then((serverProds) => {
+          if (Array.isArray(serverProds) && serverProds.length > 0) {
+            const serverMatch = findProductMatch(targetSlug, serverProds)
+            if (serverMatch) {
+              setProduct(serverMatch)
+              setActiveImageIndex(0)
+              if (serverMatch.sizes && serverMatch.sizes.length > 0) {
+                setAvailableSizes(serverMatch.sizes)
+                setSelectedSize(serverMatch.sizes[0])
+              }
+            }
+          }
+        })
+        .catch(() => {})
     }
     if (initialProduct) {
       setProduct(initialProduct)
@@ -348,17 +519,11 @@ export default function ProductDetailClient({
       const stored = getStoredProducts()
       if (stored && stored.length > 0) {
         setProducts(stored)
-        const match = targetSlug
-          ? stored.find(
-              (p) =>
-                p.slug?.toLowerCase() === targetSlug ||
-                p.id?.toLowerCase() === targetSlug ||
-                p.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-') === targetSlug
-            )
-          : null
+        const match = targetSlug ? findProductMatch(targetSlug, stored) : null
         const finalMatch =
           match ||
-          stored.find((p) => p.id === product?.id || p.slug === product?.slug)
+          (product?.id ? findProductMatch(product.id, stored) : null) ||
+          (product?.slug ? findProductMatch(product.slug, stored) : null)
         if (finalMatch) {
           setProduct(finalMatch)
           if (finalMatch.sizes && finalMatch.sizes.length > 0) {
@@ -574,29 +739,20 @@ export default function ProductDetailClient({
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
             <button
               type="button"
-              onClick={() => {
-                const existingCustomTiers = discountTiers
-                  .filter((t) => t.quantity > 1)
-                  .map((t) => ({ pieces: t.quantity, discount: t.discount_percentage }))
-                setQuickEditForm({
-                  price: product.price ?? 53.90,
-                  original_price: product.original_price ?? 64.95,
-                  stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
-                  sizes: (availableSizes && availableSizes.length > 0 ? availableSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
-                  custom_tiers: existingCustomTiers.length > 0 ? existingCustomTiers : [
-                    { pieces: 10, discount: 5 },
-                    { pieces: 30, discount: 10 },
-                    { pieces: 70, discount: 15 },
-                    { pieces: 100, discount: 20 },
-                  ],
-                })
-                setIsQuickEditOpen(true)
-              }}
+              onClick={handleOpenQuickEdit}
               className="flex-1 sm:flex-none bg-[#96161B] hover:bg-[#b92025] text-white text-xs font-black px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <Edit2 className="w-3.5 h-3.5" />
-              <span>Quick Edit Price, Discounts & Sizes</span>
+              <span>Quick Edit Price, Photos, Discounts & Sizes</span>
             </button>
+            <Link
+              href={`/admin/products?edit=${product.id}`}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-bold px-3 py-2.5 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              title="Open Master Admin Portal"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Master Admin</span>
+            </Link>
             <button
               type="button"
               onClick={handleDeleteProductDirect}
@@ -633,6 +789,7 @@ export default function ProductDetailClient({
                     src={thumb}
                     alt={`${product.title} angle ${idx + 1}`}
                     fill
+                    unoptimized
                     sizes="96px"
                     className="object-contain p-1"
                   />
@@ -642,6 +799,16 @@ export default function ProductDetailClient({
                 </button>
               )
             })}
+            {/* ADD / CHANGE VIEW ANGLES BUTTON */}
+            <button
+              type="button"
+              onClick={handleOpenQuickEdit}
+              className="w-16 h-16 sm:w-20 sm:h-20 2xl:w-24 2xl:h-24 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#96161B] text-slate-400 hover:text-[#96161B] p-1.5 shrink-0 flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all cursor-pointer bg-slate-50 hover:bg-red-50"
+              title="Add or Change Angle Photos"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add View</span>
+            </button>
           </div>
 
           {/* -------------------------------------------------------------
@@ -679,6 +846,7 @@ export default function ProductDetailClient({
                   src={currentImage}
                   alt={product.title}
                   fill
+                  unoptimized
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-105"
                   priority
@@ -1335,6 +1503,7 @@ export default function ProductDetailClient({
               src={currentImage}
               alt={product.title}
               fill
+              unoptimized
               className="object-contain"
               priority
             />
@@ -1379,6 +1548,105 @@ export default function ProductDetailClient({
                   value={product.title}
                   className="w-full px-3.5 py-2 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 cursor-not-allowed"
                 />
+              </div>
+
+              {/* Product Featured Image */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  Main Large View Featured Photo *
+                </label>
+                <div className="flex items-center gap-3">
+                  <div className="w-16 h-16 rounded-xl bg-white border border-slate-300 relative overflow-hidden shrink-0 flex items-center justify-center">
+                    <Image
+                      src={quickEditForm.featured_image || '/images/products/image-399.png'}
+                      alt="Main photo"
+                      fill
+                      unoptimized
+                      className="object-contain p-1"
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <input
+                      type="text"
+                      value={quickEditForm.featured_image}
+                      onChange={(e) => setQuickEditForm({ ...quickEditForm, featured_image: e.target.value })}
+                      placeholder="Paste image URL or upload..."
+                      className="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={quickImageInputRef}
+                        onChange={handleQuickFeaturedImageUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => quickImageInputRef.current?.click()}
+                        disabled={isUploadingQuickImage}
+                        className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer"
+                      >
+                        <Upload className="w-3.5 h-3.5" />
+                        <span>{isUploadingQuickImage ? 'Compressing...' : 'Upload New Photo'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Multi-Angle Gallery Images */}
+              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                    Additional Angles & Detail Views ({quickEditForm.gallery_images.length})
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    ref={quickGalleryInputRef}
+                    onChange={handleQuickGalleryUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => quickGalleryInputRef.current?.click()}
+                    disabled={isUploadingQuickGallery}
+                    className="text-xs font-bold text-[#96161B] bg-red-50 hover:bg-red-100 border border-red-200 px-2.5 py-1 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>{isUploadingQuickGallery ? 'Uploading...' : 'Add Angle Photos'}</span>
+                  </button>
+                </div>
+
+                {quickEditForm.gallery_images.length > 0 ? (
+                  <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    {quickEditForm.gallery_images.map((gImg, gIdx) => (
+                      <div key={gIdx} className="relative aspect-square rounded-xl bg-white border border-slate-200 overflow-hidden group">
+                        <Image
+                          src={gImg}
+                          alt={`Angle ${gIdx + 1}`}
+                          fill
+                          unoptimized
+                          className="object-contain p-1"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveQuickGalleryImage(gIdx)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-sm"
+                          title="Remove view"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 italic">
+                    No extra angles uploaded yet. Click &quot;Add Angle Photos&quot; to show multiple sides on the large view page.
+                  </p>
+                )}
               </div>
 
               {/* Pricing Rows */}

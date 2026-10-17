@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, Suspense } from 'react'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
 import AdminShell from '@/src/components/admin/AdminShell'
 import {
   Package,
@@ -33,7 +34,8 @@ import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
 import { compressImageFile } from '@/src/lib/imageCompressor'
 
-export default function AdminProductsPage() {
+function AdminProductsContent() {
+  const searchParams = useSearchParams()
   const [products, setProducts] = useState<ProductItem[]>([])
   const [categories, setCategories] = useState<CategoryItem[]>([])
   const [search, setSearch] = useState('')
@@ -102,12 +104,15 @@ export default function AdminProductsPage() {
     setTimeout(() => setToastMessage(null), 3500)
   }
 
-  const handleOpenAdd = () => {
+  const handleOpenAdd = (overrideCatId?: string) => {
     setEditingProduct(null)
+    const targetCat =
+      overrideCatId ||
+      (selectedCat !== 'all' ? selectedCat : (categories[0]?.id || ''))
     setFormData({
       title: '',
       sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
-      category_id: categories[0]?.id || '',
+      category_id: targetCat,
       price: 49.50,
       original_price: 59.50,
       stock_quantity: 100,
@@ -131,6 +136,29 @@ export default function AdminProductsPage() {
     })
     setIsModalOpen(true)
   }
+
+  // Handle URL deep-links from subcategories (?cat=...&add=true)
+  useEffect(() => {
+    const catParam = searchParams.get('cat')
+    const queryParam = searchParams.get('query')
+    const addParam = searchParams.get('add')
+    const editParam = searchParams.get('edit')
+
+    if (catParam) {
+      setSelectedCat(catParam)
+    }
+    if (queryParam) {
+      setSearch(queryParam)
+    }
+    if (addParam === 'true') {
+      handleOpenAdd(catParam || undefined)
+    } else if (editParam && products.length > 0) {
+      const match = products.find((p) => p.id === editParam || p.slug === editParam)
+      if (match) {
+        handleOpenEdit(match)
+      }
+    }
+  }, [searchParams, products.length])
 
   const handleOpenEdit = (prod: ProductItem) => {
     setEditingProduct(prod)
@@ -356,6 +384,12 @@ export default function AdminProductsPage() {
         })),
     ]
 
+    const cleanSlug = formData.title
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+
     let updated: ProductItem[] = []
     if (editingProduct) {
       updated = products.map((p) =>
@@ -363,6 +397,7 @@ export default function AdminProductsPage() {
           ? {
               ...p,
               title: formData.title,
+              slug: p.slug || cleanSlug,
               sku: formData.sku,
               price: Number(formData.price),
               original_price: Number(formData.original_price),
@@ -395,7 +430,7 @@ export default function AdminProductsPage() {
       const newProd: ProductItem = {
         id: `alpha-prod-${Date.now()}`,
         title: formData.title,
-        slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        slug: cleanSlug,
         sku: formData.sku,
         category_id: formData.category_id,
         category_name: resolvedCatName,
@@ -492,9 +527,6 @@ export default function AdminProductsPage() {
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Products & Best Sellers Management
             </h1>
-            <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              Add, edit, delete, or customize products and best sellers. All modifications save permanently across refreshes and appear live instantly.
-            </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <button
@@ -528,7 +560,7 @@ export default function AdminProductsPage() {
             </button>
             <button
               id="admin-add-product-btn"
-              onClick={handleOpenAdd}
+              onClick={() => handleOpenAdd()}
               className="flex items-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white font-bold text-xs sm:text-sm px-6 py-3.5 rounded-2xl transition-all shadow-md shadow-red-950/20 active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -749,6 +781,35 @@ export default function AdminProductsPage() {
             </select>
           </div>
         </div>
+
+        {/* ACTIVE SUBCATEGORY FILTER INDICATOR */}
+        {selectedCat !== 'all' && (
+          <div className="bg-red-50 border border-red-200 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-fade-in">
+            <div className="flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#96161B] animate-pulse" />
+              <span className="text-xs font-bold text-slate-800">
+                Active Subcategory Filter: <span className="text-[#96161B] font-extrabold">{categories.find((c) => c.id === selectedCat)?.name || selectedCat}</span> ({filtered.length} products found)
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleOpenAdd(selectedCat)}
+                className="bg-[#96161B] hover:bg-[#7e1216] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl flex items-center gap-1 shadow-xs cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Product in this Subcategory</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedCat('all')}
+                className="bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-xs font-bold px-3.5 py-1.5 rounded-xl cursor-pointer"
+              >
+                Clear Filter (Show All)
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* PRODUCTS DATA TABLE */}
         <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-sm">
@@ -1432,5 +1493,21 @@ export default function AdminProductsPage() {
         </div>
       )}
     </AdminShell>
+  )
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <AdminShell>
+          <div className="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 font-bold text-sm">
+            Loading Products & Best Sellers Catalog...
+          </div>
+        </AdminShell>
+      }
+    >
+      <AdminProductsContent />
+    </Suspense>
   )
 }

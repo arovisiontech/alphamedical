@@ -28,7 +28,7 @@ export default function AdminSidebar() {
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Products & Best Sellers', href: '/admin/products', icon: Package },
     { name: 'Categories', href: '/admin/categories', icon: Layers },
-    { name: 'Subcategories (PDFs)', href: '/admin/subcategories', icon: Sliders },
+    { name: 'Subcategories', href: '/admin/subcategories', icon: Sliders },
     { name: 'PDF Catalogues', href: '/admin/catalogues', icon: FileText },
     { name: 'FAQs Knowledgebase', href: '/admin/faqs', icon: HelpCircle },
     { name: 'Media Library', href: '/admin/media', icon: ImageIcon },
