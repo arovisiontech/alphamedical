@@ -134,10 +134,13 @@ function ShopCatalogContent({
 
         matchesCat =
           p.category_id === selectedCategory ||
+          p.subcategory_id === selectedCategory ||
           Boolean(p.category_id && childCatIds.includes(p.category_id)) ||
           p.category_name?.toLowerCase().includes(catClean) ||
+          p.subcategory_name?.toLowerCase().includes(catClean) ||
           (selectedCatObj &&
-            p.specifications?.Subcategory?.toLowerCase() === selectedCatObj.name.toLowerCase()) ||
+            (p.specifications?.Subcategory?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
+             p.subcategory_name?.toLowerCase() === selectedCatObj.name.toLowerCase())) ||
           p.slug.includes(catClean)
       }
 

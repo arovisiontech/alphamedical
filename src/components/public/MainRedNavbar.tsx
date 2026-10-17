@@ -203,7 +203,9 @@ export default function MainRedNavbar() {
                     {item.columns?.map((col, idx) => (
                       <div key={idx} className="space-y-3">
                         <h4 className="font-extrabold text-xs text-[#96161B] uppercase tracking-wider border-b border-red-100 pb-1.5">
-                          {col.title}
+                          <Link href={getDropdownItemHref(item.name, col.title)} className="hover:underline block">
+                            {col.title}
+                          </Link>
                         </h4>
                         <ul className="space-y-1.5 text-xs text-slate-600 font-medium">
                           {col.items.map((sub, sIdx) => (

@@ -33,6 +33,9 @@ export interface ProductItem {
   created_at: string
   updated_at: string
   category_name?: string | null
+  subcategory_id?: string | null
+  subcategory_name?: string | null
+  weight?: string | null
   gallery_images?: (ProductImageItem | string)[]
   price?: number | null
   original_price?: number | null
@@ -72,6 +75,9 @@ export const productSchema = z.object({
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must contain lowercase letters, numbers, and hyphens'),
   sku: z.string().nullable().optional(),
   category_id: z.string().nullable().optional(),
+  subcategory_id: z.string().nullable().optional(),
+  subcategory_name: z.string().nullable().optional(),
+  weight: z.string().nullable().optional(),
   short_description: z.string().nullable().optional(),
   full_description: z.string().nullable().optional(),
   featured_image: z.string().nullable().optional(),

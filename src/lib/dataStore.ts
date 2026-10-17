@@ -170,42 +170,44 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    const rawV2 = localStorage.getItem('alpha_products_v2')
-    const rawV1 = localStorage.getItem('alpha_products')
-    const existingStr = rawV2 || rawV1
-
-    if (existingStr) {
+    const rawV3 = localStorage.getItem('alpha_products_v3')
+    if (rawV3) {
       try {
-        const parsed = JSON.parse(existingStr)
+        const parsed = JSON.parse(rawV3)
         if (Array.isArray(parsed)) {
-          if (parsed.length > 0) {
-            return parsed
-          }
-          if (localStorage.getItem('alpha_products_user_managed') === 'true') {
-            return []
-          }
+          if (parsed.length > 0) return parsed
+          if (localStorage.getItem('alpha_products_user_managed') === 'true') return []
         }
       } catch (err) {}
     }
 
-    // Only populate from server on initial visit when local storage is empty
-    if (!isProductsSyncInitiated && localStorage.getItem('alpha_products_user_managed') !== 'true') {
+    // Auto-clean legacy storage keys containing old 40+ cluttered dummy products
+    localStorage.removeItem('alpha_products_v2')
+    localStorage.removeItem('alpha_products')
+
+    // Initialize with pristine clean baseline (1 product per subcategory)
+    const seedStr = JSON.stringify(INITIAL_PRODUCTS_SEED)
+    localStorage.setItem('alpha_products_v3', seedStr)
+    localStorage.setItem('alpha_products_v2', seedStr)
+    localStorage.setItem('alpha_products', seedStr)
+
+    // Sync from server /api/products
+    if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
-            const current = localStorage.getItem('alpha_products_v2') || localStorage.getItem('alpha_products')
-            if (!current || current === '[]') {
-              const serverStr = JSON.stringify(serverProds)
-              localStorage.setItem('alpha_products_v2', serverStr)
-              localStorage.setItem('alpha_products', serverStr)
-              window.dispatchEvent(new Event('alpha_content_updated'))
-            }
+            const serverStr = JSON.stringify(serverProds)
+            localStorage.setItem('alpha_products_v3', serverStr)
+            localStorage.setItem('alpha_products_v2', serverStr)
+            localStorage.setItem('alpha_products', serverStr)
+            window.dispatchEvent(new Event('alpha_content_updated'))
           }
         })
         .catch(() => {})
     }
+    return INITIAL_PRODUCTS_SEED
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
   }
@@ -216,6 +218,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(products)
+      localStorage.setItem('alpha_products_v3', serialized)
       localStorage.setItem('alpha_products_v2', serialized)
       localStorage.setItem('alpha_products', serialized)
       localStorage.setItem('alpha_products_user_managed', 'true')
@@ -238,8 +241,31 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_products_v3', products)
   savePersistentData('alpha_products_v2', products)
   savePersistentData('alpha_products', products)
+}
+
+export function resetToCleanBaselineProducts(): ProductItem[] {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('alpha_products_v2')
+      localStorage.removeItem('alpha_products')
+      const serialized = JSON.stringify(INITIAL_PRODUCTS_SEED)
+      localStorage.setItem('alpha_products_v3', serialized)
+      localStorage.setItem('alpha_products_v2', serialized)
+      localStorage.setItem('alpha_products', serialized)
+      localStorage.setItem('alpha_products_user_managed', 'false')
+      window.dispatchEvent(new Event('alpha_content_updated'))
+
+      fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: serialized,
+      }).catch((e) => console.warn('Failed to reset products on API:', e))
+    } catch (e) {}
+  }
+  return INITIAL_PRODUCTS_SEED
 }
 
 let isCataloguesSyncInitiated = false

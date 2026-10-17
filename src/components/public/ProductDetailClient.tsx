@@ -39,7 +39,7 @@ import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
-import { getStoredProducts } from '@/src/lib/dataStore'
+import { getStoredProducts, saveStoredProducts } from '@/src/lib/dataStore'
 import { compressImageFile } from '@/src/lib/imageCompressor'
 
 interface ProductDetailClientProps {
@@ -258,6 +258,7 @@ export default function ProductDetailClient({
     original_price: product.original_price ?? 64.95,
     stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
     sizes: (product.sizes && product.sizes.length > 0 ? product.sizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+    weight: product.weight || product.specifications?.['Weight'] || '140g',
     featured_image: product.featured_image || '',
     gallery_images: (product.gallery_images || []).map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean) as string[],
     custom_tiers: discountTiers.filter((t) => t.quantity > 1).length > 0
@@ -279,6 +280,7 @@ export default function ProductDetailClient({
       original_price: product.original_price ?? 64.95,
       stock_quantity: typeof product.stock_quantity === 'number' ? product.stock_quantity : 142,
       sizes: (availableSizes && availableSizes.length > 0 ? availableSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']).join(', '),
+      weight: product.weight || product.specifications?.['Weight'] || '140g',
       featured_image: product.featured_image || '',
       gallery_images: (product.gallery_images || []).map((item: any) => typeof item === 'string' ? item : item?.image_url).filter(Boolean) as string[],
       custom_tiers: existingCustomTiers.length > 0 ? existingCustomTiers : [
@@ -413,9 +415,14 @@ export default function ProductDetailClient({
         original_price: Number(quickEditForm.original_price) || 64.95,
         stock_quantity: Number(quickEditForm.stock_quantity) || 142,
         sizes: parsedSizes.length > 0 ? parsedSizes : availableSizes,
+        weight: quickEditForm.weight || product.weight || '140g',
         featured_image: quickEditForm.featured_image || product.featured_image,
         gallery_images: quickEditForm.gallery_images,
         quantity_discounts: updatedTiers,
+        specifications: {
+          ...(product.specifications || {}),
+          Weight: quickEditForm.weight || product.weight || '140g',
+        },
         updated_at: new Date().toISOString(),
       }
 
@@ -424,22 +431,10 @@ export default function ProductDetailClient({
 
       const allStored = getStoredProducts()
       const updatedAll = allStored.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-      localStorage.setItem('alpha_products_v2', JSON.stringify(updatedAll))
-      localStorage.setItem('alpha_products', JSON.stringify(updatedAll))
-      window.dispatchEvent(new Event('alpha_content_updated'))
+      saveStoredProducts(updatedAll)
 
-      const res = await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'saveSingle', product: updatedProduct }),
-      })
-
-      if (res.ok) {
-        showToast('Product pricing, photos & sizes saved live!')
-        setIsQuickEditOpen(false)
-      } else {
-        showToast('Saved locally, server returned notice.')
-      }
+      showToast('Product pricing, photos, weight & sizes saved live!')
+      setIsQuickEditOpen(false)
     } catch (err) {
       console.error('Error saving product:', err)
       showToast('Error saving product.')
@@ -454,17 +449,9 @@ export default function ProductDetailClient({
     try {
       const allStored = getStoredProducts()
       const updatedAll = allStored.filter((p) => p.id !== product.id)
-      localStorage.setItem('alpha_products_v2', JSON.stringify(updatedAll))
-      localStorage.setItem('alpha_products', JSON.stringify(updatedAll))
-      window.dispatchEvent(new Event('alpha_content_updated'))
+      saveStoredProducts(updatedAll)
 
-      await fetch('/api/products', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'delete', id: product.id }),
-      })
-
-      showToast('Product deleted from server disk!')
+      showToast('Product deleted from server and storefront!')
       router.push('/products')
     } catch (err) {
       alert('Error deleting product')
@@ -571,6 +558,7 @@ export default function ProductDetailClient({
   const badge = product.badge || 'New'
   const inStock = product.in_stock !== false
   const sku = product.sku || 'NMD020146'
+  const weight = product.weight || product.specifications?.['Weight'] || '140g'
 
   // Related products
   const relatedProducts = products
@@ -923,6 +911,8 @@ export default function ProductDetailClient({
               <span className="text-slate-500 font-medium">Based on 18 reviews</span>
               <span className="text-slate-300">|</span>
               <span className="font-mono text-slate-500 font-bold">Model: {sku}</span>
+              <span className="text-slate-300">|</span>
+              <span className="text-slate-600 font-semibold">Weight: <strong className="text-slate-900">{weight}</strong></span>
             </div>
 
             {/* SCREENSHOT 1: TIERED QUANTITY DISCOUNT RADIO CARDS */}
@@ -1315,6 +1305,14 @@ export default function ProductDetailClient({
                       <td className="py-3 px-4 font-mono text-slate-700">{sku}</td>
                     </tr>
                     <tr>
+                      <td className="py-3 px-4 font-bold text-slate-900">Unit Net Weight</td>
+                      <td className="py-3 px-4 text-slate-700 font-bold">{weight}</td>
+                    </tr>
+                    <tr className="bg-slate-50/50">
+                      <td className="py-3 px-4 font-bold text-slate-900">Available Lengths / Sizes</td>
+                      <td className="py-3 px-4 text-slate-700">{availableSizes.join(', ')}</td>
+                    </tr>
+                    <tr>
                       <td className="py-3 px-4 font-bold text-slate-900">Category Division</td>
                       <td className="py-3 px-4 text-slate-700">{product.category_name || 'Surgical Instruments'}</td>
                     </tr>
@@ -1693,22 +1691,37 @@ export default function ProductDetailClient({
                 />
               </div>
 
-              {/* Available Sizes List */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Available Sizes (Comma Separated) *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={quickEditForm.sizes}
-                  onChange={(e) => setQuickEditForm({ ...quickEditForm, sizes: e.target.value })}
-                  placeholder="12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">
-                  Each comma separates a size pill shown on the product page.
-                </span>
+              {/* Product Weight & Sizes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Unit Weight (e.g. 140g, 0.5 kg) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={quickEditForm.weight}
+                    onChange={(e) => setQuickEditForm({ ...quickEditForm, weight: e.target.value })}
+                    placeholder="140g"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Available Sizes (Comma Separated) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={quickEditForm.sizes}
+                    onChange={(e) => setQuickEditForm({ ...quickEditForm, sizes: e.target.value })}
+                    placeholder="12.5cm, 14.0cm, 15.5cm, 18.0cm, 20.5cm"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                  />
+                  <span className="text-[10px] text-slate-400 mt-0.5 block">
+                    Each comma separates a size pill shown on the product page.
+                  </span>
+                </div>
               </div>
 
               {/* Bulk Tier Discounts */}
