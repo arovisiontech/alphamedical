@@ -31,6 +31,7 @@ import {
 } from '@/src/lib/dataStore'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
+import { compressImageFile } from '@/src/lib/imageCompressor'
 
 export default function AdminProductsPage() {
   const [products, setProducts] = useState<ProductItem[]>([])
@@ -71,43 +72,11 @@ export default function AdminProductsPage() {
     is_published: true,
   })
 
-  const loadData = async () => {
-    // 1. Instant optimistic load from localStorage / memory
+  const loadData = () => {
     const prods = getStoredProducts()
     const cats = getStoredCategories()
     setProducts(prods)
     setCategories(cats)
-
-    // 2. Authoritative sync with server disk JSON file
-    try {
-      const res = await fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-      if (res.ok) {
-        const serverProds = await res.json()
-        if (Array.isArray(serverProds) && serverProds.length > 0) {
-          setProducts(serverProds)
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('alpha_products_v2', JSON.stringify(serverProds))
-            localStorage.setItem('alpha_products', JSON.stringify(serverProds))
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Could not sync products from API:', err)
-    }
-
-    try {
-      const catRes = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' })
-      if (catRes.ok) {
-        const serverCats = await catRes.json()
-        if (Array.isArray(serverCats) && serverCats.length > 0) {
-          setCategories(serverCats)
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('alpha_categories_v2', JSON.stringify(serverCats))
-            localStorage.setItem('alpha_categories', JSON.stringify(serverCats))
-          }
-        }
-      }
-    } catch (err) {}
   }
 
   useEffect(() => {
@@ -264,25 +233,21 @@ export default function AdminProductsPage() {
   }
 
   const handleImageFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const rawFile = e.target.files?.[0]
+    if (!rawFile) return
 
     setIsUploadingImage(true)
 
-    // 1. Instant local preview and fallback using FileReader
-    const reader = new FileReader()
-    reader.onload = (loadEvt) => {
-      const dataUrl = loadEvt.target?.result as string
+    try {
+      // 1. Instant client-side compression to lightweight HD image (~50KB, zero quota crash)
+      const { dataUrl, file: compressedFile } = await compressImageFile(rawFile, 800, 800, 0.85)
       if (dataUrl) {
         setFormData((prev) => ({ ...prev, featured_image: dataUrl }))
       }
-    }
-    reader.readAsDataURL(file)
 
-    // 2. Upload to /api/upload with serverless resiliency
-    try {
+      // 2. Upload compressed file to /api/upload with serverless resiliency
       const data = new FormData()
-      data.append('file', file)
+      data.append('file', compressedFile)
       data.append('type', 'product')
 
       const res = await fetch('/api/upload', {
@@ -290,15 +255,15 @@ export default function AdminProductsPage() {
         body: data,
       })
       const json = await res.json()
-      if (json.success && json.url) {
+      if (json.success && json.url && !json.url.startsWith('data:')) {
         setFormData((prev) => ({ ...prev, featured_image: json.url }))
-        showToast('Product image uploaded successfully!')
+        showToast('Product image uploaded & saved!')
       } else {
-        showToast('Image uploaded and saved!')
+        showToast('Product image ready & saved!')
       }
     } catch (err) {
-      console.warn('Network upload fallback to local data URL:', err)
-      showToast('Image uploaded and saved!')
+      console.warn('Network upload fallback to compressed data URL:', err)
+      showToast('Product image ready & saved!')
     } finally {
       setIsUploadingImage(false)
     }
@@ -309,6 +274,9 @@ export default function AdminProductsPage() {
     if (!formData.title.trim()) return
 
     const catObj = categories.find((c) => c.id === formData.category_id)
+    const parentObj = catObj?.parent_id ? categories.find((c) => c.id === catObj.parent_id) : null
+    const resolvedCatName = parentObj ? parentObj.name : (catObj?.name || 'Surgical Instruments')
+    const resolvedSubcatName = catObj?.parent_id ? catObj.name : ''
     const parsedSizes = formData.sizes
       .split(',')
       .map((s) => s.trim())
@@ -339,7 +307,7 @@ export default function AdminProductsPage() {
               original_price: Number(formData.original_price),
               badge: formData.badge || null,
               category_id: formData.category_id,
-              category_name: catObj?.name || p.category_name,
+              category_name: resolvedCatName,
               short_description: formData.short_description,
               full_description: formData.full_description,
               featured_image: formData.featured_image,
@@ -353,7 +321,8 @@ export default function AdminProductsPage() {
               is_published: formData.is_published,
               specifications: {
                 ...(p.specifications || {}),
-                Subcategory: catObj?.name || p.specifications?.Subcategory || '',
+                Category: resolvedCatName,
+                Subcategory: resolvedSubcatName || (p.specifications?.Subcategory || ''),
               },
               updated_at: new Date().toISOString(),
             }
@@ -367,7 +336,7 @@ export default function AdminProductsPage() {
         slug: formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         sku: formData.sku,
         category_id: formData.category_id,
-        category_name: catObj?.name || 'Medical Equipment',
+        category_name: resolvedCatName,
         price: Number(formData.price),
         original_price: Number(formData.original_price),
         badge: formData.badge || null,
@@ -379,7 +348,8 @@ export default function AdminProductsPage() {
         quantity_discounts: discountTiers,
         features: ['German Grade Stainless Steel', 'Autoclavable & Durable', 'ISO 13485 Certified'],
         specifications: {
-          Subcategory: catObj?.name || '',
+          Category: resolvedCatName,
+          Subcategory: resolvedSubcatName,
           'Quality Grade': 'Medical Grade German Stainless Steel',
           Sterilization: 'Autoclavable (134°C)',
         },
@@ -405,12 +375,17 @@ export default function AdminProductsPage() {
     setIsModalOpen(false)
   }
 
-  // Filter products based on active tab and search/category
+  // Filter products based on active tab and search/category (including subcategories)
   const filtered = products.filter((p) => {
     const matchesSearch =
       p.title.toLowerCase().includes(search.toLowerCase()) ||
       (p.sku && p.sku.toLowerCase().includes(search.toLowerCase()))
-    const matchesCat = selectedCat === 'all' || p.category_id === selectedCat
+    
+    const subcategoryIds = categories.filter((c) => c.parent_id === selectedCat).map((c) => c.id)
+    const matchesCat =
+      selectedCat === 'all' ||
+      p.category_id === selectedCat ||
+      subcategoryIds.includes(p.category_id || '')
 
     let matchesTab = true
     if (viewTab === 'best_sellers') {
@@ -683,12 +658,22 @@ export default function AdminProductsPage() {
               onChange={(e) => setSelectedCat(e.target.value)}
               className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs sm:text-sm font-semibold text-slate-800 outline-none cursor-pointer"
             >
-              <option value="all">All Categories ({products.length})</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
+              <option value="all">All Categories & Subcategories ({products.length})</option>
+              {categories
+                .filter((c) => !c.parent_id || c.level === 0)
+                .map((parent) => {
+                  const childSubs = categories.filter((sub) => sub.parent_id === parent.id)
+                  return (
+                    <optgroup key={parent.id} label={parent.name}>
+                      <option value={parent.id}>{parent.name} (All)</option>
+                      {childSubs.map((sub) => (
+                        <option key={sub.id} value={sub.id}>
+                          &nbsp;&nbsp;↳ {sub.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
             </select>
           </div>
         </div>
@@ -896,13 +881,31 @@ export default function AdminProductsPage() {
                   <select
                     value={formData.category_id}
                     onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
                   >
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
+                    <option value="">Select Category / Subcategory...</option>
+                    {categories
+                      .filter((c) => !c.parent_id || c.level === 0)
+                      .map((parent) => {
+                        const childSubs = categories.filter((sub) => sub.parent_id === parent.id)
+                        return (
+                          <optgroup key={parent.id} label={`📁 ${parent.name}`}>
+                            <option value={parent.id}>{parent.name} (Main Category)</option>
+                            {childSubs.map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                &nbsp;&nbsp;↳ {sub.name} (Subcategory)
+                              </option>
+                            ))}
+                          </optgroup>
+                        )
+                      })}
+                    {categories
+                      .filter((c) => c.parent_id && !categories.some((p) => p.id === c.parent_id))
+                      .map((orphan) => (
+                        <option key={orphan.id} value={orphan.id}>
+                          ↳ {orphan.name} (Subcategory)
+                        </option>
+                      ))}
                   </select>
                 </div>
               </div>

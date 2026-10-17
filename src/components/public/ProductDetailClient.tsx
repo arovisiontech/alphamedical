@@ -293,22 +293,6 @@ export default function ProductDetailClient({
 
     syncClient()
 
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data)
-          const match = data.find((p) => p.id === initialProduct.id || p.slug === initialProduct.slug)
-          if (match) {
-            setProduct(match)
-            if (match.sizes && match.sizes.length > 0) {
-              setAvailableSizes(match.sizes)
-            }
-          }
-        }
-      })
-      .catch(() => {})
-
     window.addEventListener('alpha_content_updated', syncClient)
     window.addEventListener('storage', syncClient)
 

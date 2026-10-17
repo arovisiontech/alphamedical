@@ -39,15 +39,6 @@ export default function FeaturedProductsSection({
   useEffect(() => {
     loadData()
 
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data)
-        }
-      })
-      .catch(() => {})
-
     const handleUpdate = () => {
       loadData()
     }

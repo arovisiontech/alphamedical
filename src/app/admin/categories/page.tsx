@@ -26,6 +26,7 @@ import {
   INITIAL_CATEGORIES_SEED,
 } from '@/src/lib/dataStore'
 import { CategoryItem } from '@/src/types/category'
+import { compressImageFile } from '@/src/lib/imageCompressor'
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<CategoryItem[]>(INITIAL_CATEGORIES_SEED)
@@ -86,22 +87,10 @@ export default function AdminCategoriesPage() {
   const [isUploading, setIsUploading] = useState(false)
   const categoryFileInputRef = React.useRef<HTMLInputElement>(null)
 
-  const loadData = async () => {
+  const loadData = () => {
     const data = getStoredCategories()
     setCategories(data)
     setIsLoaded(true)
-
-    try {
-      const res = await fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' })
-      if (res.ok) {
-        const serverCats = await res.json()
-        if (Array.isArray(serverCats) && serverCats.length > 0) {
-          setCategories(serverCats)
-          localStorage.setItem('alpha_categories_v2', JSON.stringify(serverCats))
-          localStorage.setItem('alpha_categories', JSON.stringify(serverCats))
-        }
-      }
-    } catch (err) {}
   }
 
   // Load categories from persistent storage and server disk
@@ -151,27 +140,23 @@ export default function AdminCategoriesPage() {
     setShowModal(true)
   }
 
-  // Image upload via /api/upload to server disk with resilient client fallback
+  // Image upload via /api/upload with high-speed client-side compression
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const rawFile = e.target.files?.[0]
+    if (!rawFile) return
 
     setIsUploading(true)
 
-    // 1. Instant local preview and fallback using FileReader
-    const reader = new FileReader()
-    reader.onload = (loadEvt) => {
-      const dataUrl = loadEvt.target?.result as string
+    try {
+      // 1. Instant compression down to ~40KB HD image
+      const { dataUrl, file: compressedFile } = await compressImageFile(rawFile, 800, 800, 0.85)
       if (dataUrl) {
         setFormCardImage(dataUrl)
       }
-    }
-    reader.readAsDataURL(file)
 
-    // 2. Upload to /api/upload
-    try {
+      // 2. Upload compressed file to /api/upload
       const data = new FormData()
-      data.append('file', file)
+      data.append('file', compressedFile)
       data.append('type', 'category')
 
       const res = await fetch('/api/upload', {
@@ -179,15 +164,15 @@ export default function AdminCategoriesPage() {
         body: data,
       })
       const json = await res.json()
-      if (json.success && json.url) {
+      if (json.success && json.url && !json.url.startsWith('data:')) {
         setFormCardImage(json.url)
-        showNotification('✓ Category image uploaded successfully!')
-      } else {
         showNotification('✓ Category image uploaded & saved!')
+      } else {
+        showNotification('✓ Category image ready & saved!')
       }
     } catch (err) {
-      console.warn('Network upload fallback to local data URL:', err)
-      showNotification('✓ Category image uploaded & saved!')
+      console.warn('Network upload fallback to compressed data URL:', err)
+      showNotification('✓ Category image ready & saved!')
     } finally {
       setIsUploading(false)
     }

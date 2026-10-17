@@ -63,16 +63,6 @@ function ShopCatalogContent({
   useEffect(() => {
     loadData()
 
-    // Server-side persistent disk fetch to guarantee fresh data across page refreshes
-    fetch('/api/products')
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setProducts(data.filter((p: ProductItem) => p.is_published !== false))
-        }
-      })
-      .catch(() => {})
-
     const handleUpdate = () => {
       loadData()
     }

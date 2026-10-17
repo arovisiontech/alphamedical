@@ -84,15 +84,29 @@ let isCategoriesSyncInitiated = false
 export function getStoredCategories(): CategoryItem[] {
   if (typeof window === 'undefined') return INITIAL_CATEGORIES_SEED
   try {
+    const rawV2 = localStorage.getItem('alpha_categories_v2')
+    const rawV1 = localStorage.getItem('alpha_categories')
+    const existingStr = rawV2 || rawV1
+
+    if (existingStr) {
+      try {
+        const parsed = JSON.parse(existingStr)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      } catch (err) {}
+    }
+
+    // Only populate from server if local storage has no categories yet
     if (!isCategoriesSyncInitiated) {
       isCategoriesSyncInitiated = true
-      fetch('/api/categories')
+      fetch('/api/categories?t=' + Date.now(), { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverCats) => {
           if (Array.isArray(serverCats) && serverCats.length > 0) {
-            const localStr = localStorage.getItem('alpha_categories_v2')
-            const serverStr = JSON.stringify(serverCats)
-            if (localStr !== serverStr) {
+            const current = localStorage.getItem('alpha_categories_v2') || localStorage.getItem('alpha_categories')
+            if (!current || current === '[]') {
+              const serverStr = JSON.stringify(serverCats)
               localStorage.setItem('alpha_categories_v2', serverStr)
               localStorage.setItem('alpha_categories', serverStr)
               window.dispatchEvent(new Event('alpha_content_updated'))
@@ -100,14 +114,6 @@ export function getStoredCategories(): CategoryItem[] {
           }
         })
         .catch(() => {})
-    }
-
-    const dataV2 = getLocalStorageSync<CategoryItem[] | null>('alpha_categories_v2', null)
-    if (Array.isArray(dataV2)) return dataV2
-
-    const data = getLocalStorageSync<CategoryItem[] | null>('alpha_categories', null)
-    if (Array.isArray(data)) {
-      return data
     }
   } catch (e) {
     console.error('Failed to read alpha_categories:', e)
@@ -118,14 +124,24 @@ export function getStoredCategories(): CategoryItem[] {
 export function saveStoredCategories(categories: CategoryItem[]): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('alpha_categories_v2', JSON.stringify(categories))
-      localStorage.setItem('alpha_categories', JSON.stringify(categories))
+      const serialized = JSON.stringify(categories)
+      localStorage.setItem('alpha_categories_v2', serialized)
+      localStorage.setItem('alpha_categories', serialized)
       window.dispatchEvent(new Event('alpha_content_updated'))
+
+      // Broadcast to other tabs
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const alphaChannel = new BroadcastChannel('alpha_sync_channel')
+          alphaChannel.postMessage({ type: 'categories_updated', timestamp: Date.now() })
+          alphaChannel.close()
+        } catch (e) {}
+      }
 
       fetch('/api/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(categories),
+        body: serialized,
       }).catch((e) => console.warn('Failed to sync categories to API:', e))
     } catch (e) {}
   }
@@ -140,7 +156,11 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
   try {
     const alphaChannel = new BroadcastChannel('alpha_sync_channel')
     alphaChannel.onmessage = (event) => {
-      if (event.data?.type === 'products_updated' || event.data?.type === 'content_updated') {
+      if (
+        event.data?.type === 'products_updated' ||
+        event.data?.type === 'categories_updated' ||
+        event.data?.type === 'content_updated'
+      ) {
         window.dispatchEvent(new Event('alpha_content_updated'))
       }
     }
@@ -150,18 +170,29 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    const dataV2 = getLocalStorageSync<ProductItem[] | null>('alpha_products_v2', null)
+    const rawV2 = localStorage.getItem('alpha_products_v2')
+    const rawV1 = localStorage.getItem('alpha_products')
+    const existingStr = rawV2 || rawV1
 
-    // Background sync with API file storage once on client with cache-busting
+    if (existingStr) {
+      try {
+        const parsed = JSON.parse(existingStr)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed
+        }
+      } catch (err) {}
+    }
+
+    // Only populate from server on initial visit when local storage is empty
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
-            const localStr = localStorage.getItem('alpha_products_v2')
-            const serverStr = JSON.stringify(serverProds)
-            if (localStr !== serverStr) {
+            const current = localStorage.getItem('alpha_products_v2') || localStorage.getItem('alpha_products')
+            if (!current || current === '[]') {
+              const serverStr = JSON.stringify(serverProds)
               localStorage.setItem('alpha_products_v2', serverStr)
               localStorage.setItem('alpha_products', serverStr)
               window.dispatchEvent(new Event('alpha_content_updated'))
@@ -169,13 +200,6 @@ export function getStoredProducts(): ProductItem[] {
           }
         })
         .catch(() => {})
-    }
-
-    if (Array.isArray(dataV2) && dataV2.length > 0) return dataV2
-
-    const data = getLocalStorageSync<ProductItem[] | null>('alpha_products', null)
-    if (Array.isArray(data) && data.length > 0) {
-      return data
     }
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
@@ -200,7 +224,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
         } catch (e) {}
       }
 
-      // Immediately sync with server disk JSON file
+      // Sync with server disk / memory
       fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,25 +241,29 @@ let isCataloguesSyncInitiated = false
 export function getStoredCatalogues(): CatalogueItem[] {
   if (typeof window === 'undefined') return INITIAL_CATALOGUES_SEED
   try {
+    const raw = localStorage.getItem('alpha_catalogues')
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      } catch (err) {}
+    }
+
     if (!isCataloguesSyncInitiated) {
       isCataloguesSyncInitiated = true
-      fetch('/api/catalogues')
+      fetch('/api/catalogues?t=' + Date.now(), { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverCats) => {
           if (Array.isArray(serverCats) && serverCats.length > 0) {
-            const localStr = localStorage.getItem('alpha_catalogues')
-            const serverStr = JSON.stringify(serverCats)
-            if (localStr !== serverStr) {
-              localStorage.setItem('alpha_catalogues', serverStr)
+            const current = localStorage.getItem('alpha_catalogues')
+            if (!current || current === '[]') {
+              localStorage.setItem('alpha_catalogues', JSON.stringify(serverCats))
               window.dispatchEvent(new Event('alpha_content_updated'))
             }
           }
         })
         .catch(() => {})
     }
-
-    const data = getLocalStorageSync<CatalogueItem[]>('alpha_catalogues', INITIAL_CATALOGUES_SEED)
-    if (Array.isArray(data) && data.length > 0) return data
   } catch (e) {
     console.error('Failed to read alpha_catalogues:', e)
   }

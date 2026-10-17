@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const dataFilePath = path.join(process.cwd(), 'src', 'data', 'catalogues.json')
-const tmpFilePath = path.join('/tmp', 'alpha_catalogues.json')
+const tmpFilePath = path.join(os.tmpdir(), 'alpha_catalogues.json')
 
 const g = globalThis as unknown as { __alpha_catalogues?: any[] }
 

@@ -45,7 +45,20 @@ export default function AdminSubcategoriesPage() {
 
   useEffect(() => {
     loadData()
+    const handleUpdate = () => loadData()
+    window.addEventListener('alpha_content_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('alpha_content_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
   }, [])
+
+  const handleSaveAll = () => {
+    saveStoredCategories(categories)
+    setSuccessToast('All subcategories & hierarchies saved and live on website!')
+    setTimeout(() => setSuccessToast(null), 3500)
+  }
 
   const parentCategories = categories.filter((c) => !c.parent_id || c.level === 0)
   const subcategories = categories.filter((c) => Boolean(c.parent_id))
@@ -162,14 +175,24 @@ export default function AdminSubcategoriesPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={handleOpenAdd}
-            className="bg-[#96161B] hover:bg-[#7e1216] text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-red-950/20 active:scale-95 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Add Subcategory</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm px-5 py-3 rounded-2xl flex items-center gap-2 shadow-md shadow-emerald-950/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Save All & Publish Live</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenAdd}
+              className="bg-[#96161B] hover:bg-[#7e1216] text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-red-950/20 active:scale-95 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add Subcategory</span>
+            </button>
+          </div>
         </div>
 
         {/* SUCCESS TOAST */}

@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import os from 'os'
 import { ProductItem } from '@/src/types/product'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 const dataFilePath = path.join(process.cwd(), 'src', 'data', 'products.json')
-const tmpFilePath = path.join('/tmp', 'alpha_products.json')
+const tmpFilePath = path.join(os.tmpdir(), 'alpha_products.json')
 
 const g = globalThis as unknown as { __alpha_products?: ProductItem[] }
 
