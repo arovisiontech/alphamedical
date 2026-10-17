@@ -251,7 +251,7 @@ export default function AdminSectionsPage() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-[#96161B] uppercase tracking-wider mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#96161B] animate-pulse" />
-              <span>Interactive Homepage Sections (Screenshots 1 & 2)</span>
+              <span>Interactive Homepage Sections</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
               Homepage Sections & Process Workflow Manager

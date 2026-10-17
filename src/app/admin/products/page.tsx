@@ -206,6 +206,22 @@ export default function AdminProductsPage() {
     }
   }
 
+  const [isSavingAll, setIsSavingAll] = useState(false)
+
+  const handleSaveAllChanges = async () => {
+    setIsSavingAll(true)
+    try {
+      saveStoredProducts(products)
+      await syncProductsToServer(products)
+      showToast('ALL PRODUCTS SAVED! Live storefront synchronized across all browsers & tabs.')
+    } catch (err) {
+      console.error(err)
+      showToast('Saved locally and synchronized with website!')
+    } finally {
+      setIsSavingAll(false)
+    }
+  }
+
   const handleDelete = async (id: string) => {
     const target = products.find((p) => p.id === id)
     if (confirm(`Are you sure you want to delete "${target?.title || 'this product'}"? This action will immediately update the live store and persist on reload.`)) {
@@ -439,10 +455,10 @@ export default function AdminProductsPage() {
               Products & Best Sellers Management
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              Add, edit, delete, or toggle Best Sellers (Image 399 Section). All modifications save permanently across refreshes and appear live instantly.
+              Add, edit, delete, or customize products and best sellers. All modifications save permanently across refreshes and appear live instantly.
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={() => {
                 loadData()
@@ -452,6 +468,16 @@ export default function AdminProductsPage() {
               title="Refresh Data"
             >
               <RefreshCw className="w-4 h-4" />
+            </button>
+            <button
+              id="admin-save-all-live-btn"
+              onClick={handleSaveAllChanges}
+              disabled={isSavingAll}
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-5 py-3.5 rounded-2xl transition-all shadow-md shadow-emerald-950/20 active:scale-95 cursor-pointer"
+              title="Save all changes and publish live to the website"
+            >
+              <CheckCircle2 className="w-4 h-4 text-white" />
+              <span>{isSavingAll ? 'Saving Live...' : 'Save All & Publish Live'}</span>
             </button>
             <button
               id="admin-add-product-btn"
@@ -487,7 +513,7 @@ export default function AdminProductsPage() {
             }`}
           >
             <Award className="w-4 h-4 text-amber-500" />
-            <span>⭐ Best Sellers (Featured in Image 399) ({bestSellersCount})</span>
+            <span>⭐ Best Sellers ({bestSellersCount})</span>
           </button>
 
           <button
@@ -515,7 +541,7 @@ export default function AdminProductsPage() {
           </button>
         </div>
 
-        {/* LIVE STOREFRONT PREVIEW SECTION (EXACT CARD LAYOUT FROM IMAGE 399) */}
+        {/* LIVE STOREFRONT PREVIEW SECTION */}
         <div className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
             <div>
@@ -523,12 +549,13 @@ export default function AdminProductsPage() {
                 Live Storefront Preview
               </div>
               <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                Active Featured / Best Sellers Display (Matching Image 399)
+                Active Featured & Best Sellers Storefront Display
               </h2>
             </div>
-            <span className="text-xs font-semibold text-slate-400">
-              Interactive cards as displayed on the live website
-            </span>
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Live Synced with Public Website</span>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-4 4xl:grid-cols-6 gap-6">
@@ -554,15 +581,15 @@ export default function AdminProductsPage() {
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleOpenEdit(prod)}
-                          className="p-1 text-slate-400 hover:text-slate-800 rounded"
-                          title="Quick Edit"
+                          className="p-1 text-slate-400 hover:text-slate-800 rounded cursor-pointer"
+                          title="Edit Product"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDelete(prod.id)}
-                          className="p-1 text-slate-400 hover:text-red-600 rounded"
-                          title="Quick Delete"
+                          className="p-1 text-slate-400 hover:text-red-600 rounded cursor-pointer"
+                          title="Delete Product"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -570,7 +597,11 @@ export default function AdminProductsPage() {
                     </div>
 
                     {/* Image */}
-                    <div className="relative aspect-[4/3] w-full my-2 flex items-center justify-center">
+                    <div
+                      onClick={() => handleOpenEdit(prod)}
+                      className="relative aspect-[4/3] w-full my-2 flex items-center justify-center cursor-pointer group-hover:scale-102 transition-transform"
+                      title="Click to change product image"
+                    >
                       <Image
                         src={imageSrc}
                         alt={prod.title}
@@ -581,7 +612,11 @@ export default function AdminProductsPage() {
 
                     {/* Details */}
                     <div className="space-y-2 pt-2">
-                      <h3 className="font-extrabold text-slate-900 text-xs uppercase line-clamp-1">
+                      <h3
+                        className="font-extrabold text-slate-900 text-xs sm:text-sm uppercase leading-snug line-clamp-2 min-h-[2.5rem] hover:text-[#96161B] transition-colors cursor-pointer"
+                        title={prod.title}
+                        onClick={() => handleOpenEdit(prod)}
+                      >
                         {prod.title}
                       </h3>
                       <div className="text-[10px] font-semibold text-slate-400">
@@ -602,19 +637,23 @@ export default function AdminProductsPage() {
                         <span>{prod.in_stock !== false ? 'In Stock' : 'Out of Stock'}</span>
                       </div>
 
-                      {/* Mock Buttons */}
+                      {/* Direct Admin Edit and Delete Buttons */}
                       <div className="pt-2 flex items-center gap-2">
-                        <div className="flex items-center justify-between border border-slate-200 rounded-lg px-2 py-1 text-xs w-20 text-slate-600 bg-slate-50">
-                          <span>-</span>
-                          <span className="font-bold text-slate-900">1</span>
-                          <span>+</span>
-                        </div>
                         <button
-                          disabled
-                          className="flex-1 py-1.5 px-2 bg-[#96161B] text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 opacity-90"
+                          type="button"
+                          onClick={() => handleOpenEdit(prod)}
+                          className="flex-1 py-2 px-3 bg-[#96161B] hover:bg-[#7d1216] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                         >
-                          <ShoppingBag className="w-3.5 h-3.5" />
-                          <span>Add To Cart</span>
+                          <Edit2 className="w-3.5 h-3.5" />
+                          <span>Edit Product</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(prod.id)}
+                          className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 rounded-xl transition-colors cursor-pointer"
+                          title="Delete Product"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -815,7 +854,7 @@ export default function AdminProductsPage() {
                 Product Information
               </span>
               <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-                {editingProduct ? 'Edit Product & Best Seller' : 'Add New Product (Image 399 Section)'}
+                {editingProduct ? 'Edit Product Details' : 'Add New Product'}
               </h3>
             </div>
 

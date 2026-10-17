@@ -49,7 +49,7 @@ export default function AdminBannersContentPage() {
   // Quick Preset Images
   const PRESET_IMAGES = [
     {
-      name: 'ENT Surgery Instruments Surgical Tray (Screenshot 2 / image 392)',
+      name: 'ENT Surgery Instruments Surgical Tray',
       url: '/images/banners/image-392.svg',
     },
     {
@@ -57,7 +57,7 @@ export default function AdminBannersContentPage() {
       url: '/images/banners/hero-banner-kerrison.jpg',
     },
     {
-      name: 'Alpha Retractor Tool (Image 399 Ortho Weitlaner)',
+      name: 'Orthopedic Weitlaner Retractor Tool',
       url: '/images/products/image-399.png',
     },
     {
@@ -243,7 +243,7 @@ export default function AdminBannersContentPage() {
 
   // Reset to default Kerrison Rongeur banner
   const handleResetToDefault = () => {
-    if (confirm('Reset to default Kerrison Rongeur Banner (Screenshot 3)?')) {
+    if (confirm('Reset to default Kerrison Rongeur Banner?')) {
       setBanners(INITIAL_BANNERS_SEED)
       saveStoredBanners(INITIAL_BANNERS_SEED)
       showNotification('✓ Reset to default Kerrison Rongeur banner!')
@@ -617,7 +617,7 @@ export default function AdminBannersContentPage() {
                       onChange={(e) => setFormDisplayMode(e.target.value as any)}
                       className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 outline-none focus:border-[#B92025] bg-white cursor-pointer"
                     >
-                      <option value="full_image">Full Graphic (Screenshot 3 Style)</option>
+                      <option value="full_image">Full Graphic Banner</option>
                       <option value="overlay_text">Overlay Text on Image</option>
                     </select>
                   </div>
