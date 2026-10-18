@@ -182,5 +182,355 @@
     "updated_at": "2026-10-14T16:22:11.674Z",
     "product_count": 32,
     "level": 1
+  },
+  {
+    "id": "sub-den-rongeurs",
+    "parent_id": "sub-dental-surgery",
+    "name": "Bone Rongeurs",
+    "slug": "dental-bone-rongeurs",
+    "description": "Precision bone rongeurs for oral surgery and dental bone contouring.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-den-scissors",
+    "parent_id": "sub-dental-surgery",
+    "name": "Dissecting Scissors",
+    "slug": "dental-dissecting-scissors",
+    "description": "Delicate curved and straight oral dissecting scissors.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-den-forceps",
+    "parent_id": "sub-dental-surgery",
+    "name": "Extraction Forceps",
+    "slug": "dental-extraction-forceps",
+    "description": "Ergonomic dental extraction forceps for anterior and posterior teeth.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-den-needle-holders",
+    "parent_id": "sub-dental-surgery",
+    "name": "Surgical Needle Holders",
+    "slug": "dental-surgical-needle-holders",
+    "description": "Cross-serrated TC surgical needle holders for delicate oral sutures.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-den-retractors",
+    "parent_id": "sub-dental-surgery",
+    "name": "Cheek Retractors",
+    "slug": "dental-cheek-retractors",
+    "description": "Self-retaining and handheld cheek and lip retractors.",
+    "sort_order": 5,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-bone-forceps",
+    "parent_id": "sub-bone-surgery",
+    "name": "Bone Forceps",
+    "slug": "bone-holding-forceps",
+    "description": "Self-centering bone holding forceps with ratchet lock.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-bone-elevators",
+    "parent_id": "sub-bone-surgery",
+    "name": "Elevators",
+    "slug": "bone-periosteal-elevators",
+    "description": "Periosteal elevators for flap reflection and tissue separation.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-bone-scissors",
+    "parent_id": "sub-bone-surgery",
+    "name": "Surgical Scissors",
+    "slug": "bone-surgical-scissors",
+    "description": "Heavy-duty bone and tissue cutting surgical scissors.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-bone-needle-holders",
+    "parent_id": "sub-bone-surgery",
+    "name": "Surgical Needle Holders",
+    "slug": "bone-needle-holders",
+    "description": "Tungsten carbide needle holders for deep surgical closure.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-bone-retractors",
+    "parent_id": "sub-bone-surgery",
+    "name": "Cheek Retractors",
+    "slug": "bone-retractors",
+    "description": "Deep tissue exposure retractors and bone spreaders.",
+    "sort_order": 5,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-per-rongeurs",
+    "parent_id": "sub-periodontics",
+    "name": "Bone Rongeurs",
+    "slug": "periodontic-bone-rongeurs",
+    "description": "Micro delicate bone rongeurs for periodontal surgery.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-per-elevators",
+    "parent_id": "sub-periodontics",
+    "name": "Elevators",
+    "slug": "periodontic-luxating-elevators",
+    "description": "Sharp luxating elevators for atraumatic periodontal extraction.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-per-scissors",
+    "parent_id": "sub-periodontics",
+    "name": "Surgical Scissors",
+    "slug": "periodontic-surgical-scissors",
+    "description": "Castroviejo fine microsurgical scissors.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-per-needle-holders",
+    "parent_id": "sub-periodontics",
+    "name": "Surgical Needle Holders",
+    "slug": "periodontic-needle-holders",
+    "description": "Castroviejo micro needle holders with TC tips.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-per-retractors",
+    "parent_id": "sub-periodontics",
+    "name": "Cheek Retractors",
+    "slug": "periodontic-cheek-retractors",
+    "description": "Periodontal mucoperiosteal flap retractors.",
+    "sort_order": 5,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-disp-gloves",
+    "parent_id": "sub-disposables",
+    "name": "Sterile Gloves",
+    "slug": "sterile-gloves",
+    "description": "Sterile powder-free surgical and examination gloves.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-disp-cannulas",
+    "parent_id": "sub-disposables",
+    "name": "IV Cannulas",
+    "slug": "iv-cannulas",
+    "description": "Sterile intravenous cannulas with injection port.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-disp-syringes",
+    "parent_id": "sub-disposables",
+    "name": "Syringes & Needles",
+    "slug": "syringes-needles",
+    "description": "Disposable luer-lock syringes with ultra-fine hypodermic needles.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-disp-gauze",
+    "parent_id": "sub-disposables",
+    "name": "Gauze Swabs",
+    "slug": "gauze-swabs",
+    "description": "100% cotton sterile absorbent surgical gauze swabs.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-diag-stethoscopes",
+    "parent_id": "sub-diagnostics",
+    "name": "Stethoscopes",
+    "slug": "stethoscopes",
+    "description": "Cardiology dual-head precision acoustic stethoscopes.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-diag-sphygmo",
+    "parent_id": "sub-diagnostics",
+    "name": "Sphygmomanometers",
+    "slug": "sphygmomanometers",
+    "description": "Aneroid clinical blood pressure monitors with adult cuff.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-diag-pulse",
+    "parent_id": "sub-diagnostics",
+    "name": "Pulse Oximeters",
+    "slug": "pulse-oximeters",
+    "description": "Fingertip digital SpO2 and PR vital sign pulse oximeters.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-diag-thermo",
+    "parent_id": "sub-diagnostics",
+    "name": "Thermometers",
+    "slug": "thermometers",
+    "description": "Infrared non-contact clinical thermometers.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-ppe-masks",
+    "parent_id": "sub-protective-gear",
+    "name": "N95 & Surgical Masks",
+    "slug": "n95-surgical-masks",
+    "description": "NIOSH certified 4-ply fluid-resistant particulate respirator masks.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-ppe-gowns",
+    "parent_id": "sub-protective-gear",
+    "name": "Sterile Isolation Gowns",
+    "slug": "sterile-isolation-gowns",
+    "description": "AAMI Level 3 fluid-repellent surgical isolation gowns.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-ppe-shields",
+    "parent_id": "sub-protective-gear",
+    "name": "Protective Face Shields",
+    "slug": "protective-face-shields",
+    "description": "Full face optical anti-fog protective shields.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-ppe-gloves",
+    "parent_id": "sub-protective-gear",
+    "name": "Latex & Nitrile Gloves",
+    "slug": "latex-nitrile-gloves",
+    "description": "Heavy-duty textured nitrile & latex protective exam gloves.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-equip-ventilators",
+    "parent_id": "sub-critical-care",
+    "name": "ICU Turbine Ventilators",
+    "slug": "icu-turbine-ventilators",
+    "description": "High performance ICU non-invasive and invasive turbine ventilators.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-equip-monitors",
+    "parent_id": "sub-critical-care",
+    "name": "Multiparameter Monitors",
+    "slug": "multiparameter-monitors",
+    "description": "12.1 inch and 15 inch multi-parameter patient vital signs monitors.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-equip-defib",
+    "parent_id": "sub-critical-care",
+    "name": "Emergency Defibrillators",
+    "slug": "emergency-defibrillators",
+    "description": "Biphasic automated external defibrillators with pacing.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-equip-beds",
+    "parent_id": "sub-critical-care",
+    "name": "Electric ICU Beds",
+    "slug": "electric-icu-beds",
+    "description": "5-function motorized intensive care hospital beds with CPR release.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-brnd-alpha",
+    "parent_id": "sub-certified-brands",
+    "name": "ALPHA Surgical Systems",
+    "slug": "alpha-surgical-systems",
+    "description": "Flagship certified line of German grade precision surgical instruments.",
+    "sort_order": 1,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-brnd-german",
+    "parent_id": "sub-certified-brands",
+    "name": "German Steel Craft",
+    "slug": "german-steel-craft",
+    "description": "Authentic DIN 1.4021 medical stainless steel surgical tools.",
+    "sort_order": 2,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-brnd-medequip",
+    "parent_id": "sub-certified-brands",
+    "name": "MedEquip Pro",
+    "slug": "medequip-pro",
+    "description": "Specialized hospital OR equipment and monitoring technology.",
+    "sort_order": 3,
+    "is_published": true,
+    "level": 2
+  },
+  {
+    "id": "sub-brnd-surgi",
+    "parent_id": "sub-certified-brands",
+    "name": "SurgiPrecision USA",
+    "slug": "surgiprecision-usa",
+    "description": "FDA registered microsurgical instruments and precision retractors.",
+    "sort_order": 4,
+    "is_published": true,
+    "level": 2
   }
 ]

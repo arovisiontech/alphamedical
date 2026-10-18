@@ -84,22 +84,24 @@ let isCategoriesSyncInitiated = false
 export function getStoredCategories(): CategoryItem[] {
   if (typeof window === 'undefined') return INITIAL_CATEGORIES_SEED
   try {
-    const rawV3 = localStorage.getItem('alpha_categories_v3')
-    if (rawV3) {
+    const rawV4 = localStorage.getItem('alpha_categories_v4')
+    if (rawV4) {
       try {
-        const parsed = JSON.parse(rawV3)
+        const parsed = JSON.parse(rawV4)
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed
         }
       } catch (err) {}
     }
 
-    // Auto-clean legacy storage keys containing old dead categories
+    // Auto-clean legacy storage keys containing older category versions
+    localStorage.removeItem('alpha_categories_v3')
     localStorage.removeItem('alpha_categories_v2')
     localStorage.removeItem('alpha_categories')
 
-    // Initialize with clean seed (5 main categories + 8 subcategories)
+    // Initialize with clean seed (5 main categories + 8 subcategories + 33 sub-subcategories)
     const seedStr = JSON.stringify(INITIAL_CATEGORIES_SEED)
+    localStorage.setItem('alpha_categories_v4', seedStr)
     localStorage.setItem('alpha_categories_v3', seedStr)
     localStorage.setItem('alpha_categories_v2', seedStr)
     localStorage.setItem('alpha_categories', seedStr)
@@ -112,6 +114,7 @@ export function getStoredCategories(): CategoryItem[] {
         .then((serverCats) => {
           if (Array.isArray(serverCats) && serverCats.length > 0) {
             const serverStr = JSON.stringify(serverCats)
+            localStorage.setItem('alpha_categories_v4', serverStr)
             localStorage.setItem('alpha_categories_v3', serverStr)
             localStorage.setItem('alpha_categories_v2', serverStr)
             localStorage.setItem('alpha_categories', serverStr)
@@ -130,6 +133,7 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(categories)
+      localStorage.setItem('alpha_categories_v4', serialized)
       localStorage.setItem('alpha_categories_v3', serialized)
       localStorage.setItem('alpha_categories_v2', serialized)
       localStorage.setItem('alpha_categories', serialized)
@@ -151,6 +155,7 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
       }).catch((e) => console.warn('Failed to sync categories to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_categories_v4', categories)
   savePersistentData('alpha_categories_v3', categories)
   savePersistentData('alpha_categories_v2', categories)
   savePersistentData('alpha_categories', categories)
@@ -177,10 +182,10 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    const rawV3 = localStorage.getItem('alpha_products_v3')
-    if (rawV3) {
+    const rawV4 = localStorage.getItem('alpha_products_v4')
+    if (rawV4) {
       try {
-        const parsed = JSON.parse(rawV3)
+        const parsed = JSON.parse(rawV4)
         if (Array.isArray(parsed)) {
           if (parsed.length > 0) return parsed
           if (localStorage.getItem('alpha_products_user_managed') === 'true') return []
@@ -188,12 +193,14 @@ export function getStoredProducts(): ProductItem[] {
       } catch (err) {}
     }
 
-    // Auto-clean legacy storage keys containing old 40+ cluttered dummy products
+    // Auto-clean legacy storage keys containing older product seeds
+    localStorage.removeItem('alpha_products_v3')
     localStorage.removeItem('alpha_products_v2')
     localStorage.removeItem('alpha_products')
 
-    // Initialize with pristine clean baseline (1 product per subcategory)
+    // Initialize with pristine clean baseline (1 product per subcategory, exactly 1 on sale)
     const seedStr = JSON.stringify(INITIAL_PRODUCTS_SEED)
+    localStorage.setItem('alpha_products_v4', seedStr)
     localStorage.setItem('alpha_products_v3', seedStr)
     localStorage.setItem('alpha_products_v2', seedStr)
     localStorage.setItem('alpha_products', seedStr)
@@ -206,6 +213,7 @@ export function getStoredProducts(): ProductItem[] {
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
             const serverStr = JSON.stringify(serverProds)
+            localStorage.setItem('alpha_products_v4', serverStr)
             localStorage.setItem('alpha_products_v3', serverStr)
             localStorage.setItem('alpha_products_v2', serverStr)
             localStorage.setItem('alpha_products', serverStr)
@@ -225,6 +233,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(products)
+      localStorage.setItem('alpha_products_v4', serialized)
       localStorage.setItem('alpha_products_v3', serialized)
       localStorage.setItem('alpha_products_v2', serialized)
       localStorage.setItem('alpha_products', serialized)
@@ -248,6 +257,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_products_v4', products)
   savePersistentData('alpha_products_v3', products)
   savePersistentData('alpha_products_v2', products)
   savePersistentData('alpha_products', products)

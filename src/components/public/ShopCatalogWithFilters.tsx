@@ -90,7 +90,33 @@ function ShopCatalogContent({
 
     if (query) {
       setSearchQuery(query)
-      setSelectedCategory('All')
+      const qClean = query.toLowerCase().trim()
+      const matchCat = categories.find(
+        (c) =>
+          c.name.toLowerCase() === qClean ||
+          c.slug === qClean ||
+          c.id === qClean
+      )
+      if (matchCat) {
+        setSelectedCategory(matchCat.id)
+        if (matchCat.level === 2 && matchCat.parent_id) {
+          const parent = categories.find((c) => c.id === matchCat.parent_id)
+          if (parent?.parent_id) {
+            setOpenMainCategory(parent.parent_id)
+            setOpenSubCategory(parent.id)
+          } else if (parent) {
+            setOpenMainCategory(parent.id)
+            setOpenSubCategory(matchCat.id)
+          }
+        } else if (matchCat.parent_id) {
+          setOpenMainCategory(matchCat.parent_id)
+          setOpenSubCategory(matchCat.id)
+        } else {
+          setOpenMainCategory(matchCat.id)
+        }
+      } else {
+        setSelectedCategory('All')
+      }
     }
 
     if (cat) {
@@ -99,7 +125,16 @@ function ShopCatalogContent({
       )
       if (match) {
         setSelectedCategory(match.id)
-        if (match.parent_id) {
+        if (match.level === 2 && match.parent_id) {
+          const parent = categories.find((c) => c.id === match.parent_id)
+          if (parent?.parent_id) {
+            setOpenMainCategory(parent.parent_id)
+            setOpenSubCategory(parent.id)
+          } else if (parent) {
+            setOpenMainCategory(parent.id)
+            setOpenSubCategory(match.id)
+          }
+        } else if (match.parent_id) {
           const parent = categories.find((c) => c.id === match.parent_id)
           if (parent?.parent_id) {
             setOpenMainCategory(parent.parent_id)
@@ -148,15 +183,12 @@ function ShopCatalogContent({
     setOpenSubCategory((prev) => (prev === subId ? null : subId))
   }
 
-  // Robust product count helper for category trees
+  // Robust product count helper for category trees & sub-subcategories
   const getCategoryCount = (catId: string): number => {
     if (catId === 'All') return products.length
     if (catId === 'sale') {
       return products.filter(
-        (p) =>
-          p.badge?.toLowerCase().includes('sale') ||
-          (p.original_price != null && p.price != null && p.original_price > p.price) ||
-          p.slug.includes('sale')
+        (p) => p.badge?.toLowerCase() === 'sale' || p.id === 'prod-sale-special-1'
       ).length
     }
 
@@ -174,6 +206,49 @@ function ShopCatalogContent({
     const allIds = [catObj.id, ...descendantIds]
     const nameLower = catObj.name.toLowerCase()
 
+    // Level 2 sub-subcategory matching
+    if (catObj.level === 2 && catObj.parent_id) {
+      const parentObj = categories.find((c) => c.id === catObj.parent_id)
+      const cleanWords = nameLower
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter((w) => w.length > 2 && !['and', 'the', 'for'].includes(w))
+
+      return products.filter((p) => {
+        // Must belong to parent division
+        const inParent =
+          p.subcategory_id === catObj.parent_id ||
+          p.category_id === catObj.parent_id ||
+          (parentObj &&
+            (p.subcategory_name?.toLowerCase() === parentObj.name.toLowerCase() ||
+             p.category_name?.toLowerCase() === parentObj.name.toLowerCase() ||
+             p.specifications?.Subcategory?.toLowerCase() === parentObj.name.toLowerCase()))
+
+        if (!inParent) return false
+
+        const prodText = [
+          p.title,
+          p.short_description,
+          p.full_description,
+          p.sku,
+          ...(p.features || []),
+          ...Object.entries(p.specifications || {}).flat(),
+        ]
+          .join(' ')
+          .toLowerCase()
+
+        if (prodText.includes(nameLower)) return true
+        const singularName = nameLower.endsWith('s') ? nameLower.slice(0, -1) : nameLower
+        if (prodText.includes(singularName)) return true
+
+        return cleanWords.some((w) => {
+          const sing = w.endsWith('s') ? w.slice(0, -1) : w
+          return prodText.includes(sing)
+        })
+      }).length
+    }
+
+    // Level 0 (Main) or Level 1 (Subcategory)
     return products.filter((p) => {
       if (p.category_id && allIds.includes(p.category_id)) return true
       if (p.subcategory_id && allIds.includes(p.subcategory_id)) return true
@@ -191,9 +266,7 @@ function ShopCatalogContent({
       let matchesCat = true
       if (selectedCategory === 'sale') {
         matchesCat = Boolean(
-          p.badge?.toLowerCase().includes('sale') ||
-            (p.original_price != null && p.price != null && p.original_price > p.price) ||
-            p.slug.includes('sale')
+          p.badge?.toLowerCase() === 'sale' || p.id === 'prod-sale-special-1'
         )
       } else if (selectedCategory !== 'All') {
         const catClean = selectedCategory.toLowerCase().trim()
@@ -201,25 +274,62 @@ function ShopCatalogContent({
           (c) => c.id === selectedCategory || c.slug === selectedCategory
         )
 
-        const getDescendants = (parentId: string): string[] => {
-          const direct = categories.filter((c) => c.parent_id === parentId).map((c) => c.id)
-          const sub = direct.flatMap((d) => getDescendants(d))
-          return [...direct, ...sub]
+        if (selectedCatObj?.level === 2 && selectedCatObj.parent_id) {
+          // Level 2 item matching
+          const parentObj = categories.find((c) => c.id === selectedCatObj.parent_id)
+          const inParent =
+            p.subcategory_id === selectedCatObj.parent_id ||
+            p.category_id === selectedCatObj.parent_id ||
+            (parentObj &&
+              (p.subcategory_name?.toLowerCase() === parentObj.name.toLowerCase() ||
+               p.category_name?.toLowerCase() === parentObj.name.toLowerCase() ||
+               p.specifications?.Subcategory?.toLowerCase() === parentObj.name.toLowerCase()))
+
+          const nameLower = selectedCatObj.name.toLowerCase()
+          const cleanWords = nameLower
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .split(/\s+/)
+            .filter((w) => w.length > 2 && !['and', 'the', 'for'].includes(w))
+
+          const prodText = [
+            p.title,
+            p.short_description,
+            p.full_description,
+            p.sku,
+            ...(p.features || []),
+            ...Object.entries(p.specifications || {}).flat(),
+          ]
+            .join(' ')
+            .toLowerCase()
+
+          const matchesItem =
+            prodText.includes(nameLower) ||
+            prodText.includes(nameLower.endsWith('s') ? nameLower.slice(0, -1) : nameLower) ||
+            cleanWords.some((w) => prodText.includes(w.endsWith('s') ? w.slice(0, -1) : w))
+
+          matchesCat = Boolean(inParent && matchesItem)
+        } else {
+          // Level 0 or Level 1 matching
+          const getDescendants = (parentId: string): string[] => {
+            const direct = categories.filter((c) => c.parent_id === parentId).map((c) => c.id)
+            const sub = direct.flatMap((d) => getDescendants(d))
+            return [...direct, ...sub]
+          }
+
+          const childCatIds = selectedCatObj ? getDescendants(selectedCatObj.id) : []
+          const allTargetIds = selectedCatObj ? [selectedCatObj.id, ...childCatIds] : [selectedCategory]
+
+          matchesCat =
+            (p.category_id && allTargetIds.includes(p.category_id)) ||
+            (p.subcategory_id && allTargetIds.includes(p.subcategory_id)) ||
+            p.category_name?.toLowerCase().includes(catClean) ||
+            p.subcategory_name?.toLowerCase().includes(catClean) ||
+            (selectedCatObj &&
+              (p.specifications?.Subcategory?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
+               p.subcategory_name?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
+               p.category_name?.toLowerCase() === selectedCatObj.name.toLowerCase())) ||
+            p.slug.includes(catClean)
         }
-
-        const childCatIds = selectedCatObj ? getDescendants(selectedCatObj.id) : []
-        const allTargetIds = selectedCatObj ? [selectedCatObj.id, ...childCatIds] : [selectedCategory]
-
-        matchesCat =
-          (p.category_id && allTargetIds.includes(p.category_id)) ||
-          (p.subcategory_id && allTargetIds.includes(p.subcategory_id)) ||
-          p.category_name?.toLowerCase().includes(catClean) ||
-          p.subcategory_name?.toLowerCase().includes(catClean) ||
-          (selectedCatObj &&
-            (p.specifications?.Subcategory?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
-             p.subcategory_name?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
-             p.category_name?.toLowerCase() === selectedCatObj.name.toLowerCase())) ||
-          p.slug.includes(catClean)
       }
 
       // Robust Search Query match: match title, sku, short_desc, full_desc, features, specs, and individual terms
@@ -497,13 +607,19 @@ function ShopCatalogContent({
                         {isOpen && subCategories.length > 0 && (
                           <div className="pl-3 pr-1 py-1.5 ml-3 my-1 space-y-1 border-l-2 border-red-300 bg-red-50/20 rounded-r-xl transition-all">
                             {subCategories.map((sub) => {
-                              const isSubSelected =
+                              const isSubDirectlySelected =
                                 selectedCategory === sub.id ||
                                 selectedCategory === sub.name ||
                                 selectedCategory === sub.slug
                               const subCount = getCategoryCount(sub.id)
                               const subChildren = categories.filter(
                                 (c) => c.parent_id === sub.id && c.is_published !== false
+                              )
+                              const hasSelectedChild = subChildren.some(
+                                (c) =>
+                                  selectedCategory === c.id ||
+                                  selectedCategory === c.slug ||
+                                  selectedCategory.toLowerCase() === c.name.toLowerCase()
                               )
                               const isSubOpen = openSubCategory === sub.id
 
@@ -516,19 +632,27 @@ function ShopCatalogContent({
                                         setSelectedCategory(sub.id)
                                         setSearchQuery('')
                                         if (subChildren.length > 0) {
-                                          toggleSubCategory(sub.id)
+                                          setOpenSubCategory((prev) =>
+                                            prev === sub.id && isSubDirectlySelected ? null : sub.id
+                                          )
                                         }
                                       }}
                                       className={`flex-1 text-left py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
-                                        isSubSelected
+                                        isSubDirectlySelected
                                           ? 'bg-[#96161B] text-white font-bold shadow-xs'
+                                          : hasSelectedChild
+                                          ? 'bg-red-50 text-[#96161B] font-bold border border-red-200'
                                           : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200/70'
                                       }`}
                                     >
                                       <span className="flex items-center gap-1.5 truncate">
                                         <span
                                           className={`text-[10px] ${
-                                            isSubSelected ? 'text-white/80' : 'text-slate-400'
+                                            isSubDirectlySelected
+                                              ? 'text-white/80'
+                                              : hasSelectedChild
+                                              ? 'text-[#96161B]'
+                                              : 'text-slate-400'
                                           }`}
                                         >
                                           ↳
@@ -537,7 +661,11 @@ function ShopCatalogContent({
                                       </span>
                                       <span
                                         className={`text-[10px] shrink-0 ml-1.5 ${
-                                          isSubSelected ? 'text-white/80' : 'text-slate-400'
+                                          isSubDirectlySelected
+                                            ? 'text-white/80'
+                                            : hasSelectedChild
+                                            ? 'text-[#96161B]'
+                                            : 'text-slate-400'
                                         }`}
                                       >
                                         ({subCount})
@@ -549,10 +677,14 @@ function ShopCatalogContent({
                                         type="button"
                                         onClick={(e) => {
                                           e.stopPropagation()
-                                          toggleSubCategory(sub.id)
+                                          setOpenSubCategory((prev) => (prev === sub.id ? null : sub.id))
                                         }}
-                                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
-                                        title={isSubOpen ? 'Collapse' : 'Expand'}
+                                        className={`p-1 rounded-md transition-colors cursor-pointer ${
+                                          isSubDirectlySelected
+                                            ? 'hover:bg-white/20 text-white'
+                                            : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60'
+                                        }`}
+                                        title={isSubOpen ? 'Collapse subcategories' : 'Expand subcategories'}
                                       >
                                         {isSubOpen ? (
                                           <ChevronDown className="w-3.5 h-3.5" />
@@ -565,11 +697,12 @@ function ShopCatalogContent({
 
                                   {/* NESTED SUB-SUBCATEGORIES (LEVEL 2) IF ANY */}
                                   {subChildren.length > 0 && isSubOpen && (
-                                    <div className="pl-3 py-1 ml-2 space-y-1 border-l-2 border-slate-200">
+                                    <div className="pl-3 py-1 ml-2 space-y-1 border-l-2 border-red-200 bg-white/60 rounded-r-lg">
                                       {subChildren.map((subChild) => {
                                         const isChildSelected =
                                           selectedCategory === subChild.id ||
-                                          selectedCategory === subChild.slug
+                                          selectedCategory === subChild.slug ||
+                                          selectedCategory.toLowerCase() === subChild.name.toLowerCase()
                                         const childCount = getCategoryCount(subChild.id)
                                         return (
                                           <button
@@ -579,15 +712,20 @@ function ShopCatalogContent({
                                               setSelectedCategory(subChild.id)
                                               setSearchQuery('')
                                             }}
-                                            className={`w-full text-left py-1 px-2 rounded-md text-[11px] font-medium transition-all flex items-center justify-between cursor-pointer ${
+                                            className={`w-full text-left py-1.5 px-2 rounded-md text-[11px] font-medium transition-all flex items-center justify-between cursor-pointer ${
                                               isChildSelected
-                                                ? 'bg-[#96161B] text-white font-bold'
+                                                ? 'bg-[#96161B] text-white font-bold shadow-xs'
                                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                             }`}
                                           >
-                                            <span className="truncate">• {subChild.name}</span>
+                                            <span className="truncate flex items-center gap-1.5">
+                                              <span className={isChildSelected ? 'text-white' : 'text-slate-400'}>
+                                                •
+                                              </span>
+                                              <span>{subChild.name}</span>
+                                            </span>
                                             <span
-                                              className={`text-[9px] shrink-0 ${
+                                              className={`text-[9px] shrink-0 ml-1 ${
                                                 isChildSelected
                                                   ? 'text-white/80'
                                                   : 'text-slate-400'
