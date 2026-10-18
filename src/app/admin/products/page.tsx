@@ -30,6 +30,7 @@ import {
   Folder,
   Layers,
   ChevronRight,
+  ChevronDown,
   ExternalLink,
   Maximize2,
   ArrowRight,
@@ -98,11 +99,17 @@ function AdminProductsContent() {
   const [showInlineNewSubcategory, setShowInlineNewSubcategory] = useState(false)
   const [inlineSubcategoryName, setInlineSubcategoryName] = useState('')
 
+  // Active main category & subcategory in 3-level visual hierarchy navigator
+  const [activeMainCatId, setActiveMainCatId] = useState<string>('cat-surg-inst')
+  const [activeSubcatId, setActiveSubcatId] = useState<string | null>('sub-dental-surgery')
+
   const [formData, setFormData] = useState({
     title: '',
     sku: '',
     category_id: '',
     subcategory_id: '',
+    sub_subcategory_id: '',
+    sub_subcategory_name: '',
     price: 49.50,
     original_price: 59.50,
     weight: '140g',
@@ -174,23 +181,39 @@ function AdminProductsContent() {
   // ==========================================
   // PRODUCT ADD / EDIT OPEN HANDLERS
   // ==========================================
-  const handleOpenAdd = (overrideCatId?: string, overrideSubcatId?: string) => {
+  const handleOpenAdd = (
+    overrideCatId?: string | null,
+    overrideSubcatId?: string | null,
+    overrideSubSubcatId?: string | null
+  ) => {
     setEditingProduct(null)
     setShowInlineNewCategory(false)
     setShowInlineNewSubcategory(false)
 
     // Determine target category and subcategory
-    let targetCat = overrideCatId || ''
-    let targetSubcat = overrideSubcatId || ''
-
+    let targetCat = overrideCatId || activeMainCatId || ''
     if (!targetCat) {
       const mainCats = categories.filter((c) => !c.parent_id || c.level === 0)
       targetCat = mainCats[0]?.id || 'cat-surg-inst'
     }
 
+    let targetSubcat = overrideSubcatId || activeSubcatId || ''
     if (!targetSubcat) {
-      const subs = categories.filter((c) => c.parent_id === targetCat)
+      const subs = categories.filter((c) => c.parent_id === targetCat && c.level === 1)
       targetSubcat = subs[0]?.id || ''
+    }
+
+    let targetSubSubcat = overrideSubSubcatId || ''
+    let targetSubSubcatName = ''
+    if (targetSubSubcat) {
+      const subsub = categories.find((c) => c.id === targetSubSubcat)
+      if (subsub) targetSubSubcatName = subsub.name
+    } else if (targetSubcat) {
+      const subsubs = categories.filter((c) => c.parent_id === targetSubcat && c.level === 2)
+      if (subsubs.length > 0) {
+        targetSubSubcat = subsubs[0].id
+        targetSubSubcatName = subsubs[0].name
+      }
     }
 
     setFormData({
@@ -198,6 +221,8 @@ function AdminProductsContent() {
       sku: `SKU-${Math.floor(1000 + Math.random() * 9000)}`,
       category_id: targetCat,
       subcategory_id: targetSubcat,
+      sub_subcategory_id: targetSubSubcat,
+      sub_subcategory_name: targetSubSubcatName,
       price: 49.50,
       original_price: 59.50,
       weight: '140g',
@@ -252,11 +277,29 @@ function AdminProductsContent() {
       if (matchSub) resolvedSubId = matchSub.id
     }
 
+    // Resolve sub-subcategory id (Level 2 group)
+    let resolvedSubSubId = prod.sub_subcategory_id || ''
+    let resolvedSubSubName = prod.sub_subcategory_name || prod.specifications?.Group || ''
+    if (!resolvedSubSubId && resolvedSubId) {
+      const subsubs = categories.filter((c) => c.parent_id === resolvedSubId && c.level === 2)
+      const matchSubSub = subsubs.find(
+        (c) =>
+          prod.title.toLowerCase().includes(c.name.toLowerCase()) ||
+          c.name.toLowerCase() === prod.specifications?.Group?.toLowerCase()
+      )
+      if (matchSubSub) {
+        resolvedSubSubId = matchSubSub.id
+        resolvedSubSubName = matchSubSub.name
+      }
+    }
+
     setFormData({
       title: prod.title,
       sku: prod.sku || '',
       category_id: prod.category_id || 'cat-surg-inst',
       subcategory_id: resolvedSubId,
+      sub_subcategory_id: resolvedSubSubId,
+      sub_subcategory_name: resolvedSubSubName,
       price: prod.price ?? 55.95,
       original_price: prod.original_price ?? 64.95,
       weight: prod.weight || prod.specifications?.Weight || '140g',
@@ -396,11 +439,14 @@ function AdminProductsContent() {
 
     const catObj = categories.find((c) => c.id === formData.category_id)
     const subcatObj = categories.find((c) => c.id === formData.subcategory_id)
+    const subSubcatObj = categories.find((c) => c.id === formData.sub_subcategory_id)
 
     const resolvedCatId = catObj?.id || 'cat-surg-inst'
     const resolvedCatName = catObj?.name || 'Surgical Instruments'
     const resolvedSubcatId = subcatObj?.id || null
     const resolvedSubcatName = subcatObj?.name || ''
+    const resolvedSubSubcatId = subSubcatObj?.id || formData.sub_subcategory_id || null
+    const resolvedSubSubcatName = subSubcatObj?.name || formData.sub_subcategory_name || ''
 
     const parsedSizes = formData.sizes
       .split(',')
@@ -444,6 +490,8 @@ function AdminProductsContent() {
               category_name: resolvedCatName,
               subcategory_id: resolvedSubcatId,
               subcategory_name: resolvedSubcatName,
+              sub_subcategory_id: resolvedSubSubcatId,
+              sub_subcategory_name: resolvedSubSubcatName,
               short_description: formData.short_description,
               full_description: formData.full_description,
               featured_image: formData.featured_image,
@@ -460,6 +508,7 @@ function AdminProductsContent() {
                 ...(p.specifications || {}),
                 Category: resolvedCatName,
                 Subcategory: resolvedSubcatName,
+                Group: resolvedSubSubcatName,
                 Weight: formData.weight || '140g',
               },
               updated_at: new Date().toISOString(),
@@ -477,6 +526,8 @@ function AdminProductsContent() {
         category_name: resolvedCatName,
         subcategory_id: resolvedSubcatId,
         subcategory_name: resolvedSubcatName,
+        sub_subcategory_id: resolvedSubSubcatId,
+        sub_subcategory_name: resolvedSubSubcatName,
         price: Number(formData.price),
         original_price: Number(formData.original_price),
         weight: formData.weight || '140g',
@@ -492,6 +543,7 @@ function AdminProductsContent() {
         specifications: {
           Category: resolvedCatName,
           Subcategory: resolvedSubcatName,
+          Group: resolvedSubSubcatName,
           Weight: formData.weight || '140g',
           'Quality Grade': 'Medical Grade German Stainless Steel',
           Sterilization: 'Autoclavable (134°C)',
@@ -620,8 +672,36 @@ function AdminProductsContent() {
 
   // Current product location helper
   const selectedCatObj = categories.find((c) => c.id === formData.category_id)
-  const availableSubcats = categories.filter((c) => c.parent_id === formData.category_id)
+  const availableSubcats = categories.filter((c) => c.parent_id === formData.category_id && c.level === 1)
   const selectedSubcatObj = categories.find((c) => c.id === formData.subcategory_id)
+  const availableSubSubcats = categories.filter(
+    (c) => c.parent_id === formData.subcategory_id && c.level === 2
+  )
+  const selectedSubSubcatObj = categories.find((c) => c.id === formData.sub_subcategory_id)
+
+  // Matching helpers for 3-level tree
+  const matchProductToGroup = (p: ProductItem, group: CategoryItem) => {
+    if (p.sub_subcategory_id === group.id) return true
+    if (p.sub_subcategory_name && p.sub_subcategory_name.toLowerCase() === group.name.toLowerCase()) return true
+    if (p.specifications?.Group && p.specifications.Group.toLowerCase() === group.name.toLowerCase()) return true
+    if (p.title.toLowerCase().includes(group.name.toLowerCase())) return true
+    return false
+  }
+
+  const matchProductToSubcat = (p: ProductItem, subcat: CategoryItem) => {
+    if (p.subcategory_id === subcat.id) return true
+    if (p.category_id === subcat.id) return true
+    if (p.subcategory_name && p.subcategory_name.toLowerCase() === subcat.name.toLowerCase()) return true
+    if (p.specifications?.Subcategory && p.specifications.Subcategory.toLowerCase() === subcat.name.toLowerCase()) return true
+    return false
+  }
+
+  const matchProductToMainCat = (p: ProductItem, mainCat: CategoryItem) => {
+    if (p.category_id === mainCat.id) return true
+    if (p.category_name && p.category_name.toLowerCase() === mainCat.name.toLowerCase()) return true
+    const childSubs = categories.filter((c) => c.parent_id === mainCat.id)
+    return childSubs.some((s) => s.id === p.subcategory_id || s.id === p.category_id)
+  }
 
   return (
     <AdminShell>
@@ -703,60 +783,268 @@ function AdminProductsContent() {
         </div>
 
         {/* ========================================================
-            CATEGORY QUICK TILES EXPLORER (INTERACTIVE BAR)
+            3-LEVEL STOREFRONT HIERARCHY & PRODUCTS NAVIGATOR
         ======================================================== */}
-        <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <FolderTree className="w-4 h-4 text-[#96161B]" />
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-                Website Categories & Subcategories
-              </h2>
+        <div className="bg-white p-5 sm:p-7 rounded-3xl border border-slate-200/90 shadow-sm space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <FolderTree className="w-5 h-5 text-[#96161B]" />
+                <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+                  Website Categories & Products Hierarchy (3 Levels)
+                </h2>
+              </div>
+              <p className="text-xs text-slate-500 font-medium mt-1">
+                Browse Main Category ➔ Subcategory ➔ Further Subcategory / Instrument Group. Click thumbnails to View Large, edit, delete, or quick-add products.
+              </p>
             </div>
-            <button
-              onClick={() => setIsAddCategoryOpen(true)}
-              className="text-xs font-bold text-[#96161B] hover:underline flex items-center gap-1 cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Add New Category</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsAddCategoryOpen(true)}
+                className="text-xs font-bold text-[#96161B] hover:bg-red-50 px-3 py-2 rounded-xl border border-red-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Category</span>
+              </button>
+              <button
+                onClick={() => handleOpenAdd(activeMainCatId, activeSubcatId || undefined)}
+                className="text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Product In Selected Group</span>
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-            {mainCategories.map((cat) => {
-              const childSubs = categories.filter((c) => c.parent_id === cat.id)
-              const catProds = products.filter(
-                (p) =>
-                  p.category_id === cat.id ||
-                  childSubs.some((s) => s.id === p.subcategory_id || s.id === p.category_id) ||
-                  p.category_name?.toLowerCase() === cat.name.toLowerCase()
-              )
+          {/* LEVEL 0: MAIN CATEGORIES TABS */}
+          <div>
+            <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#96161B]" />
+              <span>Level 1 — Main Categories</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+              {mainCategories.map((cat) => {
+                const childSubs = categories.filter((c) => c.parent_id === cat.id && c.level === 1)
+                const catProds = products.filter((p) => matchProductToMainCat(p, cat))
+                const isActive = activeMainCatId === cat.id
 
-              return (
-                <div
-                  key={cat.id}
-                  onClick={() => {
-                    setDrilldownCategory(cat)
-                    setDrilldownSubcategory(null)
-                  }}
-                  className="p-3.5 rounded-2xl border border-slate-200 hover:border-[#96161B] hover:shadow-md bg-slate-50/60 hover:bg-white cursor-pointer transition-all group flex flex-col justify-between text-left"
-                >
-                  <div className="space-y-1">
-                    <div className="text-xl">{cat.icon || '📁'}</div>
-                    <div className="font-extrabold text-xs text-slate-900 group-hover:text-[#96161B] line-clamp-1">
-                      {cat.name}
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setActiveMainCatId(cat.id)
+                      const firstSub = childSubs[0]?.id || null
+                      setActiveSubcatId(firstSub)
+                    }}
+                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                      isActive
+                        ? 'border-[#96161B] bg-gradient-to-br from-red-50/80 to-white shadow-md shadow-red-950/5 ring-2 ring-[#96161B]/20'
+                        : 'border-slate-200 hover:border-slate-300 bg-slate-50/70 hover:bg-white'
+                    }`}
+                  >
+                    <div>
+                      <div className="text-xl mb-1">{cat.icon || '📁'}</div>
+                      <div className={`font-black text-xs sm:text-sm line-clamp-1 ${isActive ? 'text-[#96161B]' : 'text-slate-800'}`}>
+                        {cat.name}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between text-[11px] font-semibold text-slate-500 border-t border-slate-200/80 pt-2">
-                    <span>{childSubs.length} Subcategories</span>
-                    <span className="bg-[#96161B]/10 text-[#96161B] font-black px-1.5 py-0.5 rounded">
-                      {catProds.length} Prods
-                    </span>
-                  </div>
+                    <div className="mt-3 flex items-center justify-between text-[11px] font-semibold text-slate-500 border-t border-slate-200/70 pt-2">
+                      <span>{childSubs.length} Subcats</span>
+                      <span className={`px-1.5 py-0.5 rounded font-black text-[10px] ${
+                        isActive ? 'bg-[#96161B] text-white' : 'bg-slate-200 text-slate-700'
+                      }`}>
+                        {catProds.length} Prods
+                      </span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* LEVEL 1 & LEVEL 2: SUBCATEGORIES ACCORDION WITH GROUPS & PRODUCTS */}
+          {activeMainCatId && (() => {
+            const currentMainCat = categories.find((c) => c.id === activeMainCatId)
+            const currentSubs = categories.filter((c) => c.parent_id === activeMainCatId && c.level === 1)
+
+            if (currentSubs.length === 0) {
+              return (
+                <div className="p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
+                  <p className="text-xs text-slate-500 font-semibold">No subcategories defined for this category.</p>
                 </div>
               )
-            })}
-          </div>
+            }
+
+            return (
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                    <span>Level 2 — Subcategories in {currentMainCat?.name} (Click subcategory to expand instrument groups & products)</span>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setNewSubcategoryData({ parent_id: activeMainCatId, name: '', description: '' })
+                      setIsAddSubcategoryOpen(true)
+                    }}
+                    className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>+ New Subcategory</span>
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {currentSubs.map((subcat) => {
+                    const isOpen = activeSubcatId === subcat.id
+                    const groups = categories.filter((c) => c.parent_id === subcat.id && c.level === 2)
+                    const subcatProds = products.filter((p) => matchProductToSubcat(p, subcat))
+
+                    return (
+                      <div
+                        key={subcat.id}
+                        className={`rounded-2xl border transition-all overflow-hidden ${
+                          isOpen
+                            ? 'border-indigo-300 bg-slate-50/40 shadow-sm'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        {/* SUBCATEGORY HEADER BAR (CLICK TO TOGGLE - ONE OPEN AT A TIME) */}
+                        <div
+                          onClick={() => setActiveSubcatId(isOpen ? null : subcat.id)}
+                          className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 cursor-pointer select-none bg-white hover:bg-slate-50/80 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-sm ${
+                              isOpen ? 'bg-indigo-600 text-white' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {isOpen ? '▾' : '▸'}
+                            </div>
+                            <div>
+                              <div className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                                <span>{subcat.name}</span>
+                                <span className="text-[11px] font-bold bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full border border-indigo-200/60">
+                                  {groups.length} Groups
+                                </span>
+                                <span className="text-[11px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                                  {subcatProds.length} Products
+                                </span>
+                              </div>
+                              <p className="text-xs text-slate-500 line-clamp-1">{subcat.description}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
+                              className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                              title="Add product directly into this subcategory"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>+ Add Product in {subcat.name}</span>
+                            </button>
+                            <button
+                              onClick={() => setActiveSubcatId(isOpen ? null : subcat.id)}
+                              className="text-xs font-bold text-slate-400 hover:text-slate-700 p-1.5 rounded-lg"
+                            >
+                              {isOpen ? 'Collapse' : 'Expand'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* LEVEL 3: FURTHER SUBCATEGORIES / INSTRUMENT GROUPS & PRODUCTS */}
+                        {isOpen && (
+                          <div className="p-4 sm:p-5 border-t border-slate-200/80 space-y-5 bg-slate-50/50 animate-fade-in">
+                            {groups.length === 0 ? (
+                              <div>
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-xs font-bold text-slate-600">Direct Products in {subcat.name}:</span>
+                                  <button
+                                    onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
+                                    className="text-xs font-bold text-[#96161B] hover:underline flex items-center gap-1 cursor-pointer"
+                                  >
+                                    <Plus className="w-3 h-3" />
+                                    <span>Add Product</span>
+                                  </button>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                  {subcatProds.map((prod) => (
+                                    <ProductMiniCard
+                                      key={prod.id}
+                                      prod={prod}
+                                      onViewLarge={() => setPreviewLargeImage(prod.featured_image)}
+                                      onEdit={() => handleOpenEdit(prod)}
+                                      onDelete={() => handleDelete(prod.id)}
+                                    />
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              groups.map((group) => {
+                                const groupProds = products.filter((p) => matchProductToGroup(p, group))
+
+                                return (
+                                  <div
+                                    key={group.id}
+                                    className="p-4 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-3"
+                                  >
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                                      <div className="flex items-center gap-2">
+                                        <span className="w-2 h-2 rounded-full bg-[#96161B]" />
+                                        <h4 className="font-extrabold text-xs sm:text-sm text-slate-900">
+                                          {group.name}
+                                        </h4>
+                                        <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
+                                          {groupProds.length} {groupProds.length === 1 ? 'Product' : 'Products'}
+                                        </span>
+                                      </div>
+
+                                      <button
+                                        onClick={() => handleOpenAdd(activeMainCatId, subcat.id, group.id)}
+                                        className="text-xs font-bold text-emerald-700 hover:text-white hover:bg-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl transition-all cursor-pointer flex items-center gap-1 w-fit"
+                                      >
+                                        <Plus className="w-3 h-3" />
+                                        <span>+ Add Product in {group.name}</span>
+                                      </button>
+                                    </div>
+
+                                    {groupProds.length > 0 ? (
+                                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 pt-1">
+                                        {groupProds.map((prod) => (
+                                          <ProductMiniCard
+                                            key={prod.id}
+                                            prod={prod}
+                                            onViewLarge={() => setPreviewLargeImage(prod.featured_image)}
+                                            onEdit={() => handleOpenEdit(prod)}
+                                            onDelete={() => handleDelete(prod.id)}
+                                          />
+                                        ))}
+                                      </div>
+                                    ) : (
+                                      <div className="p-4 rounded-xl border border-dashed border-slate-200 bg-slate-50/60 text-center flex items-center justify-between">
+                                        <span className="text-xs text-slate-400 font-medium">No products uploaded in this group yet.</span>
+                                        <button
+                                          onClick={() => handleOpenAdd(activeMainCatId, subcat.id, group.id)}
+                                          className="text-xs font-bold text-[#96161B] hover:underline cursor-pointer"
+                                        >
+                                          + Upload 1st Product
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })()}
         </div>
 
         {/* ========================================================
@@ -903,22 +1191,36 @@ function AdminProductsContent() {
                         </div>
                       </td>
 
-                      {/* Category & Subcategory */}
+                      {/* Category, Subcategory & Instrument Group */}
                       <td className="p-4 sm:p-5">
-                        <div className="font-semibold text-slate-800">{prod.category_name || 'General'}</div>
-                        <div className="text-[11px] text-slate-500 font-medium">
-                          ↳ {prod.subcategory_name || prod.specifications?.Subcategory || 'Standard Line'}
+                        <div className="font-bold text-slate-800">{prod.category_name || 'General'}</div>
+                        <div className="text-[11px] text-[#96161B] font-semibold flex items-center gap-1 mt-0.5">
+                          <span>↳</span>
+                          <span>{prod.subcategory_name || prod.specifications?.Subcategory || 'Standard Line'}</span>
                         </div>
+                        {(prod.sub_subcategory_name || prod.specifications?.Group) && (
+                          <div className="text-[10px] text-indigo-700 font-bold pl-3 flex items-center gap-1 mt-0.5">
+                            <span>↳</span>
+                            <span className="bg-indigo-50 border border-indigo-100 px-1.5 py-0.5 rounded">
+                              {prod.sub_subcategory_name || prod.specifications?.Group}
+                            </span>
+                          </div>
+                        )}
                       </td>
 
-                      {/* Pricing */}
+                      {/* Pricing with Discount */}
                       <td className="p-4 sm:p-5">
                         <div className="text-[#96161B] font-extrabold text-sm">
                           ${(prod.price ?? 49.50).toFixed(2)}
                         </div>
-                        {prod.original_price && (
-                          <div className="text-slate-400 text-xs line-through font-semibold">
-                            ${prod.original_price.toFixed(2)}
+                        {prod.original_price && prod.original_price > (prod.price ?? 0) && (
+                          <div className="flex items-center gap-1 text-[11px] mt-0.5">
+                            <span className="text-slate-400 line-through font-semibold">
+                              ${prod.original_price.toFixed(2)}
+                            </span>
+                            <span className="text-emerald-700 bg-emerald-50 px-1 rounded font-black text-[10px]">
+                              -{Math.round(((prod.original_price - (prod.price ?? 0)) / prod.original_price) * 100)}%
+                            </span>
                           </div>
                         )}
                       </td>
@@ -977,9 +1279,16 @@ function AdminProductsContent() {
                         </button>
                       </td>
 
-                      {/* Actions: Edit, Delete, View Large */}
+                      {/* Actions: + Quick Add, Storefront View, Edit, Delete */}
                       <td className="p-4 sm:p-5 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleOpenAdd(prod.category_id, prod.subcategory_id, prod.sub_subcategory_id || undefined)}
+                            className="p-2 text-emerald-700 hover:text-white hover:bg-emerald-600 bg-emerald-50 rounded-xl transition-all cursor-pointer font-bold"
+                            title={`+ Quick Add Product in ${prod.subcategory_name || 'this category'}`}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </button>
                           <Link
                             href={`/products/${prod.slug || prod.id}`}
                             target="_blank"
@@ -1580,14 +1889,22 @@ function AdminProductsContent() {
             <div className="p-3 bg-red-50/70 border border-red-200/80 rounded-2xl flex items-center gap-2 text-xs font-bold text-slate-800 mb-5">
               <span className="text-base shrink-0">📍</span>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <span className="text-slate-500 font-semibold">Location on Website:</span>
+                <span className="text-slate-500 font-semibold">Storefront Hierarchy:</span>
                 <span className="text-slate-900">Home</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-[#96161B] font-extrabold">{selectedCatObj?.name || 'Category'}</span>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                 <span className="text-slate-800 font-extrabold">
-                  {selectedSubcatObj?.name || 'General Product List'}
+                  {selectedSubcatObj?.name || 'General Subcategory'}
                 </span>
+                {(selectedSubSubcatObj || formData.sub_subcategory_name) && (
+                  <>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="text-indigo-800 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded font-extrabold">
+                      {selectedSubSubcatObj?.name || formData.sub_subcategory_name}
+                    </span>
+                  </>
+                )}
               </div>
             </div>
 
@@ -1608,21 +1925,21 @@ function AdminProductsContent() {
                 />
               </div>
 
-              {/* Category & Subcategory Dropdowns with "+ Create New" buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Category Selection */}
+              {/* 3 Cascading Category Dropdowns: Main Category, Subcategory, Further Subcategory / Group */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                {/* 1. Category Selection */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Category *
+                      1. Main Category *
                     </label>
                     <button
                       type="button"
                       onClick={() => setShowInlineNewCategory(!showInlineNewCategory)}
-                      className="text-[11px] font-bold text-[#96161B] hover:underline flex items-center gap-0.5 cursor-pointer"
+                      className="text-[10px] font-bold text-[#96161B] hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
-                      <span>New Category</span>
+                      <span>+ New</span>
                     </button>
                   </div>
 
@@ -1665,14 +1982,18 @@ function AdminProductsContent() {
                       value={formData.category_id}
                       onChange={(e) => {
                         const newCatId = e.target.value
-                        const available = categories.filter((c) => c.parent_id === newCatId)
+                        const available = categories.filter((c) => c.parent_id === newCatId && c.level === 1)
+                        const firstSub = available[0]?.id || ''
+                        const availableGroups = categories.filter((c) => c.parent_id === firstSub && c.level === 2)
                         setFormData({
                           ...formData,
                           category_id: newCatId,
-                          subcategory_id: available[0]?.id || '',
+                          subcategory_id: firstSub,
+                          sub_subcategory_id: availableGroups[0]?.id || '',
+                          sub_subcategory_name: availableGroups[0]?.name || '',
                         })
                       }}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
                     >
                       {mainCategories.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -1683,19 +2004,19 @@ function AdminProductsContent() {
                   )}
                 </div>
 
-                {/* Subcategory Selection */}
+                {/* 2. Subcategory Selection */}
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Subcategory
+                      2. Subcategory *
                     </label>
                     <button
                       type="button"
                       onClick={() => setShowInlineNewSubcategory(!showInlineNewSubcategory)}
-                      className="text-[11px] font-bold text-[#96161B] hover:underline flex items-center gap-0.5 cursor-pointer"
+                      className="text-[10px] font-bold text-[#96161B] hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />
-                      <span>New Subcategory</span>
+                      <span>+ New</span>
                     </button>
                   </div>
 
@@ -1736,8 +2057,17 @@ function AdminProductsContent() {
                   ) : (
                     <select
                       value={formData.subcategory_id}
-                      onChange={(e) => setFormData({ ...formData, subcategory_id: e.target.value })}
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
+                      onChange={(e) => {
+                        const newSubId = e.target.value
+                        const availableGroups = categories.filter((c) => c.parent_id === newSubId && c.level === 2)
+                        setFormData({
+                          ...formData,
+                          subcategory_id: newSubId,
+                          sub_subcategory_id: availableGroups[0]?.id || '',
+                          sub_subcategory_name: availableGroups[0]?.name || '',
+                        })
+                      }}
+                      className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
                     >
                       <option value="">Select Subcategory...</option>
                       {availableSubcats.map((sub) => (
@@ -1747,6 +2077,35 @@ function AdminProductsContent() {
                       ))}
                     </select>
                   )}
+                </div>
+
+                {/* 3. Further Subcategory / Instrument Group (Level 2) */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      3. Group / Sub-Subcat
+                    </label>
+                  </div>
+                  <select
+                    value={formData.sub_subcategory_id}
+                    onChange={(e) => {
+                      const selectedId = e.target.value
+                      const subsub = categories.find((c) => c.id === selectedId)
+                      setFormData({
+                        ...formData,
+                        sub_subcategory_id: selectedId,
+                        sub_subcategory_name: subsub?.name || '',
+                      })
+                    }}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B] font-semibold"
+                  >
+                    <option value="">Select Group / Further Sub...</option>
+                    {availableSubSubcats.map((subsub) => (
+                      <option key={subsub.id} value={subsub.id}>
+                        ↳ {subsub.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1808,6 +2167,19 @@ function AdminProductsContent() {
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
                   />
                 </div>
+
+                {/* LIVE DISCOUNT PERCENTAGE BADGE & SAVINGS */}
+                {formData.original_price > formData.price && formData.price > 0 && (
+                  <div className="col-span-2 sm:col-span-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-800">
+                    <span className="flex items-center gap-1.5">
+                      <span>🎉</span>
+                      <span>Live Discount: {Math.round(((formData.original_price - formData.price) / formData.original_price) * 100)}% OFF</span>
+                    </span>
+                    <span className="font-extrabold text-emerald-700">
+                      Client saves ${(formData.original_price - formData.price).toFixed(2)} per unit
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Sizes & Stock Quantity */}
@@ -2167,6 +2539,93 @@ function AdminProductsContent() {
       )}
 
     </AdminShell>
+  )
+}
+
+function ProductMiniCard({
+  prod,
+  onViewLarge,
+  onEdit,
+  onDelete,
+}: {
+  prod: ProductItem
+  onViewLarge: () => void
+  onEdit: () => void
+  onDelete: () => void
+}) {
+  return (
+    <div className="p-3 bg-white rounded-2xl border border-slate-200/90 hover:border-[#96161B]/60 hover:shadow-md transition-all group flex flex-col justify-between">
+      <div>
+        <div className="relative w-full h-32 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 flex items-center justify-center mb-2.5">
+          <Image
+            src={prod.featured_image || '/images/products/image-399.png'}
+            alt={prod.title}
+            fill
+            unoptimized
+            className="object-contain p-2 group-hover:scale-105 transition-transform"
+          />
+          <button
+            type="button"
+            onClick={onViewLarge}
+            className="absolute top-2 right-2 p-1.5 rounded-lg bg-white/90 hover:bg-[#96161B] text-slate-600 hover:text-white shadow-sm transition-colors cursor-pointer"
+            title="View Large"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </button>
+          {prod.badge && (
+            <span className="absolute top-2 left-2 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-[#96161B] text-white shadow-xs">
+              {prod.badge}
+            </span>
+          )}
+        </div>
+
+        <div className="text-xs font-black text-slate-900 line-clamp-2 leading-snug group-hover:text-[#96161B] transition-colors" title={prod.title}>
+          {prod.title}
+        </div>
+        <div className="text-[10px] font-mono text-slate-400 mt-1 flex items-center justify-between">
+          <span>{prod.sku || 'SKU-N/A'}</span>
+          <span className="text-slate-500 font-semibold">{prod.weight || '140g'}</span>
+        </div>
+      </div>
+
+      <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between">
+        <div>
+          <span className="text-[#96161B] font-black text-sm">
+            ${(prod.price ?? 49.50).toFixed(2)}
+          </span>
+          {prod.original_price && prod.original_price > (prod.price ?? 0) && (
+            <span className="text-slate-400 text-[11px] line-through ml-1.5 font-semibold">
+              ${prod.original_price.toFixed(2)}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1">
+          <Link
+            href={`/products/${prod.slug || prod.id}`}
+            target="_blank"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+            title="Storefront View"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Link>
+          <button
+            onClick={onEdit}
+            className="p-1.5 text-slate-600 hover:text-[#96161B] hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            title="Edit Product"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+            title="Delete Product"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }
 

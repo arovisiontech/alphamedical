@@ -266,9 +266,11 @@ export function saveStoredProducts(products: ProductItem[]): void {
 export function resetToCleanBaselineProducts(): ProductItem[] {
   if (typeof window !== 'undefined') {
     try {
+      localStorage.removeItem('alpha_products_v3')
       localStorage.removeItem('alpha_products_v2')
       localStorage.removeItem('alpha_products')
       const serialized = JSON.stringify(INITIAL_PRODUCTS_SEED)
+      localStorage.setItem('alpha_products_v4', serialized)
       localStorage.setItem('alpha_products_v3', serialized)
       localStorage.setItem('alpha_products_v2', serialized)
       localStorage.setItem('alpha_products', serialized)

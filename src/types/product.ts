@@ -35,6 +35,8 @@ export interface ProductItem {
   category_name?: string | null
   subcategory_id?: string | null
   subcategory_name?: string | null
+  sub_subcategory_id?: string | null
+  sub_subcategory_name?: string | null
   weight?: string | null
   gallery_images?: (ProductImageItem | string)[]
   price?: number | null

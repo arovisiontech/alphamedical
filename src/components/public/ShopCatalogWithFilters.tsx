@@ -226,6 +226,14 @@ function ShopCatalogContent({
 
         if (!inParent) return false
 
+        if (
+          p.sub_subcategory_id === catObj.id ||
+          p.sub_subcategory_name?.toLowerCase() === nameLower ||
+          p.specifications?.Group?.toLowerCase() === nameLower
+        ) {
+          return true
+        }
+
         const prodText = [
           p.title,
           p.short_description,
@@ -303,6 +311,9 @@ function ShopCatalogContent({
             .toLowerCase()
 
           const matchesItem =
+            p.sub_subcategory_id === selectedCatObj.id ||
+            p.sub_subcategory_name?.toLowerCase() === nameLower ||
+            p.specifications?.Group?.toLowerCase() === nameLower ||
             prodText.includes(nameLower) ||
             prodText.includes(nameLower.endsWith('s') ? nameLower.slice(0, -1) : nameLower) ||
             cleanWords.some((w) => prodText.includes(w.endsWith('s') ? w.slice(0, -1) : w))
