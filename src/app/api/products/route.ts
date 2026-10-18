@@ -13,12 +13,29 @@ const tmpFilePath = path.join(os.tmpdir(), 'alpha_products.json')
 const g = globalThis as unknown as { __alpha_products?: ProductItem[] }
 
 function getStoredProductsFromFile(): ProductItem[] {
-  // 1. Check src/data/products.json first (source of truth)
+  // 1. Check in-memory global store first (reflects latest live edits/deletions)
+  if (g.__alpha_products !== undefined && Array.isArray(g.__alpha_products)) {
+    return g.__alpha_products
+  }
+
+  // 2. Check /tmp on serverless environments
+  try {
+    if (fs.existsSync(tmpFilePath)) {
+      const content = fs.readFileSync(tmpFilePath, 'utf-8')
+      const parsed = JSON.parse(content)
+      if (Array.isArray(parsed)) {
+        g.__alpha_products = parsed
+        return parsed
+      }
+    }
+  } catch (e) {}
+
+  // 3. Fallback to src/data/products.json
   try {
     if (fs.existsSync(dataFilePath)) {
       const content = fs.readFileSync(dataFilePath, 'utf-8')
       const parsed = JSON.parse(content)
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         g.__alpha_products = parsed
         return parsed
       }
@@ -26,23 +43,6 @@ function getStoredProductsFromFile(): ProductItem[] {
   } catch (err) {
     console.error('[API /api/products] Error reading products file:', err)
   }
-
-  // 2. Check in-memory store
-  if (g.__alpha_products && Array.isArray(g.__alpha_products) && g.__alpha_products.length > 0) {
-    return g.__alpha_products
-  }
-
-  // 3. Check /tmp on serverless environments
-  try {
-    if (fs.existsSync(tmpFilePath)) {
-      const content = fs.readFileSync(tmpFilePath, 'utf-8')
-      const parsed = JSON.parse(content)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        g.__alpha_products = parsed
-        return parsed
-      }
-    }
-  } catch (e) {}
 
   return []
 }

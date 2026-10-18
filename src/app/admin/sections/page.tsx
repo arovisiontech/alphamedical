@@ -250,14 +250,14 @@ export default function AdminSectionsPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-[#96161B] uppercase tracking-wider mb-1">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#96161B] animate-pulse" />
-              <span>Interactive Homepage Sections</span>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#96161B]" />
+              <span>Homepage Content</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Homepage Sections & Process Workflow Manager
+              Sections & Content
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm mt-1">
-              100% dynamic management for 7-Step Order Process Workflow, Compliances, Promo Cards, Video, and Global Export sections. All edits persist permanently on refresh (F5).
+              Manage order workflow steps, compliance badges, promo banners, and media sections.
             </p>
           </div>
           <button

@@ -722,52 +722,26 @@ function AdminProductsContent() {
           <div>
             <div className="flex items-center gap-2 text-xs font-bold text-[#96161B] uppercase tracking-wider mb-1">
               <span className="w-2.5 h-2.5 rounded-full bg-[#96161B] animate-pulse" />
-              <span>Live Storefront Products & Category Hierarchy Manager</span>
+              <span>Catalog Management</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Products & Categories Management
+              Products Management
             </h1>
+            <p className="text-slate-500 text-xs sm:text-sm mt-1">
+              View, add, edit, and organize all products and their categories.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
-            {/* EXPLORE CATEGORIES & SUBCATEGORIES BUTTON */}
+          <div className="flex items-center gap-3">
             <button
-              onClick={() => setIsCategoryExplorerOpen(true)}
-              className="flex items-center gap-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl transition-all shadow-xs cursor-pointer"
-              title="Browse categories, subcategories and their products in a popup tree"
+              onClick={() => {
+                loadData()
+                showToast('Products refreshed!')
+              }}
+              className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl transition-all cursor-pointer"
+              title="Refresh Products"
             >
-              <FolderTree className="w-4 h-4 text-indigo-700" />
-              <span>Category Explorer ({mainCategories.length})</span>
-            </button>
-
-            {/* ADD CATEGORY BUTTON */}
-            <button
-              onClick={() => setIsAddCategoryOpen(true)}
-              className="flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 font-bold text-xs sm:text-sm px-3.5 py-3 rounded-2xl transition-all shadow-xs cursor-pointer"
-              title="Add a new main website category"
-            >
-              <FolderPlus className="w-4 h-4 text-blue-700" />
-              <span>+ Add Category</span>
-            </button>
-
-            {/* REFRESH / RESET BASELINE */}
-            <button
-              onClick={handleResetCleanBaseline}
-              className="flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 font-bold text-xs sm:text-sm px-3.5 py-3 rounded-2xl transition-all shadow-xs cursor-pointer"
-              title="Reset catalog to pristine 1-product-per-subcategory baseline and clear old dummy items"
-            >
-              <RefreshCw className="w-4 h-4 text-amber-700" />
-              <span>Clean Baseline (1 per Sub)</span>
-            </button>
-
-            {/* SAVE ALL */}
-            <button
-              onClick={handleSaveAllChanges}
-              disabled={isSavingAll}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl transition-all shadow-sm cursor-pointer"
-            >
-              <CheckCircle2 className="w-4 h-4 text-white" />
-              <span>{isSavingAll ? 'Saving...' : 'Save All Live'}</span>
+              <RefreshCw className="w-4 h-4" />
             </button>
 
             {/* ADD NEW PRODUCT BUTTON */}
@@ -777,7 +751,7 @@ function AdminProductsContent() {
               className="flex items-center gap-2 bg-[#96161B] hover:bg-[#7d1216] text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl transition-all shadow-md shadow-red-950/20 active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>+ Add New Product</span>
+              <span>Add New Product</span>
             </button>
           </div>
         </div>
@@ -791,36 +765,29 @@ function AdminProductsContent() {
               <div className="flex items-center gap-2">
                 <FolderTree className="w-5 h-5 text-[#96161B]" />
                 <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
-                  Website Categories & Products Hierarchy (3 Levels)
+                  Product Categories & Hierarchy
                 </h2>
               </div>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                Browse Main Category ➔ Subcategory ➔ Further Subcategory / Instrument Group. Click thumbnails to View Large, edit, delete, or quick-add products.
+                Browse products by category, subcategory, and instrument group.
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsAddCategoryOpen(true)}
-                className="text-xs font-bold text-[#96161B] hover:bg-red-50 px-3 py-2 rounded-xl border border-red-200 flex items-center gap-1.5 transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Category</span>
-              </button>
               <button
                 onClick={() => handleOpenAdd(activeMainCatId, activeSubcatId || undefined)}
                 className="text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] px-3.5 py-2 rounded-xl shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>+ Add Product In Selected Group</span>
+                <span>Add Product in Group</span>
               </button>
             </div>
           </div>
 
           {/* LEVEL 0: MAIN CATEGORIES TABS */}
           <div>
-            <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#96161B]" />
-              <span>Level 1 — Main Categories</span>
+              <span>Main Categories</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {mainCategories.map((cat) => {
@@ -879,9 +846,9 @@ function AdminProductsContent() {
             return (
               <div className="space-y-3 pt-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-[11px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
-                    <span>Level 2 — Subcategories in {currentMainCat?.name} (Click subcategory to expand instrument groups & products)</span>
+                    <span>Subcategories ({currentMainCat?.name})</span>
                   </div>
                   <button
                     onClick={() => {
@@ -891,7 +858,7 @@ function AdminProductsContent() {
                     className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
-                    <span>+ New Subcategory</span>
+                    <span>New Subcategory</span>
                   </button>
                 </div>
 
@@ -938,11 +905,11 @@ function AdminProductsContent() {
                           <div className="flex items-center gap-2 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
-                              className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                              className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                               title="Add product directly into this subcategory"
                             >
                               <Plus className="w-3.5 h-3.5" />
-                              <span>+ Add Product in {subcat.name}</span>
+                              <span>Add Product in {subcat.name}</span>
                             </button>
                             <button
                               onClick={() => setActiveSubcatId(isOpen ? null : subcat.id)}
@@ -1002,10 +969,10 @@ function AdminProductsContent() {
 
                                       <button
                                         onClick={() => handleOpenAdd(activeMainCatId, subcat.id, group.id)}
-                                        className="text-xs font-bold text-emerald-700 hover:text-white hover:bg-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl transition-all cursor-pointer flex items-center gap-1 w-fit"
+                                        className="text-xs font-bold text-emerald-700 hover:text-white hover:bg-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 w-fit"
                                       >
                                         <Plus className="w-3 h-3" />
-                                        <span>+ Add Product in {group.name}</span>
+                                        <span>Add Product in {group.name}</span>
                                       </button>
                                     </div>
 

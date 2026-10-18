@@ -249,7 +249,7 @@ function ShopCatalogContent({
         const singularName = nameLower.endsWith('s') ? nameLower.slice(0, -1) : nameLower
         if (prodText.includes(singularName)) return true
 
-        return cleanWords.some((w) => {
+        return cleanWords.length > 0 && cleanWords.every((w) => {
           const sing = w.endsWith('s') ? w.slice(0, -1) : w
           return prodText.includes(sing)
         })
@@ -316,7 +316,7 @@ function ShopCatalogContent({
             p.specifications?.Group?.toLowerCase() === nameLower ||
             prodText.includes(nameLower) ||
             prodText.includes(nameLower.endsWith('s') ? nameLower.slice(0, -1) : nameLower) ||
-            cleanWords.some((w) => prodText.includes(w.endsWith('s') ? w.slice(0, -1) : w))
+            (cleanWords.length > 0 && cleanWords.every((w) => prodText.includes(w.endsWith('s') ? w.slice(0, -1) : w)))
 
           matchesCat = Boolean(inParent && matchesItem)
         } else {
@@ -351,6 +351,9 @@ function ShopCatalogContent({
           p.title,
           p.sku,
           p.category_name,
+          p.subcategory_name || '',
+          p.sub_subcategory_name || '',
+          p.specifications?.Group || '',
           p.short_description,
           p.full_description,
           ...(p.features || []),
@@ -367,9 +370,7 @@ function ShopCatalogContent({
 
         matchesSearch =
           searchableText.includes(q) ||
-          (cleanWords.length > 0 && cleanWords.every((word) => searchableText.includes(word))) ||
-          (cleanWords.length > 0 &&
-            cleanWords.some((word) => searchableText.includes(word) && word.length >= 4))
+          (cleanWords.length > 0 && cleanWords.every((word) => searchableText.includes(word)))
       }
 
       // Price match

@@ -12,7 +12,7 @@ const tmpFilePath = path.join(os.tmpdir(), 'alpha_catalogues.json')
 const g = globalThis as unknown as { __alpha_catalogues?: any[] }
 
 function getStoredCataloguesFromFile(): any[] {
-  if (g.__alpha_catalogues && Array.isArray(g.__alpha_catalogues) && g.__alpha_catalogues.length > 0) {
+  if (g.__alpha_catalogues && Array.isArray(g.__alpha_catalogues)) {
     return g.__alpha_catalogues
   }
 
@@ -20,7 +20,7 @@ function getStoredCataloguesFromFile(): any[] {
     if (fs.existsSync(tmpFilePath)) {
       const content = fs.readFileSync(tmpFilePath, 'utf-8')
       const parsed = JSON.parse(content)
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         g.__alpha_catalogues = parsed
         return parsed
       }

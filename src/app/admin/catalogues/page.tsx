@@ -100,17 +100,20 @@ export default function AdminCataloguesPage() {
     const cats = getStoredCatalogues()
     setCatalogues(cats)
 
-    // Server disk sync
-    try {
-      const res = await fetch(`/api/catalogues?t=${Date.now()}`, { cache: 'no-store' })
-      if (res.ok) {
-        const serverCats = await res.json()
-        if (Array.isArray(serverCats) && serverCats.length > 0) {
-          setCatalogues(serverCats)
-          localStorage.setItem('alpha_catalogues', JSON.stringify(serverCats))
+    // Only sync from server if user hasn't explicitly customized or deleted catalogues
+    if (typeof window !== 'undefined' && localStorage.getItem('alpha_catalogues_user_managed') !== 'true') {
+      try {
+        const res = await fetch(`/api/catalogues?t=${Date.now()}`, { cache: 'no-store' })
+        if (res.ok) {
+          const serverCats = await res.json()
+          if (Array.isArray(serverCats) && serverCats.length > 0) {
+            setCatalogues(serverCats)
+            localStorage.setItem('alpha_catalogues_v4', JSON.stringify(serverCats))
+            localStorage.setItem('alpha_catalogues', JSON.stringify(serverCats))
+          }
         }
-      }
-    } catch (err) {}
+      } catch (err) {}
+    }
   }
 
   useEffect(() => {
@@ -163,10 +166,15 @@ export default function AdminCataloguesPage() {
 
   const handleDelete = (id: string) => {
     const target = catalogues.find((c) => c.id === id)
-    if (confirm(`Are you sure you want to delete "${target?.title || 'this catalogue'}"? Changes persist immediately.`)) {
+    if (confirm(`Are you sure you want to delete "${target?.title || 'this catalogue'}"?`)) {
       const updated = catalogues.filter((c) => c.id !== id)
       setCatalogues(updated)
       saveStoredCatalogues(updated)
+      fetch('/api/catalogues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated),
+      }).catch(() => {})
       showToast('Catalogue successfully removed!')
     }
   }
@@ -238,13 +246,13 @@ export default function AdminCataloguesPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider text-[#B92025] bg-red-50 px-2 py-0.5 rounded-md">
-                100% Dynamic Disk Persistence
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#B92025] bg-red-50 px-2.5 py-0.5 rounded-full">
+                PDF Catalogues
               </span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 mt-1">Official Product Catalogues (PDF)</h1>
+            <h1 className="text-2xl font-black text-slate-900 mt-1">Product Catalogues</h1>
             <p className="text-slate-500 text-xs mt-1">
-              Manage downloadable brochures matching the official store catalogue gallery.
+              Upload, edit, and manage downloadable product brochures and PDF catalogues.
             </p>
           </div>
           <button

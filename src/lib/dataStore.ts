@@ -205,19 +205,21 @@ export function getStoredProducts(): ProductItem[] {
     localStorage.setItem('alpha_products_v2', seedStr)
     localStorage.setItem('alpha_products', seedStr)
 
-    // Sync from server /api/products
-    if (!isProductsSyncInitiated) {
+    // Sync from server /api/products only if not user-managed
+    if (!isProductsSyncInitiated && localStorage.getItem('alpha_products_user_managed') !== 'true') {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
-            const serverStr = JSON.stringify(serverProds)
-            localStorage.setItem('alpha_products_v4', serverStr)
-            localStorage.setItem('alpha_products_v3', serverStr)
-            localStorage.setItem('alpha_products_v2', serverStr)
-            localStorage.setItem('alpha_products', serverStr)
-            window.dispatchEvent(new Event('alpha_content_updated'))
+            if (localStorage.getItem('alpha_products_user_managed') !== 'true') {
+              const serverStr = JSON.stringify(serverProds)
+              localStorage.setItem('alpha_products_v4', serverStr)
+              localStorage.setItem('alpha_products_v3', serverStr)
+              localStorage.setItem('alpha_products_v2', serverStr)
+              localStorage.setItem('alpha_products', serverStr)
+              window.dispatchEvent(new Event('alpha_content_updated'))
+            }
           }
         })
         .catch(() => {})
@@ -292,13 +294,24 @@ let isCataloguesSyncInitiated = false
 export function getStoredCatalogues(): CatalogueItem[] {
   if (typeof window === 'undefined') return INITIAL_CATALOGUES_SEED
   try {
-    const raw = localStorage.getItem('alpha_catalogues')
-    if (raw) {
+    const rawV4 = localStorage.getItem('alpha_catalogues_v4') || localStorage.getItem('alpha_catalogues')
+    if (rawV4) {
       try {
-        const parsed = JSON.parse(raw)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
+        const parsed = JSON.parse(rawV4)
+        if (Array.isArray(parsed)) {
+          if (parsed.length > 0) return parsed
+          if (localStorage.getItem('alpha_catalogues_user_managed') === 'true') return []
+        }
       } catch (err) {}
     }
+
+    if (localStorage.getItem('alpha_catalogues_user_managed') === 'true') {
+      return []
+    }
+
+    const seedStr = JSON.stringify(INITIAL_CATALOGUES_SEED)
+    localStorage.setItem('alpha_catalogues_v4', seedStr)
+    localStorage.setItem('alpha_catalogues', seedStr)
 
     if (!isCataloguesSyncInitiated) {
       isCataloguesSyncInitiated = true
@@ -306,9 +319,10 @@ export function getStoredCatalogues(): CatalogueItem[] {
         .then((res) => res.json())
         .then((serverCats) => {
           if (Array.isArray(serverCats) && serverCats.length > 0) {
-            const current = localStorage.getItem('alpha_catalogues')
-            if (!current || current === '[]') {
-              localStorage.setItem('alpha_catalogues', JSON.stringify(serverCats))
+            if (localStorage.getItem('alpha_catalogues_user_managed') !== 'true') {
+              const str = JSON.stringify(serverCats)
+              localStorage.setItem('alpha_catalogues_v4', str)
+              localStorage.setItem('alpha_catalogues', str)
               window.dispatchEvent(new Event('alpha_content_updated'))
             }
           }
@@ -324,16 +338,28 @@ export function getStoredCatalogues(): CatalogueItem[] {
 export function saveStoredCatalogues(catalogues: CatalogueItem[]): void {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.setItem('alpha_catalogues', JSON.stringify(catalogues))
+      const serialized = JSON.stringify(catalogues)
+      localStorage.setItem('alpha_catalogues_v4', serialized)
+      localStorage.setItem('alpha_catalogues', serialized)
+      localStorage.setItem('alpha_catalogues_user_managed', 'true')
       window.dispatchEvent(new Event('alpha_content_updated'))
+
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const alphaChannel = new BroadcastChannel('alpha_sync_channel')
+          alphaChannel.postMessage({ type: 'catalogues_updated', timestamp: Date.now() })
+          alphaChannel.close()
+        } catch (e) {}
+      }
 
       fetch('/api/catalogues', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(catalogues),
+        body: serialized,
       }).catch((e) => console.warn('Failed to sync catalogues to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_catalogues_v4', catalogues)
   savePersistentData('alpha_catalogues', catalogues)
 }
 

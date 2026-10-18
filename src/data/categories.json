@@ -276,7 +276,7 @@
   {
     "id": "sub-bone-retractors",
     "parent_id": "sub-bone-surgery",
-    "name": "Cheek Retractors",
+    "name": "Bone Retractors",
     "slug": "bone-retractors",
     "description": "Deep tissue exposure retractors and bone spreaders.",
     "sort_order": 5,

@@ -168,14 +168,14 @@ export default function AdminFaqsPage() {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px] font-black tracking-widest text-[#B92025] uppercase">
-                110% Dynamic FAQs Knowledgebase
+                Frequently Asked Questions
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Manage Frequently Asked Questions
+              Manage FAQs & Knowledgebase
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 max-w-2xl leading-relaxed">
-              Add, edit, or delete questions. All changes are written directly to disk (<code>src/data/faqs.json</code>) and immediately reflect live on the public <Link href="/faq" target="_blank" className="text-[#B92025] font-bold underline inline-flex items-center gap-1">/faq storefront <ExternalLink className="w-3 h-3" /></Link>.
+              Add, edit, or organize questions and answers displayed on the public <Link href="/faq" target="_blank" className="text-[#B92025] font-bold underline inline-flex items-center gap-1">FAQ page <ExternalLink className="w-3 h-3" /></Link>.
             </p>
           </div>
 
@@ -183,7 +183,7 @@ export default function AdminFaqsPage() {
             <button
               onClick={loadFaqs}
               className="p-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-2xl transition-colors cursor-pointer"
-              title="Reload from disk"
+              title="Refresh FAQs"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
@@ -340,7 +340,7 @@ export default function AdminFaqsPage() {
                   <h3 className="text-lg font-black text-slate-900">
                     {faqs.some((f) => f.id === editingFaq.id) ? 'Edit Question' : 'Add New Question'}
                   </h3>
-                  <p className="text-xs text-slate-500">Live preview & disk persistence</p>
+                  <p className="text-xs text-slate-500">Configure question details and answers</p>
                 </div>
                 <button
                   onClick={() => setIsModalOpen(false)}

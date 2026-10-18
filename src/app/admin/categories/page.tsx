@@ -45,28 +45,28 @@ export default function AdminCategoriesPage() {
   const [formSortOrder, setFormSortOrder] = useState(1)
   const [formIsPublished, setFormIsPublished] = useState(true)
 
-  // Preset Card Images (Image 376, 377, 378, 379)
+  // Preset Card Images
   const PRESET_CARDS = [
     {
-      name: 'Card 376: General Surgery Instruments',
+      name: 'General Surgery Instruments',
       url: '/images/categories/image_376.png',
       defaultIcon: '✂️',
       defaultTitle: 'SET BY PROCEDURE',
     },
     {
-      name: 'Card 377: Orthopedic & Bone Surgery',
+      name: 'Orthopedic & Bone Surgery',
       url: '/images/categories/image_377.png',
       defaultIcon: '🦴',
       defaultTitle: 'ORTHOPEDIC INSTRUMENTS',
     },
     {
-      name: 'Card 378: Titanium Instruments (22 Ti)',
+      name: 'Titanium Instruments (22 Ti)',
       url: '/images/categories/image_378.png',
       defaultIcon: 'Ti',
       defaultTitle: 'TITANIUM INSTRUMENTS',
     },
     {
-      name: 'Card 379: Neuro & Spine Instruments',
+      name: 'Neuro & Spine Instruments',
       url: '/images/categories/image_379.png',
       defaultIcon: '🧠',
       defaultTitle: 'NEURO & SPINE INSTRUMENTS',
@@ -293,12 +293,12 @@ export default function AdminCategoriesPage() {
     showNotification('✓ Category position updated!')
   }
 
-  // Reset to default cards (Image 376, 377, 378, 379)
+  // Reset to default categories
   const handleResetToDefault = () => {
-    if (confirm('Reset to default cards (Cards 376, 377, 378, 379)?')) {
+    if (confirm('Reset categories to system defaults? Any custom categories will be replaced.')) {
       setCategories(INITIAL_CATEGORIES_SEED)
       saveStoredCategories(INITIAL_CATEGORIES_SEED)
-      showNotification('✓ Categories reset to default cards 376, 377, 378, 379!')
+      showNotification('✓ Categories reset to system defaults!')
     }
   }
 
@@ -320,24 +320,24 @@ export default function AdminCategoriesPage() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-2 text-xs font-bold text-[#B92025] uppercase tracking-wider">
               <Sparkles className="w-4 h-4 text-[#B92025]" />
-              <span>ALPHA Categories Collection Management</span>
+              <span>Categories</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-              Homepage Category Cards & Slider
+              Categories & Collections
             </h1>
             <p className="text-slate-500 text-xs sm:text-sm max-w-xl">
-              100% Dynamic management of category cards (Images 376, 377, 378, 379). Any edit, add, or delete persists across page refreshes and updates live on the storefront.
+              Manage store categories, descriptions, and featured collection cards.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleResetToDefault}
-              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-3 rounded-xl transition-all"
-              title="Reset to default Cards 376-379"
+              className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-4 py-3 rounded-xl transition-all cursor-pointer"
+              title="Reset default categories"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Reset Cards 376-379</span>
+              <span>Reset Defaults</span>
             </button>
 
             <button
@@ -609,7 +609,7 @@ export default function AdminCategoriesPage() {
                   {/* PRESET CARDS SELECTOR */}
                   <div className="space-y-1.5 pt-1">
                     <span className="text-[11px] font-semibold text-slate-500">
-                      Select from official cards (Image 376, 377, 378, 379):
+                      Select from preset card templates:
                     </span>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {PRESET_CARDS.map((p, idx) => (
