@@ -16,6 +16,9 @@ import {
   Sparkles,
   ArrowUpDown,
   ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  Flame,
 } from 'lucide-react'
 import {
   getStoredProducts,
@@ -49,6 +52,10 @@ function ShopCatalogContent({
   const [inStockOnly, setInStockOnly] = useState<boolean>(false)
   const [sortBy, setSortBy] = useState<'featured' | 'price_low' | 'price_high' | 'title'>('featured')
 
+  // Accordion state: ONLY ONE main category dropdown open at a time ("aik sub catagories open kryn to bki sub catagories vgyra close honi chiya")
+  const [openMainCategory, setOpenMainCategory] = useState<string | null>('cat-surg-inst')
+  const [openSubCategory, setOpenSubCategory] = useState<string | null>(null)
+
   // Card Interactive states
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [addedState, setAddedState] = useState<Record<string, boolean>>({})
@@ -75,7 +82,7 @@ function ShopCatalogContent({
     }
   }, [])
 
-  // Sync URL search params and initialCategory with active filter state
+  // Sync URL search params and initialCategory with active filter state & auto-expand accordion
   useEffect(() => {
     const cat = searchParams.get('cat')
     const query = searchParams.get('query')
@@ -92,11 +99,24 @@ function ShopCatalogContent({
       )
       if (match) {
         setSelectedCategory(match.id)
+        if (match.parent_id) {
+          const parent = categories.find((c) => c.id === match.parent_id)
+          if (parent?.parent_id) {
+            setOpenMainCategory(parent.parent_id)
+            setOpenSubCategory(parent.id)
+          } else {
+            setOpenMainCategory(match.parent_id)
+            setOpenSubCategory(match.id)
+          }
+        } else {
+          setOpenMainCategory(match.id)
+        }
       } else {
         setSelectedCategory(cat)
       }
     } else if (sale === 'true') {
       setSelectedCategory('sale')
+      setOpenMainCategory('sale')
     } else if (initialCategory) {
       const match = categories.find(
         (c) =>
@@ -106,11 +126,63 @@ function ShopCatalogContent({
       )
       if (match) {
         setSelectedCategory(match.id)
+        if (match.parent_id) {
+          setOpenMainCategory(match.parent_id)
+        } else {
+          setOpenMainCategory(match.id)
+        }
       } else {
         setSelectedCategory(initialCategory)
       }
     }
   }, [searchParams, categories, initialCategory])
+
+  // Helper to toggle main category accordion (closing any other open category!)
+  const toggleMainCategory = (catId: string) => {
+    setOpenMainCategory((prev) => (prev === catId ? null : catId))
+    setOpenSubCategory(null)
+  }
+
+  // Helper to toggle subcategory accordion (closing any other open subcategory!)
+  const toggleSubCategory = (subId: string) => {
+    setOpenSubCategory((prev) => (prev === subId ? null : subId))
+  }
+
+  // Robust product count helper for category trees
+  const getCategoryCount = (catId: string): number => {
+    if (catId === 'All') return products.length
+    if (catId === 'sale') {
+      return products.filter(
+        (p) =>
+          p.badge?.toLowerCase().includes('sale') ||
+          (p.original_price != null && p.price != null && p.original_price > p.price) ||
+          p.slug.includes('sale')
+      ).length
+    }
+
+    const catObj = categories.find((c) => c.id === catId || c.slug === catId)
+    if (!catObj) return 0
+
+    // Collect all descendant ids recursively
+    const getDescendants = (parentId: string): string[] => {
+      const direct = categories.filter((c) => c.parent_id === parentId).map((c) => c.id)
+      const sub = direct.flatMap((d) => getDescendants(d))
+      return [...direct, ...sub]
+    }
+
+    const descendantIds = getDescendants(catObj.id)
+    const allIds = [catObj.id, ...descendantIds]
+    const nameLower = catObj.name.toLowerCase()
+
+    return products.filter((p) => {
+      if (p.category_id && allIds.includes(p.category_id)) return true
+      if (p.subcategory_id && allIds.includes(p.subcategory_id)) return true
+      if (p.category_name?.toLowerCase() === nameLower) return true
+      if (p.subcategory_name?.toLowerCase() === nameLower) return true
+      if (p.specifications?.Subcategory?.toLowerCase() === nameLower) return true
+      return false
+    }).length
+  }
 
   // Filtered & Sorted products calculation
   const filteredProducts = products
@@ -120,7 +192,8 @@ function ShopCatalogContent({
       if (selectedCategory === 'sale') {
         matchesCat = Boolean(
           p.badge?.toLowerCase().includes('sale') ||
-            (p.original_price != null && p.price != null && p.original_price > p.price)
+            (p.original_price != null && p.price != null && p.original_price > p.price) ||
+            p.slug.includes('sale')
         )
       } else if (selectedCategory !== 'All') {
         const catClean = selectedCategory.toLowerCase().trim()
@@ -128,19 +201,24 @@ function ShopCatalogContent({
           (c) => c.id === selectedCategory || c.slug === selectedCategory
         )
 
-        const childCatIds = selectedCatObj
-          ? categories.filter((c) => c.parent_id === selectedCatObj.id).map((c) => c.id)
-          : []
+        const getDescendants = (parentId: string): string[] => {
+          const direct = categories.filter((c) => c.parent_id === parentId).map((c) => c.id)
+          const sub = direct.flatMap((d) => getDescendants(d))
+          return [...direct, ...sub]
+        }
+
+        const childCatIds = selectedCatObj ? getDescendants(selectedCatObj.id) : []
+        const allTargetIds = selectedCatObj ? [selectedCatObj.id, ...childCatIds] : [selectedCategory]
 
         matchesCat =
-          p.category_id === selectedCategory ||
-          p.subcategory_id === selectedCategory ||
-          Boolean(p.category_id && childCatIds.includes(p.category_id)) ||
+          (p.category_id && allTargetIds.includes(p.category_id)) ||
+          (p.subcategory_id && allTargetIds.includes(p.subcategory_id)) ||
           p.category_name?.toLowerCase().includes(catClean) ||
           p.subcategory_name?.toLowerCase().includes(catClean) ||
           (selectedCatObj &&
             (p.specifications?.Subcategory?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
-             p.subcategory_name?.toLowerCase() === selectedCatObj.name.toLowerCase())) ||
+             p.subcategory_name?.toLowerCase() === selectedCatObj.name.toLowerCase() ||
+             p.category_name?.toLowerCase() === selectedCatObj.name.toLowerCase())) ||
           p.slug.includes(catClean)
       }
 
@@ -297,57 +375,335 @@ function ShopCatalogContent({
               </label>
             </div>
 
-            {/* DYNAMIC CATEGORIES LIST */}
+            {/* DYNAMIC HIERARCHICAL CATEGORIES ACCORDION */}
             <div className="space-y-2 border-t border-slate-100 pt-4">
-              <label className="block text-[11px] 2xl:text-xs font-bold uppercase text-slate-700 tracking-wider mb-2">
-                Procedure Divisions
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-[11px] 2xl:text-xs font-bold uppercase text-slate-700 tracking-wider">
+                  Procedure Divisions
+                </label>
+                <span className="text-[10px] text-slate-400 font-semibold">
+                  Click to Expand
+                </span>
+              </div>
+
               <div className="space-y-1 text-xs 2xl:text-sm">
+                {/* 1. ALL DIVISIONS (RESETS FILTER) */}
                 <button
                   type="button"
-                  onClick={() => setSelectedCategory('All')}
-                  className={`w-full text-left py-2 px-3 rounded-xl font-bold transition-colors cursor-pointer flex items-center justify-between ${
+                  onClick={() => {
+                    setSelectedCategory('All')
+                    setSearchQuery('')
+                  }}
+                  className={`w-full text-left py-2 px-3 rounded-xl font-bold transition-all cursor-pointer flex items-center justify-between ${
                     selectedCategory === 'All'
                       ? 'bg-[#96161B] text-white shadow-sm'
                       : 'text-slate-700 hover:bg-slate-100'
                   }`}
                 >
-                  <span>All Divisions</span>
-                  <span className={`text-[10px] ${selectedCategory === 'All' ? 'text-white/80' : 'text-slate-400'}`}>
-                    ({products.length})
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm">🌐</span>
+                    <span>All Divisions</span>
+                  </span>
+                  <span
+                    className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                      selectedCategory === 'All'
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-100 text-slate-500'
+                    }`}
+                  >
+                    {products.length}
                   </span>
                 </button>
 
-                {categories.map((c) => {
-                  const isSelected = selectedCategory === c.id || selectedCategory === c.name || selectedCategory === c.slug
-                  const childIds = categories.filter((ch) => ch.parent_id === c.id).map((ch) => ch.id)
-                  const count = products.filter((p) => {
-                    if (p.category_id === c.id || (p.category_id && childIds.includes(p.category_id))) return true
-                    if (p.specifications?.Subcategory?.toLowerCase() === c.name.toLowerCase()) return true
-                    return false
-                  }).length
+                {/* 2. DYNAMIC MAIN CATEGORIES WITH SINGLE-OPEN ACCORDION */}
+                {categories
+                  .filter((c) => !c.parent_id && c.is_published !== false)
+                  .map((mainCat) => {
+                    const isMainSelected =
+                      selectedCategory === mainCat.id ||
+                      selectedCategory === mainCat.name ||
+                      selectedCategory === mainCat.slug
+                    const isOpen = openMainCategory === mainCat.id
+                    const totalMainCount = getCategoryCount(mainCat.id)
+                    const subCategories = categories.filter(
+                      (sub) => sub.parent_id === mainCat.id && sub.is_published !== false
+                    )
+
+                    return (
+                      <div key={mainCat.id} className="space-y-1">
+                        {/* MAIN CATEGORY ROW */}
+                        <div
+                          className={`w-full rounded-xl transition-all flex items-center justify-between px-2.5 py-1.5 cursor-pointer ${
+                            isMainSelected
+                              ? 'bg-[#96161B] text-white font-bold shadow-sm'
+                              : isOpen
+                              ? 'bg-slate-100 text-slate-900 font-bold border border-slate-200/80'
+                              : 'text-slate-700 hover:bg-slate-100 font-semibold'
+                          }`}
+                        >
+                          {/* Clicking the title selects this main category and keeps its dropdown open */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(mainCat.id)
+                              setSearchQuery('')
+                              setOpenMainCategory(mainCat.id)
+                              setOpenSubCategory(null)
+                            }}
+                            className="flex items-center gap-2 flex-1 text-left truncate cursor-pointer py-1"
+                          >
+                            <span className="text-sm shrink-0">
+                              {mainCat.icon || '📦'}
+                            </span>
+                            <span className="truncate">{mainCat.name}</span>
+                          </button>
+
+                          {/* Right side: count badge + chevron toggle */}
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            <span
+                              className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                                isMainSelected
+                                  ? 'bg-white/20 text-white'
+                                  : 'bg-slate-200/70 text-slate-600'
+                              }`}
+                            >
+                              {totalMainCount}
+                            </span>
+                            {subCategories.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleMainCategory(mainCat.id)
+                                }}
+                                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                  isMainSelected
+                                    ? 'hover:bg-white/20 text-white'
+                                    : 'hover:bg-slate-200 text-slate-500'
+                                }`}
+                                title={isOpen ? 'Collapse subcategories' : 'Expand subcategories'}
+                              >
+                                {isOpen ? (
+                                  <ChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <ChevronRight className="w-4 h-4" />
+                                )}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* SUB-CATEGORIES ACCORDION PANEL (Only open when selected/toggled, closes when others open) */}
+                        {isOpen && subCategories.length > 0 && (
+                          <div className="pl-3 pr-1 py-1.5 ml-3 my-1 space-y-1 border-l-2 border-red-300 bg-red-50/20 rounded-r-xl transition-all">
+                            {subCategories.map((sub) => {
+                              const isSubSelected =
+                                selectedCategory === sub.id ||
+                                selectedCategory === sub.name ||
+                                selectedCategory === sub.slug
+                              const subCount = getCategoryCount(sub.id)
+                              const subChildren = categories.filter(
+                                (c) => c.parent_id === sub.id && c.is_published !== false
+                              )
+                              const isSubOpen = openSubCategory === sub.id
+
+                              return (
+                                <div key={sub.id} className="space-y-1">
+                                  <div className="flex items-center justify-between gap-1">
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCategory(sub.id)
+                                        setSearchQuery('')
+                                        if (subChildren.length > 0) {
+                                          toggleSubCategory(sub.id)
+                                        }
+                                      }}
+                                      className={`flex-1 text-left py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                        isSubSelected
+                                          ? 'bg-[#96161B] text-white font-bold shadow-xs'
+                                          : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200/70'
+                                      }`}
+                                    >
+                                      <span className="flex items-center gap-1.5 truncate">
+                                        <span
+                                          className={`text-[10px] ${
+                                            isSubSelected ? 'text-white/80' : 'text-slate-400'
+                                          }`}
+                                        >
+                                          ↳
+                                        </span>
+                                        <span className="truncate">{sub.name}</span>
+                                      </span>
+                                      <span
+                                        className={`text-[10px] shrink-0 ml-1.5 ${
+                                          isSubSelected ? 'text-white/80' : 'text-slate-400'
+                                        }`}
+                                      >
+                                        ({subCount})
+                                      </span>
+                                    </button>
+
+                                    {subChildren.length > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          toggleSubCategory(sub.id)
+                                        }}
+                                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 transition-colors"
+                                        title={isSubOpen ? 'Collapse' : 'Expand'}
+                                      >
+                                        {isSubOpen ? (
+                                          <ChevronDown className="w-3.5 h-3.5" />
+                                        ) : (
+                                          <ChevronRight className="w-3.5 h-3.5" />
+                                        )}
+                                      </button>
+                                    )}
+                                  </div>
+
+                                  {/* NESTED SUB-SUBCATEGORIES (LEVEL 2) IF ANY */}
+                                  {subChildren.length > 0 && isSubOpen && (
+                                    <div className="pl-3 py-1 ml-2 space-y-1 border-l-2 border-slate-200">
+                                      {subChildren.map((subChild) => {
+                                        const isChildSelected =
+                                          selectedCategory === subChild.id ||
+                                          selectedCategory === subChild.slug
+                                        const childCount = getCategoryCount(subChild.id)
+                                        return (
+                                          <button
+                                            key={subChild.id}
+                                            type="button"
+                                            onClick={() => {
+                                              setSelectedCategory(subChild.id)
+                                              setSearchQuery('')
+                                            }}
+                                            className={`w-full text-left py-1 px-2 rounded-md text-[11px] font-medium transition-all flex items-center justify-between cursor-pointer ${
+                                              isChildSelected
+                                                ? 'bg-[#96161B] text-white font-bold'
+                                                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                                            }`}
+                                          >
+                                            <span className="truncate">• {subChild.name}</span>
+                                            <span
+                                              className={`text-[9px] shrink-0 ${
+                                                isChildSelected
+                                                  ? 'text-white/80'
+                                                  : 'text-slate-400'
+                                              }`}
+                                            >
+                                              ({childCount})
+                                            </span>
+                                          </button>
+                                        )
+                                      })}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+
+                {/* 3. SALE & CLEARANCE CATEGORY ACCORDION */}
+                {(() => {
+                  const isSaleSelected = selectedCategory === 'sale'
+                  const isSaleOpen = openMainCategory === 'sale'
+                  const saleCount = getCategoryCount('sale')
 
                   return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedCategory(c.id)
-                        setSearchQuery('')
-                      }}
-                      className={`w-full text-left py-2 px-3 rounded-xl font-semibold transition-colors flex items-center justify-between cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#96161B] text-white font-bold shadow-sm'
-                          : 'text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      <span className="truncate pr-2">{c.name}</span>
-                      <span className={`text-[10px] shrink-0 ${isSelected ? 'text-white/80' : 'text-slate-400'}`}>
-                        ({count})
-                      </span>
-                    </button>
+                    <div className="space-y-1">
+                      <div
+                        className={`w-full rounded-xl transition-all flex items-center justify-between px-2.5 py-1.5 cursor-pointer ${
+                          isSaleSelected
+                            ? 'bg-[#96161B] text-white font-bold shadow-sm'
+                            : isSaleOpen
+                            ? 'bg-amber-50 text-amber-950 font-bold border border-amber-200/80'
+                            : 'text-slate-700 hover:bg-slate-100 font-semibold'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory('sale')
+                            setSearchQuery('')
+                            setOpenMainCategory('sale')
+                            setOpenSubCategory(null)
+                          }}
+                          className="flex items-center gap-2 flex-1 text-left truncate cursor-pointer py-1"
+                        >
+                          <span className="text-sm shrink-0">🔥</span>
+                          <span className="truncate">Sale & Clearance</span>
+                        </button>
+
+                        <div className="flex items-center gap-1 shrink-0 ml-1">
+                          <span
+                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                              isSaleSelected
+                                ? 'bg-white/20 text-white'
+                                : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {saleCount}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleMainCategory('sale')
+                            }}
+                            className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                              isSaleSelected
+                                ? 'hover:bg-white/20 text-white'
+                                : 'hover:bg-slate-200 text-slate-500'
+                            }`}
+                            title={isSaleOpen ? 'Collapse sale deals' : 'Expand sale deals'}
+                          >
+                            {isSaleOpen ? (
+                              <ChevronDown className="w-4 h-4" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* SUB-MENU FOR SALE */}
+                      {isSaleOpen && (
+                        <div className="pl-3 pr-1 py-1.5 ml-3 my-1 space-y-1 border-l-2 border-amber-300 bg-amber-50/30 rounded-r-xl transition-all">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory('sale')
+                              setSearchQuery('')
+                            }}
+                            className={`w-full text-left py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                              selectedCategory === 'sale'
+                                ? 'bg-[#96161B] text-white font-bold shadow-xs'
+                                : 'text-slate-700 hover:text-slate-900 hover:bg-amber-100/50'
+                            }`}
+                          >
+                            <span className="flex items-center gap-1.5 truncate">
+                              <span className="text-[10px] text-amber-600">↳</span>
+                              <span className="truncate">All Discounted Clearance</span>
+                            </span>
+                            <span
+                              className={`text-[10px] shrink-0 ml-1.5 ${
+                                selectedCategory === 'sale' ? 'text-white/80' : 'text-slate-400'
+                              }`}
+                            >
+                              ({saleCount})
+                            </span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )
-                })}
+                })()}
               </div>
             </div>
 
