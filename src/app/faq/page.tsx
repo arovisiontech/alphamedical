@@ -12,10 +12,6 @@ import {
   Search,
   Plus,
   Minus,
-  Mail,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
   Sparkles,
   HelpCircle,
   X,
@@ -53,9 +49,6 @@ export default function FAQPage() {
   const [isQuoteOpen, setIsQuoteOpen] = useState(false)
   const [quoteItems, setQuoteItems] = useState<ProductItem[]>([])
 
-  // Newsletter state
-  const [newsletterEmail, setNewsletterEmail] = useState('')
-  const [newsletterSubmitted, setNewsletterSubmitted] = useState(false)
 
   // Fetch latest dynamic FAQs from API
   useEffect(() => {
@@ -115,16 +108,6 @@ export default function FAQPage() {
       ...prev,
       [id]: !prev[id],
     }))
-  }
-
-  const handleNewsletterSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!newsletterEmail) return
-    setNewsletterSubmitted(true)
-    setTimeout(() => {
-      setNewsletterEmail('')
-      setNewsletterSubmitted(false)
-    }, 4000)
   }
 
   return (
@@ -349,65 +332,6 @@ export default function FAQPage() {
               </a>
             </div>
           </section>
-
-          {/* STAY INSPIRED NEWSLETTER (Matching exact newsletter card from screenshot) */}
-          <section className="bg-[#F8F9FA] rounded-2xl border border-slate-200/90 p-6 sm:p-10 shadow-sm">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-              {/* Left mail icon & title */}
-              <div className="lg:col-span-6 flex items-start sm:items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-                  <Mail className="w-6 h-6 text-[#B92025]" />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    NEWSLETTER
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-slate-900">
-                    Stay <span className="text-[#B92025]">inspired.</span>
-                  </h3>
-                  <p className="text-xs text-slate-500 leading-relaxed">
-                    Receive exclusive tips, trends, and promotions for professionals—directly from Alpha Medical Supplies in your inbox.
-                  </p>
-                </div>
-              </div>
-
-              {/* Right input & subscribe */}
-              <div className="lg:col-span-6 space-y-2">
-                <form onSubmit={handleNewsletterSubmit} className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="email"
-                      required
-                      value={newsletterEmail}
-                      onChange={(e) => setNewsletterEmail(e.target.value)}
-                      placeholder="Enter your email address"
-                      className="w-full pl-10 pr-4 py-3 bg-white rounded-lg border border-slate-200 text-xs sm:text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#B92025]/30 focus:border-[#B92025]"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="px-6 py-3 bg-[#B92025] hover:bg-[#96161B] text-white rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow transition-colors cursor-pointer shrink-0"
-                  >
-                    <span>Subscribe</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 pl-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>No spam. Unsubscribe anytime.</span>
-                  {newsletterSubmitted && (
-                    <span className="ml-2 font-bold text-emerald-600 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Thank you for subscribing!
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-
         </div>
       </main>
 
