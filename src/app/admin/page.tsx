@@ -65,7 +65,7 @@ export default function AdminDashboardPage() {
       subtext: 'Active Product Categories',
       icon: Layers,
       color: 'bg-slate-800',
-      href: '/admin/categories',
+      href: '/admin/products',
     },
     {
       title: 'PDF Catalogues',

@@ -70,6 +70,16 @@ function ShopCatalogContent({
   useEffect(() => {
     loadData()
 
+    // Fetch fresh products and categories from server API
+    fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverProds) => {
+        if (Array.isArray(serverProds) && serverProds.length > 0) {
+          setProducts(serverProds.filter((p: any) => p.is_published !== false))
+        }
+      })
+      .catch(() => {})
+
     const handleUpdate = () => {
       loadData()
     }

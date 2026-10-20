@@ -182,49 +182,54 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    const rawV4 = localStorage.getItem('alpha_products_v4')
-    if (rawV4) {
+    const rawV5 = localStorage.getItem('alpha_products_v5')
+    if (rawV5) {
       try {
-        const parsed = JSON.parse(rawV4)
-        if (Array.isArray(parsed)) {
-          if (parsed.length > 0) return parsed
-          if (localStorage.getItem('alpha_products_user_managed') === 'true') return []
-        }
+        const parsed = JSON.parse(rawV5)
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed
       } catch (err) {}
     }
 
-    // Auto-clean legacy storage keys containing older product seeds
+    // Merge any previous user-created products from v4 with the fresh seed
+    let merged = [...INITIAL_PRODUCTS_SEED]
+    const rawV4 = localStorage.getItem('alpha_products_v4')
+    if (rawV4) {
+      try {
+        const parsedV4 = JSON.parse(rawV4)
+        if (Array.isArray(parsedV4)) {
+          parsedV4.forEach((p: ProductItem) => {
+            if (p && p.id && !merged.some((m) => m.id === p.id || m.sku === p.sku)) {
+              merged.push(p)
+            }
+          })
+        }
+      } catch (e) {}
+    }
+
+    const serialized = JSON.stringify(merged)
+    localStorage.setItem('alpha_products_v5', serialized)
+    localStorage.setItem('alpha_products_v4', serialized)
     localStorage.removeItem('alpha_products_v3')
     localStorage.removeItem('alpha_products_v2')
     localStorage.removeItem('alpha_products')
 
-    // Initialize with pristine clean baseline (1 product per subcategory, exactly 1 on sale)
-    const seedStr = JSON.stringify(INITIAL_PRODUCTS_SEED)
-    localStorage.setItem('alpha_products_v4', seedStr)
-    localStorage.setItem('alpha_products_v3', seedStr)
-    localStorage.setItem('alpha_products_v2', seedStr)
-    localStorage.setItem('alpha_products', seedStr)
-
-    // Sync from server /api/products only if not user-managed
-    if (!isProductsSyncInitiated && localStorage.getItem('alpha_products_user_managed') !== 'true') {
+    // Always background-sync latest from /api/products
+    if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
-            if (localStorage.getItem('alpha_products_user_managed') !== 'true') {
-              const serverStr = JSON.stringify(serverProds)
-              localStorage.setItem('alpha_products_v4', serverStr)
-              localStorage.setItem('alpha_products_v3', serverStr)
-              localStorage.setItem('alpha_products_v2', serverStr)
-              localStorage.setItem('alpha_products', serverStr)
-              window.dispatchEvent(new Event('alpha_content_updated'))
-            }
+            const serverStr = JSON.stringify(serverProds)
+            localStorage.setItem('alpha_products_v5', serverStr)
+            localStorage.setItem('alpha_products_v4', serverStr)
+            window.dispatchEvent(new Event('alpha_content_updated'))
           }
         })
         .catch(() => {})
     }
-    return INITIAL_PRODUCTS_SEED
+
+    return merged
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
   }
@@ -235,10 +240,8 @@ export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(products)
+      localStorage.setItem('alpha_products_v5', serialized)
       localStorage.setItem('alpha_products_v4', serialized)
-      localStorage.setItem('alpha_products_v3', serialized)
-      localStorage.setItem('alpha_products_v2', serialized)
-      localStorage.setItem('alpha_products', serialized)
       localStorage.setItem('alpha_products_user_managed', 'true')
       window.dispatchEvent(new Event('alpha_content_updated'))
 
@@ -259,10 +262,8 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_products_v5', products)
   savePersistentData('alpha_products_v4', products)
-  savePersistentData('alpha_products_v3', products)
-  savePersistentData('alpha_products_v2', products)
-  savePersistentData('alpha_products', products)
 }
 
 export function resetToCleanBaselineProducts(): ProductItem[] {

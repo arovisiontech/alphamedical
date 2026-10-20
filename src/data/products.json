@@ -1,5 +1,89 @@
 [
   {
+    "id": "prod-display-test-products",
+    "category_id": "cat-ppe",
+    "category_name": "PPE & Protective Gear",
+    "subcategory_id": "sub-protective-gear",
+    "subcategory_name": "Protective Gear",
+    "sub_subcategory_id": "sub-ppe-shields",
+    "sub_subcategory_name": "Protective Face Shields",
+    "title": "Display Test Products",
+    "slug": "display-test-products",
+    "sku": "SKU-4211",
+    "price": 48.95,
+    "original_price": 59.45,
+    "weight": "140g",
+    "sizes": [
+      "Standard Universal Fit"
+    ],
+    "stock_quantity": 100,
+    "badge": "New",
+    "is_best_seller": false,
+    "is_new_arrival": true,
+    "in_stock": true,
+    "is_featured": true,
+    "is_published": true,
+    "short_description": "Hospital grade protective face shields and surgical instruments with optical clarity.",
+    "full_description": "Precision engineered medical protective gear and stainless steel forceps with anti-fog optical clarity and hospital grade compliance.",
+    "featured_image": "/images/products/display-test-forceps.jpg",
+    "gallery_images": [
+      "/images/products/display-test-forceps.jpg",
+      "/images/extracted/image_4.png"
+    ],
+    "features": [
+      "Hospital Grade Compliance",
+      "Optical Anti-Fog Surface",
+      "Autoclavable & Durable Stainless Instruments",
+      "ISO 13485 Certified"
+    ],
+    "specifications": {
+      "Category": "PPE & Protective Gear",
+      "Subcategory": "Protective Gear",
+      "Group": "Protective Face Shields",
+      "Weight": "140g",
+      "SKU": "SKU-4211",
+      "Quality Grade": "Medical Grade German Stainless Steel"
+    },
+    "quantity_discounts": [
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
+    ],
+    "catalogue_pdf": "/catalogues/Artery-Forceps-Section4.pdf",
+    "seo_title": "Display Test Products - Alpha Medical Supplies",
+    "seo_description": "High quality protective face shields and surgical instruments.",
+    "sort_order": 1,
+    "created_at": "2026-10-20T18:06:02.430Z",
+    "updated_at": "2026-10-20T18:06:02.434Z"
+  },
+  {
     "id": "prod-dental-surgery-1",
     "category_id": "cat-surg-inst",
     "category_name": "Surgical Instruments",
@@ -13,7 +97,11 @@
     "price": 48.5,
     "original_price": 48.5,
     "weight": "140g",
-    "sizes": ["12.5cm", "14.0cm", "15.5cm"],
+    "sizes": [
+      "12.5cm",
+      "14.0cm",
+      "15.5cm"
+    ],
     "stock_quantity": 120,
     "badge": "New",
     "is_best_seller": false,
@@ -46,11 +134,36 @@
       "Weight": "140g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Dental Bone Rongeur Friedman 14cm - ALPHA Medical",
@@ -73,7 +186,11 @@
     "price": 59.95,
     "original_price": 59.95,
     "weight": "210g",
-    "sizes": ["13.0cm", "16.5cm", "20.0cm"],
+    "sizes": [
+      "13.0cm",
+      "16.5cm",
+      "20.0cm"
+    ],
     "stock_quantity": 145,
     "badge": "Best Seller",
     "is_best_seller": true,
@@ -106,11 +223,36 @@
       "Weight": "210g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Ortho Weitlaner Retractor Sharp 165mm - ALPHA Medical",
@@ -133,7 +275,11 @@
     "price": 54.5,
     "original_price": 54.5,
     "weight": "85g",
-    "sizes": ["13.0cm", "14.0cm", "16.0cm"],
+    "sizes": [
+      "13.0cm",
+      "14.0cm",
+      "16.0cm"
+    ],
     "stock_quantity": 95,
     "badge": "Precision",
     "is_best_seller": false,
@@ -165,11 +311,36 @@
       "Weight": "85g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Micro Castroviejo Needle Holder 14cm TC - ALPHA Medical",
@@ -190,7 +361,12 @@
     "price": 18.5,
     "original_price": 18.5,
     "weight": "480g",
-    "sizes": ["Small", "Medium", "Large", "X-Large"],
+    "sizes": [
+      "Small",
+      "Medium",
+      "Large",
+      "X-Large"
+    ],
     "stock_quantity": 500,
     "badge": "Medical Grade",
     "is_best_seller": true,
@@ -220,11 +396,36 @@
       "Weight": "480g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Sterile Nitrile Examination Gloves (Box of 100) - ALPHA Medical",
@@ -242,10 +443,13 @@
     "title": "Clinical Cardiology Dual-Head Stethoscope Stainless Steel",
     "slug": "clinical-cardiology-dual-head-stethoscope",
     "sku": "DIAG-5001",
-    "price": 42.0,
-    "original_price": 42.0,
+    "price": 42,
+    "original_price": 42,
     "weight": "220g",
-    "sizes": ["Adult Standard (28\")", "Pediatric (28\")"],
+    "sizes": [
+      "Adult Standard (28\")",
+      "Pediatric (28\")"
+    ],
     "stock_quantity": 80,
     "badge": "Certified",
     "is_best_seller": false,
@@ -275,11 +479,36 @@
       "Weight": "220g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Clinical Cardiology Stethoscope - ALPHA Medical Supplies",
@@ -300,7 +529,10 @@
     "price": 29.99,
     "original_price": 29.99,
     "weight": "320g",
-    "sizes": ["Standard Fit (Pack of 20)", "Large Fit (Pack of 20)"],
+    "sizes": [
+      "Standard Fit (Pack of 20)",
+      "Large Fit (Pack of 20)"
+    ],
     "stock_quantity": 350,
     "badge": "NIOSH Certified",
     "is_best_seller": true,
@@ -330,11 +562,36 @@
       "Weight": "320g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "N95 Surgical Particulate Respirator Masks - ALPHA Medical",
@@ -352,10 +609,13 @@
     "title": "Smart ICU Multiparameter Patient Vital Signs Monitor 12.1\"",
     "slug": "smart-icu-multiparameter-patient-vital-signs-monitor",
     "sku": "EQUIP-7001",
-    "price": 890.0,
-    "original_price": 890.0,
+    "price": 890,
+    "original_price": 890,
     "weight": "4.2 kg",
-    "sizes": ["12.1\" Screen Standard", "15.0\" Screen Touch"],
+    "sizes": [
+      "12.1\" Screen Standard",
+      "15.0\" Screen Touch"
+    ],
     "stock_quantity": 25,
     "badge": "Hospital Grade",
     "is_best_seller": false,
@@ -385,11 +645,36 @@
       "Weight": "4.2 kg"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 5, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 10, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 20, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 50, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 5,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 20,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 50,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "ICU Multiparameter Patient Vital Signs Monitor - ALPHA Medical",
@@ -407,10 +692,14 @@
     "title": "ALPHA German Steel Standard Surgical Tray Set (24 Pcs)",
     "slug": "alpha-german-steel-standard-surgical-tray-set-24pcs",
     "sku": "BRND-8001",
-    "price": 340.0,
-    "original_price": 340.0,
+    "price": 340,
+    "original_price": 340,
     "weight": "1.85 kg",
-    "sizes": ["Minor Surgery Set (16 Pcs)", "Standard OR Set (24 Pcs)", "Major Surgery Set (48 Pcs)"],
+    "sizes": [
+      "Minor Surgery Set (16 Pcs)",
+      "Standard OR Set (24 Pcs)",
+      "Major Surgery Set (48 Pcs)"
+    ],
     "stock_quantity": 40,
     "badge": "ISO 13485",
     "is_best_seller": true,
@@ -441,11 +730,36 @@
       "Weight": "1.85 kg"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 5, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 10, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 25, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 50, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 5,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 25,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 50,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "ALPHA German Steel Surgical Tray Set (24 Pcs) - ALPHA Medical",
@@ -466,9 +780,13 @@
     "slug": "titanium-micro-iris-scissors-straight-115cm",
     "sku": "SALE-9001",
     "price": 36.5,
-    "original_price": 54.0,
+    "original_price": 54,
     "weight": "45g",
-    "sizes": ["10.5cm", "11.5cm", "12.5cm"],
+    "sizes": [
+      "10.5cm",
+      "11.5cm",
+      "12.5cm"
+    ],
     "stock_quantity": 85,
     "badge": "Sale",
     "is_best_seller": true,
@@ -499,11 +817,36 @@
       "Weight": "45g"
     },
     "quantity_discounts": [
-      { "quantity": 1, "discount_percentage": 0, "badge": "Standard price", "free_shipping": false },
-      { "quantity": 10, "discount_percentage": 5, "badge": "Save 5%", "free_shipping": true },
-      { "quantity": 30, "discount_percentage": 10, "badge": "Save 10%", "free_shipping": true },
-      { "quantity": 70, "discount_percentage": 15, "badge": "Save 15%", "free_shipping": true },
-      { "quantity": 100, "discount_percentage": 20, "badge": "Save 20%", "free_shipping": true }
+      {
+        "quantity": 1,
+        "discount_percentage": 0,
+        "badge": "Standard price",
+        "free_shipping": false
+      },
+      {
+        "quantity": 10,
+        "discount_percentage": 5,
+        "badge": "Save 5%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 30,
+        "discount_percentage": 10,
+        "badge": "Save 10%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 70,
+        "discount_percentage": 15,
+        "badge": "Save 15%",
+        "free_shipping": true
+      },
+      {
+        "quantity": 100,
+        "discount_percentage": 20,
+        "badge": "Save 20%",
+        "free_shipping": true
+      }
     ],
     "catalogue_pdf": null,
     "seo_title": "Titanium Micro Iris Scissors Straight 11.5cm (Sale) - ALPHA Medical",
