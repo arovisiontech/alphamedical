@@ -13,25 +13,17 @@ import { ProductItem } from '@/src/types/product'
 import { CatalogueItem } from '@/src/types/catalogue'
 import { getStoredCatalogues, INITIAL_CATALOGUES_SEED } from '@/src/lib/dataStore'
 import {
-  FileText,
   Download,
   Eye,
-  CheckCircle2,
   ShieldCheck,
-  Tag,
-  Layers,
-  ArrowRight,
-  X,
   BookOpen,
   Search,
-  ExternalLink,
   SlidersHorizontal,
 } from 'lucide-react'
 
 export default function CataloguesPage() {
   const [catalogues, setCatalogues] = useState<CatalogueItem[]>(INITIAL_CATALOGUES_SEED)
   const [activeCategory, setActiveCategory] = useState<string>('ALL')
-  const [selectedCatalog, setSelectedCatalog] = useState<CatalogueItem | null>(null)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isQuoteOpen, setIsQuoteOpen] = useState(false)
   const [quoteItems, setQuoteItems] = useState<ProductItem[]>([])
@@ -94,136 +86,7 @@ export default function CataloguesPage() {
       {/* 3. MAIN CONTENT CONTAINER */}
       <div className="flex-1 max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 py-10 sm:py-16 space-y-16 w-full">
         {/* =========================================================
-            TAGLINE / TITLE (MATCHING SLICE 1 OF SVG)
-        ========================================================= */}
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl 2xl:text-5xl font-black text-slate-900 tracking-tight uppercase">
-            BUILT TO PERFORM. MADE TO LAST.
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 max-w-2xl mx-auto font-medium">
-            Browse and download official product catalogues, technical drawings, and sterile processing guidelines.
-          </p>
-        </div>
-
-        {/* =========================================================
-            4 FEATURE VALUE CARDS (MATCHING SLICE 1 OF SVG)
-        ========================================================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1: Product Catalogs */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-[#B92025] shrink-0">
-                  <FileText className="w-6 h-6 text-[#B92025]" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                    Product Catalogs
-                  </h3>
-                  <div className="w-10 h-0.5 bg-[#0A2540] mt-1"></div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium pt-1">
-                Explore Our Comprehensive Range Of Surgical Instruments Designed For Precision And
-                Professional Use.
-              </p>
-            </div>
-            <a
-              href="#catalog-list"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-[#B92025] hover:underline uppercase tracking-wider pt-2 cursor-pointer"
-            >
-              <span>View Catalogs</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {/* Card 2: Quality Standards */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-[#B92025] shrink-0">
-                  <CheckCircle2 className="w-6 h-6 text-[#B92025]" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                    Quality Standards
-                  </h3>
-                  <div className="w-10 h-0.5 bg-[#0A2540] mt-1"></div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium pt-1">
-                Manufactured to DIN and ISO/ASTM Standards with strict quality control to ensure
-                reliability and safety.
-              </p>
-            </div>
-            <a
-              href="#catalog-list"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-[#B92025] hover:underline uppercase tracking-wider pt-2 cursor-pointer"
-            >
-              <span>View Catalogs</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {/* Card 3: OEM / Private Label */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-[#B92025] shrink-0">
-                  <Tag className="w-6 h-6 text-[#B92025]" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                    OEM / Private Label
-                  </h3>
-                  <div className="w-10 h-0.5 bg-[#0A2540] mt-1"></div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium pt-1">
-                Custom Manufacturing, Private Label Branding And Sterile Kitting Solutions Tailored To
-                Your Business Needs.
-              </p>
-            </div>
-            <a
-              href="#catalog-list"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-[#B92025] hover:underline uppercase tracking-wider pt-2 cursor-pointer"
-            >
-              <span>View Catalogs</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {/* Card 4: Materials & Sterilization */}
-          <div className="bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7 shadow-sm hover:shadow-md transition-shadow space-y-4 flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center text-[#B92025] shrink-0">
-                  <Layers className="w-6 h-6 text-[#B92025]" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-snug">
-                    Materials & Sterilization
-                  </h3>
-                  <div className="w-10 h-0.5 bg-[#0A2540] mt-1"></div>
-                </div>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed font-medium pt-1">
-                Premium German & Japanese Stainless Steel With Options For Reusable, Single-Use And EO
-                Sterilized Configurations.
-              </p>
-            </div>
-            <a
-              href="#catalog-list"
-              className="inline-flex items-center gap-1.5 text-xs font-black text-[#B92025] hover:underline uppercase tracking-wider pt-2 cursor-pointer"
-            >
-              <span>View Catalogs</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </a>
-          </div>
-        </div>
-
-        {/* =========================================================
-            FILTER TABS & BAR (MATCHING SLICE 1 BOTTOM / SLICE 2 TOP)
+            FILTER TABS & BAR (CATALOG LIST)
         ========================================================= */}
         <div id="catalog-list" className="space-y-6 pt-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-200 pb-4">
@@ -321,14 +184,15 @@ export default function CataloguesPage() {
                     <div className="space-y-4 pt-2 border-t border-slate-100">
                       <div className="flex flex-wrap items-center gap-3">
                         {/* View Catalog Button */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedCatalog(cat)}
+                        <a
+                          href={pdfUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="inline-flex items-center gap-2 bg-[#B92025] hover:bg-[#96161B] text-white text-xs sm:text-sm font-extrabold px-5 py-2.5 rounded-full shadow-md transition-all transform hover:-translate-y-0.5 cursor-pointer"
                         >
                           <Eye className="w-4 h-4" />
                           <span>View Catalog</span>
-                        </button>
+                        </a>
 
                         {/* Download PDF Button */}
                         <a
@@ -363,74 +227,6 @@ export default function CataloguesPage() {
           )}
         </div>
       </div>
-
-      {/* =========================================================
-          INTERACTIVE PDF / CATALOG PREVIEW MODAL
-      ========================================================= */}
-      {selectedCatalog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="relative w-full max-w-4xl 2xl:max-w-5xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
-            {/* Modal Header */}
-            <div className="bg-[#B92025] text-white px-6 py-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BookOpen className="w-5 h-5 text-white" />
-                <div>
-                  <h3 className="font-black text-sm sm:text-base leading-tight">
-                    {selectedCatalog.title}
-                  </h3>
-                  <span className="text-[10px] text-red-200 uppercase tracking-widest font-bold">
-                    Official 2026 Master Catalogue Preview
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedCatalog(null)}
-                className="w-8 h-8 rounded-full bg-black/20 hover:bg-black/40 text-white flex items-center justify-center transition-colors cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Modal Body: Embedded PDF Viewer */}
-            <div className="flex-1 overflow-hidden bg-slate-100 flex flex-col">
-              <iframe
-                src={`${selectedCatalog.pdf_url || '/catalogues/Artery-Forceps-Section4.pdf'}#toolbar=1`}
-                className="w-full flex-1 border-0 min-h-[500px]"
-                title={selectedCatalog.title}
-              />
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-4 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold">
-              <div className="text-slate-500">
-                <span>{selectedCatalog.pages || 48} Pages</span> •{' '}
-                <span>{selectedCatalog.file_size || '2.8 MB'}</span> •{' '}
-                <span className="text-emerald-600 font-bold">ISO 13485:2016 Certified</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <a
-                  href={selectedCatalog.pdf_url || '/catalogues/Artery-Forceps-Section4.pdf'}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-bold"
-                >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Open in Full Tab</span>
-                </a>
-                <a
-                  href={selectedCatalog.pdf_url || '/catalogues/Artery-Forceps-Section4.pdf'}
-                  download={`ALPHA-${selectedCatalog.title.replace(/\s+/g, '-')}-Catalogue.pdf`}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 rounded-xl bg-[#B92025] hover:bg-[#96161B] text-white font-bold shadow-md"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download PDF</span>
-                </a>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 4. GLOBAL FOOTER */}
       <PublicFooter />

@@ -1106,7 +1106,7 @@ function AdminProductsContent() {
                   <th className="p-4 sm:p-5">Product Details</th>
                   <th className="p-4 sm:p-5">Category & Subcategory</th>
                   <th className="p-4 sm:p-5">Price ($)</th>
-                  <th className="p-4 sm:p-5">Weight & Sizes</th>
+                  <th className="p-4 sm:p-5">Sizes / Lengths</th>
                   <th className="p-4 sm:p-5 text-center">Best Seller</th>
                   <th className="p-4 sm:p-5 text-center">New</th>
                   <th className="p-4 sm:p-5 text-center">Stock</th>
@@ -1192,13 +1192,10 @@ function AdminProductsContent() {
                         )}
                       </td>
 
-                      {/* Weight & Sizes */}
+                      {/* Sizes / Lengths */}
                       <td className="p-4 sm:p-5">
-                        <div className="text-xs font-bold text-slate-700">
-                          {prod.weight || prod.specifications?.Weight || '140g'}
-                        </div>
-                        <div className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                          {Array.isArray(prod.sizes) ? prod.sizes.join(', ') : '12.5cm, 15.5cm'}
+                        <div className="text-xs font-bold text-slate-700 truncate max-w-[200px]">
+                          {Array.isArray(prod.sizes) && prod.sizes.length > 0 ? prod.sizes.join(', ') : 'Standard Sizes'}
                         </div>
                       </td>
 
@@ -1565,8 +1562,6 @@ function AdminProductsContent() {
                             <span className="font-mono text-slate-500 font-bold">SKU: {p.sku || 'N/A'}</span>
                             <span className="text-slate-300">|</span>
                             <span className="font-bold text-[#96161B]">${(p.price ?? 49.5).toFixed(2)}</span>
-                            <span className="text-slate-300">|</span>
-                            <span className="text-slate-600 font-medium">Weight: {p.weight || '140g'}</span>
                           </div>
                         </div>
                       </div>
@@ -2077,7 +2072,7 @@ function AdminProductsContent() {
               </div>
 
               {/* SKU, Sale Price, Original Price, Weight */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                     SKU / Number *
@@ -2121,23 +2116,9 @@ function AdminProductsContent() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Weight (e.g. 140g) *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                    placeholder="140g, 0.5 kg"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-[#96161B]"
-                  />
-                </div>
-
                 {/* LIVE DISCOUNT PERCENTAGE BADGE & SAVINGS */}
                 {formData.original_price > formData.price && formData.price > 0 && (
-                  <div className="col-span-2 sm:col-span-4 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-800">
+                  <div className="col-span-1 sm:col-span-3 p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center justify-between text-xs font-bold text-emerald-800">
                     <span className="flex items-center gap-1.5">
                       <span>🎉</span>
                       <span>Live Discount: {Math.round(((formData.original_price - formData.price) / formData.original_price) * 100)}% OFF</span>
@@ -2549,9 +2530,8 @@ function ProductMiniCard({
         <div className="text-xs font-black text-slate-900 line-clamp-2 leading-snug group-hover:text-[#96161B] transition-colors" title={prod.title}>
           {prod.title}
         </div>
-        <div className="text-[10px] font-mono text-slate-400 mt-1 flex items-center justify-between">
+        <div className="text-[10px] font-mono text-slate-400 mt-1">
           <span>{prod.sku || 'SKU-N/A'}</span>
-          <span className="text-slate-500 font-semibold">{prod.weight || '140g'}</span>
         </div>
       </div>
 

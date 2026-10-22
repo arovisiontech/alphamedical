@@ -1,5 +1,98 @@
 [
   {
+    "id": "prod-test",
+    "category_id": "cat-equipment",
+    "category_name": "Hospital Equipment",
+    "subcategory_id": "sub-critical-care",
+    "subcategory_name": "Critical Care & OR",
+    "sub_subcategory_id": "sub-equip-defib",
+    "sub_subcategory_name": "Emergency Defibrillators",
+    "title": "test",
+    "slug": "test",
+    "sku": "SKU-4397",
+    "price": 49.5,
+    "original_price": 59.5,
+    "sizes": [
+      "12.5cm",
+      "14.0cm",
+      "15.5cm",
+      "18.0cm",
+      "20.5cm"
+    ],
+    "stock_quantity": 100,
+    "badge": "New",
+    "is_best_seller": false,
+    "is_new_arrival": true,
+    "in_stock": true,
+    "is_featured": true,
+    "is_published": true,
+    "short_description": "Hospital grade emergency defibrillator and surgical artery forceps with high reliability.",
+    "full_description": "Precision surgical instrument and emergency OR equipment crafted to strict medical standards with durable stainless components and hospital grade performance.",
+    "featured_image": "/images/extracted/image_1.png",
+    "gallery_images": [
+      "/images/extracted/image_1.png",
+      "/images/products/display-test-forceps.jpg"
+    ],
+    "features": [
+      "Hospital Grade Compliance",
+      "Emergency Defibrillator & OR Ready",
+      "Autoclavable Stainless Steel",
+      "ISO 13485 Certified"
+    ],
+    "specifications": {
+      "Category": "Hospital Equipment",
+      "Subcategory": "Critical Care & OR",
+      "Group": "Emergency Defibrillators",
+      "SKU": "SKU-4397",
+      "Quality Grade": "Medical Grade German Stainless Steel"
+    }
+  },
+  {
+    "id": "prod-diag-sphygmo-aneroid",
+    "category_id": "cat-medical-supplies",
+    "category_name": "Medical Supplies",
+    "subcategory_id": "sub-diagnostics",
+    "subcategory_name": "Diagnostic Supplies",
+    "sub_subcategory_id": "sub-diag-sphygmo",
+    "sub_subcategory_name": "Sphygmomanometers",
+    "title": "Aneroid Clinical Sphygmomanometer",
+    "slug": "aneroid-clinical-sphygmomanometer",
+    "sku": "SKU-SPHYG-101",
+    "price": 45.0,
+    "original_price": 55.0,
+    "sizes": [
+      "Adult Standard Cuff",
+      "Large Adult Cuff",
+      "Pediatric Cuff"
+    ],
+    "stock_quantity": 85,
+    "badge": "New",
+    "is_best_seller": true,
+    "is_new_arrival": true,
+    "in_stock": true,
+    "is_featured": true,
+    "is_published": true,
+    "short_description": "Professional aneroid sphygmomanometer blood pressure monitor with calibrated adult nylon cuff.",
+    "full_description": "Precision calibrated clinical aneroid sphygmomanometer engineered for accurate blood pressure measurement with deluxe air-release valve and durable latex-free bladder.",
+    "featured_image": "/images/extracted/image_2.png",
+    "gallery_images": [
+      "/images/extracted/image_2.png"
+    ],
+    "features": [
+      "Precision 300mmHg Certified Manometer",
+      "High Durability Nylon Cuff",
+      "Deluxe Air Release Chrome Valve",
+      "ISO 13485 & CE Approved"
+    ],
+    "specifications": {
+      "Category": "Medical Supplies",
+      "Subcategory": "Diagnostic Supplies",
+      "Group": "Sphygmomanometers",
+      "SKU": "SKU-SPHYG-101",
+      "Calibration": "300 mmHg Dial"
+    }
+  },
+  {
     "id": "prod-display-test-products",
     "category_id": "cat-ppe",
     "category_name": "PPE & Protective Gear",

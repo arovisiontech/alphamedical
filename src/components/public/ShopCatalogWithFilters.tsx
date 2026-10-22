@@ -59,6 +59,7 @@ function ShopCatalogContent({
   // Card Interactive states
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [addedState, setAddedState] = useState<Record<string, boolean>>({})
+  const [isReady, setIsReady] = useState<boolean>(false)
 
   const loadData = () => {
     const prods = getStoredProducts().filter((p) => p.is_published !== false)
@@ -69,6 +70,7 @@ function ShopCatalogContent({
 
   useEffect(() => {
     loadData()
+    setIsReady(true)
 
     // Fetch fresh products and categories from server API
     fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
@@ -79,6 +81,9 @@ function ShopCatalogContent({
         }
       })
       .catch(() => {})
+      .finally(() => {
+        setIsReady(true)
+      })
 
     const handleUpdate = () => {
       loadData()
@@ -380,7 +385,12 @@ function ShopCatalogContent({
 
         matchesSearch =
           searchableText.includes(q) ||
-          (cleanWords.length > 0 && cleanWords.every((word) => searchableText.includes(word)))
+          (q.endsWith('s') && searchableText.includes(q.slice(0, -1))) ||
+          (cleanWords.length > 0 &&
+            cleanWords.every((word) => {
+              const singular = word.endsWith('s') ? word.slice(0, -1) : word
+              return searchableText.includes(word) || searchableText.includes(singular)
+            }))
       }
 
       // Price match
@@ -900,8 +910,18 @@ function ShopCatalogContent({
           </div>
 
           {/* PRODUCT CARDS GRID */}
-          {filteredProducts.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4">
+          {!isReady ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 4xl:grid-cols-5 gap-6 2xl:gap-8">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4 animate-pulse min-h-[380px]">
+                  <div className="w-full h-52 bg-slate-100 rounded-2xl" />
+                  <div className="h-4 bg-slate-100 rounded w-3/4" />
+                  <div className="h-4 bg-slate-100 rounded w-1/2" />
+                </div>
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center space-y-4 animate-fade-in">
               <div className="w-16 h-16 bg-red-50 text-[#96161B] rounded-full flex items-center justify-center mx-auto">
                 <Search className="w-8 h-8" />
               </div>

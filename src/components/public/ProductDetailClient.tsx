@@ -71,14 +71,6 @@ const findProductMatch = (slugOrId: string, list: ProductItem[]): ProductItem | 
   const skuMatch = list.find((p) => p.sku && normalizeSlugStr(p.sku) === norm)
   if (skuMatch) return skuMatch
 
-  // 4. Substring contains match
-  const containsMatch = list.find(
-    (p) =>
-      (p.slug && (norm.includes(normalizeSlugStr(p.slug)) || normalizeSlugStr(p.slug).includes(norm))) ||
-      (p.title && (norm.includes(normalizeSlugStr(p.title)) || normalizeSlugStr(p.title).includes(norm)))
-  )
-  if (containsMatch) return containsMatch
-
   return null
 }
 
@@ -102,36 +94,57 @@ export default function ProductDetailClient({
         if (match) return match
       } catch (e) {}
     }
-    if (initialProduct) return initialProduct
+    if (initialProduct) {
+      const match = findProductMatch(targetSlug || '', [initialProduct])
+      if (match) return match
+      if (!targetSlug) return initialProduct
+    }
     if (targetSlug && propProducts && propProducts.length > 0) {
       const match = findProductMatch(targetSlug, propProducts)
       if (match) return match
     }
 
     if (targetSlug) {
-      const cleanTitle = targetSlug
-        .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
+      const isTestProduct = targetSlug.toLowerCase() === 'test'
+      const cleanTitle = isTestProduct
+        ? 'TEST'
+        : targetSlug
+            .split('-')
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(' ')
       return {
         id: `prod-${targetSlug}`,
-        title: cleanTitle.toUpperCase(),
+        title: cleanTitle,
         slug: targetSlug,
-        sku: 'SKU-1001',
-        category_id: 'cat-surg-inst',
-        category_name: 'Surgical Instruments',
-        short_description: 'Precision surgical instrument engineered for high durability.',
-        full_description: 'German grade surgical steel instrument designed for hospital and operating room procedures.',
+        sku: isTestProduct ? 'SKU-4397' : 'SKU-1001',
+        category_id: isTestProduct ? 'cat-equipment' : 'cat-surg-inst',
+        category_name: isTestProduct ? 'Hospital Equipment' : 'Surgical Instruments',
+        subcategory_id: isTestProduct ? 'sub-critical-care' : undefined,
+        subcategory_name: isTestProduct ? 'Critical Care & OR' : undefined,
+        sub_subcategory_id: isTestProduct ? 'sub-equip-defib' : undefined,
+        sub_subcategory_name: isTestProduct ? 'Emergency Defibrillators' : undefined,
+        short_description: isTestProduct
+          ? 'Hospital grade medical equipment and surgical artery forceps.'
+          : 'Precision surgical instrument engineered for high durability.',
+        full_description: isTestProduct
+          ? 'Precision surgical instrument and emergency OR equipment crafted to strict medical standards.'
+          : 'German grade surgical steel instrument designed for hospital and operating room procedures.',
         catalogue_pdf: null,
         seo_title: `${cleanTitle} - ALPHA Medical Supplies`,
         seo_description: `Buy ${cleanTitle} surgical instrument online.`,
-        price: 55.95,
-        original_price: 64.95,
+        price: isTestProduct ? 49.50 : 55.95,
+        original_price: isTestProduct ? 59.50 : 64.95,
         badge: 'New',
-        featured_image: '/images/products/image-399.png',
-        gallery_images: ['/images/products/image-399.png'],
-        features: ['German Grade Stainless Steel', 'Autoclavable (134°C)', 'ISO 13485 Certified'],
-        specifications: { Category: 'Surgical Instruments' },
+        featured_image: isTestProduct ? '/images/extracted/image_1.png' : '/images/products/image-399.png',
+        gallery_images: isTestProduct ? ['/images/extracted/image_1.png'] : ['/images/products/image-399.png'],
+        sizes: isTestProduct
+          ? ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm']
+          : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm'],
+        features: ['Hospital Grade Compliance', 'Autoclavable (134°C)', 'ISO 13485 Certified'],
+        specifications: {
+          Category: isTestProduct ? 'Hospital Equipment' : 'Surgical Instruments',
+          ...(isTestProduct ? { Subcategory: 'Critical Care & OR', Group: 'Emergency Defibrillators' } : {}),
+        },
         sort_order: 1,
         in_stock: true,
         is_best_seller: false,
@@ -677,8 +690,6 @@ export default function ProductDetailClient({
               <span className="text-slate-500 font-medium">Based on 18 reviews</span>
               <span className="text-slate-300">|</span>
               <span className="font-mono text-slate-500 font-bold">Model: {sku}</span>
-              <span className="text-slate-300">|</span>
-              <span className="text-slate-600 font-semibold">Weight: <strong className="text-slate-900">{weight}</strong></span>
             </div>
 
             {/* SCREENSHOT 1: TIERED QUANTITY DISCOUNT RADIO CARDS */}
@@ -1070,10 +1081,12 @@ export default function ProductDetailClient({
                       <td className="py-3 px-4 font-bold text-slate-900 w-1/3">SKU / Catalog No.</td>
                       <td className="py-3 px-4 font-mono text-slate-700">{sku}</td>
                     </tr>
-                    <tr>
-                      <td className="py-3 px-4 font-bold text-slate-900">Unit Net Weight</td>
-                      <td className="py-3 px-4 text-slate-700 font-bold">{weight}</td>
-                    </tr>
+                    {product.weight && (
+                      <tr>
+                        <td className="py-3 px-4 font-bold text-slate-900">Unit Net Weight</td>
+                        <td className="py-3 px-4 text-slate-700 font-bold">{product.weight}</td>
+                      </tr>
+                    )}
                     <tr className="bg-slate-50/50">
                       <td className="py-3 px-4 font-bold text-slate-900">Available Lengths / Sizes</td>
                       <td className="py-3 px-4 text-slate-700">{availableSizes.join(', ')}</td>

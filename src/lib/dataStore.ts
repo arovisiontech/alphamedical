@@ -182,22 +182,22 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    const rawV5 = localStorage.getItem('alpha_products_v5')
-    if (rawV5) {
+    const rawV6 = localStorage.getItem('alpha_products_v6')
+    if (rawV6) {
       try {
-        const parsed = JSON.parse(rawV5)
+        const parsed = JSON.parse(rawV6)
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
       } catch (err) {}
     }
 
-    // Merge any previous user-created products from v4 with the fresh seed
+    // Merge any previous user-created products from v5/v4 with the fresh seed
     let merged = [...INITIAL_PRODUCTS_SEED]
-    const rawV4 = localStorage.getItem('alpha_products_v4')
-    if (rawV4) {
+    const rawPrev = localStorage.getItem('alpha_products_v5') || localStorage.getItem('alpha_products_v4')
+    if (rawPrev) {
       try {
-        const parsedV4 = JSON.parse(rawV4)
-        if (Array.isArray(parsedV4)) {
-          parsedV4.forEach((p: ProductItem) => {
+        const parsedPrev = JSON.parse(rawPrev)
+        if (Array.isArray(parsedPrev)) {
+          parsedPrev.forEach((p: ProductItem) => {
             if (p && p.id && !merged.some((m) => m.id === p.id || m.sku === p.sku)) {
               merged.push(p)
             }
@@ -207,8 +207,9 @@ export function getStoredProducts(): ProductItem[] {
     }
 
     const serialized = JSON.stringify(merged)
+    localStorage.setItem('alpha_products_v6', serialized)
     localStorage.setItem('alpha_products_v5', serialized)
-    localStorage.setItem('alpha_products_v4', serialized)
+    localStorage.removeItem('alpha_products_v4')
     localStorage.removeItem('alpha_products_v3')
     localStorage.removeItem('alpha_products_v2')
     localStorage.removeItem('alpha_products')
@@ -221,8 +222,8 @@ export function getStoredProducts(): ProductItem[] {
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
             const serverStr = JSON.stringify(serverProds)
+            localStorage.setItem('alpha_products_v6', serverStr)
             localStorage.setItem('alpha_products_v5', serverStr)
-            localStorage.setItem('alpha_products_v4', serverStr)
             window.dispatchEvent(new Event('alpha_content_updated'))
           }
         })
@@ -240,8 +241,8 @@ export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(products)
+      localStorage.setItem('alpha_products_v6', serialized)
       localStorage.setItem('alpha_products_v5', serialized)
-      localStorage.setItem('alpha_products_v4', serialized)
       localStorage.setItem('alpha_products_user_managed', 'true')
       window.dispatchEvent(new Event('alpha_content_updated'))
 
@@ -262,6 +263,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_products_v6', products)
   savePersistentData('alpha_products_v5', products)
   savePersistentData('alpha_products_v4', products)
 }
