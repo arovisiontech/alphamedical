@@ -192,7 +192,7 @@ export default function MainRedNavbar() {
                 {/* MEGA MENU DROPDOWN */}
                 {item.hasDropdown && activeDropdown === item.name && (
                   <div
-                    className={`absolute top-full w-[650px] 2xl:w-[720px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 z-50 animate-fade-in grid grid-cols-3 gap-6 ${
+                    className={`absolute top-full w-[760px] 2xl:w-[860px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid grid-cols-3 gap-6 sm:gap-8 ${
                       item.name === 'Surgical Instruments'
                         ? 'left-0'
                         : item.name === 'Brands' || item.name === 'Equipment' || item.name === 'Resources'
@@ -201,20 +201,21 @@ export default function MainRedNavbar() {
                     }`}
                   >
                     {item.columns?.map((col, idx) => (
-                      <div key={idx} className="space-y-3">
-                        <h4 className="font-extrabold text-xs text-[#96161B] uppercase tracking-wider border-b border-red-100 pb-1.5">
+                      <div key={idx} className="space-y-3.5">
+                        <h4 className="font-black text-sm sm:text-[15px] 2xl:text-base text-[#96161B] uppercase tracking-wide border-b-2 border-red-100 pb-2">
                           <Link href={getDropdownItemHref(item.name, col.title)} className="hover:underline block">
                             {col.title}
                           </Link>
                         </h4>
-                        <ul className="space-y-1.5 text-xs text-slate-600 font-medium">
+                        <ul className="space-y-2 text-sm sm:text-[15px] text-slate-700 font-bold">
                           {col.items.map((sub, sIdx) => (
                             <li key={sIdx}>
                               <Link
                                 href={getDropdownItemHref(item.name, sub)}
-                                className="hover:text-[#96161B] hover:underline block py-0.5"
+                                className="hover:text-[#96161B] hover:translate-x-1 transition-all block py-1 font-bold text-slate-700 hover:font-black"
                               >
-                                • {sub}
+                                <span className="text-[#96161B] font-black mr-1.5">•</span>
+                                {sub}
                               </Link>
                             </li>
                           ))}
@@ -375,7 +376,7 @@ export default function MainRedNavbar() {
                       <button
                         type="button"
                         onClick={() => toggleAccordion(item.name)}
-                        className="w-full flex items-center justify-between py-2.5 px-2 text-xs font-extrabold text-slate-800 hover:text-[#B92025] hover:bg-red-50/50 rounded-lg transition-colors text-left"
+                        className="w-full flex items-center justify-between py-2.5 px-2 text-sm font-black text-slate-800 hover:text-[#B92025] hover:bg-red-50/50 rounded-lg transition-colors text-left"
                       >
                         <span>{item.name}</span>
                         <ChevronDown
@@ -388,11 +389,11 @@ export default function MainRedNavbar() {
                       {isOpen && (
                         <div className="pl-3 pr-2 py-2 space-y-3 bg-slate-50/70 rounded-xl mb-2 text-xs">
                           {item.columns?.map((col, idx) => (
-                            <div key={idx} className="space-y-1">
-                              <div className="font-bold text-[11px] text-[#B92025] uppercase tracking-wide">
+                            <div key={idx} className="space-y-1.5">
+                              <div className="font-black text-xs sm:text-[13px] text-[#B92025] uppercase tracking-wide">
                                 {col.title}
                               </div>
-                              <ul className="space-y-1 pl-1 text-[11px] text-slate-600 font-medium">
+                              <ul className="space-y-1.5 pl-1 text-xs sm:text-[13px] text-slate-700 font-bold">
                                 {col.items.map((sub, sIdx) => (
                                   <li key={sIdx}>
                                     <Link
@@ -411,7 +412,7 @@ export default function MainRedNavbar() {
                             <Link
                               href={item.href}
                               onClick={() => setIsMobileDrawerOpen(false)}
-                              className="text-[11px] font-bold text-[#B92025] hover:underline inline-flex items-center gap-1"
+                              className="text-xs font-black text-[#B92025] hover:underline inline-flex items-center gap-1"
                             >
                               <span>View All {item.name}</span>
                               <ArrowRight className="w-3 h-3" />
@@ -428,7 +429,7 @@ export default function MainRedNavbar() {
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMobileDrawerOpen(false)}
-                    className={`flex items-center justify-between py-2.5 px-2 text-xs font-extrabold rounded-lg transition-colors ${
+                    className={`flex items-center justify-between py-2.5 px-2 text-sm font-black rounded-lg transition-colors ${
                       item.isBadge
                         ? 'text-[#B92025] bg-red-50 hover:bg-red-100 font-black'
                         : 'text-slate-800 hover:text-[#B92025] hover:bg-slate-50'
@@ -488,14 +489,6 @@ export default function MainRedNavbar() {
                     className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-slate-50 hover:text-[#B92025]"
                   >
                     <span>Dealer Locator</span>
-                  </Link>
-                  <Link
-                    href="/admin"
-                    onClick={() => setIsMobileDrawerOpen(false)}
-                    className="flex items-center gap-2 px-2 py-2 rounded-lg bg-red-50/60 text-[#B92025] font-extrabold hover:bg-red-100"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-[#B92025]" />
-                    <span>Admin Panel Portal</span>
                   </Link>
                 </div>
               </div>

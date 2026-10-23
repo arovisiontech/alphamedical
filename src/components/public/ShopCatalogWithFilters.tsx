@@ -591,7 +591,7 @@ function ShopCatalogContent({
                               setOpenMainCategory(mainCat.id)
                               setOpenSubCategory(null)
                             }}
-                            className="flex items-center gap-2 flex-1 text-left truncate cursor-pointer py-0.5 text-sm 2xl:text-[15px]"
+                            className="flex items-center gap-2 flex-1 text-left truncate cursor-pointer py-1 text-sm 2xl:text-base font-black"
                           >
                             <span className="truncate">{mainCat.name}</span>
                           </button>
@@ -665,7 +665,7 @@ function ShopCatalogContent({
                                           )
                                         }
                                       }}
-                                      className={`flex-1 text-left py-2 px-3 rounded-lg text-[13px] 2xl:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                      className={`flex-1 text-left py-2 px-3 rounded-lg text-sm 2xl:text-[15px] font-bold transition-all flex items-center justify-between cursor-pointer ${
                                         isSubDirectlySelected
                                           ? 'bg-[#96161B] text-white shadow-xs'
                                           : hasSelectedChild
@@ -740,7 +740,7 @@ function ShopCatalogContent({
                                               setSelectedCategory(subChild.id)
                                               setSearchQuery('')
                                             }}
-                                            className={`w-full text-left py-1.5 px-2.5 rounded-md text-xs 2xl:text-[13px] font-semibold transition-all flex items-center justify-between cursor-pointer ${
+                                            className={`w-full text-left py-1.5 px-2.5 rounded-md text-xs 2xl:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
                                               isChildSelected
                                                 ? 'bg-[#96161B] text-white font-bold shadow-xs'
                                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'

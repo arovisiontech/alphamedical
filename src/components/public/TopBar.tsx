@@ -28,14 +28,6 @@ export default function TopBar() {
             <span>Sohail@alpha-medicalsupplies.com</span>
           </a>
           <GeoModeSwitcher />
-          <Link
-            href="/admin"
-            className="hidden lg:flex items-center gap-1 text-[10px] font-bold text-white bg-black/20 hover:bg-[#B92025] px-2 py-0.5 rounded transition-colors"
-            title="Go to Admin Panel"
-          >
-            <ShieldCheck className="w-3 h-3 text-red-300" />
-            <span>Admin</span>
-          </Link>
         </div>
       </div>
     </div>

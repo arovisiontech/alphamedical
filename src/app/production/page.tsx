@@ -737,9 +737,9 @@ export default function ProductionPage() {
                 <span>Email Sale</span>
               </Link>
               <a
-                href="https://wa.me/9252000000"
+                href="https://wa.me/15615289764?text=Hello%20ALPHA%20Medical%20Supplies%2C%20I%20would%20like%20to%20inquire%20about%20your%20products."
                 target="_blank"
-                rel="noreferrer"
+                rel="noopener noreferrer"
                 className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-[#B92025] border-2 border-[#B92025] px-8 py-3.5 rounded-full font-bold text-xs sm:text-sm shadow-sm transition-all transform hover:-translate-y-0.5"
               >
                 <MessageSquare className="w-4 h-4 text-[#B92025]" />

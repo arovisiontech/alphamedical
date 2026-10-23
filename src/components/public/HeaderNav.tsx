@@ -3,7 +3,8 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Search, ShoppingCart, ChevronDown, User, Menu } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Search, ShoppingCart, ChevronDown, Menu } from 'lucide-react'
 import { ALPHA_CATEGORIES } from '@/src/data/alphaData'
 
 interface HeaderNavProps {
@@ -13,7 +14,25 @@ interface HeaderNavProps {
 }
 
 export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: HeaderNavProps) {
+  const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    const q = searchQuery.trim()
+    if (q) {
+      const catParam =
+        selectedCategory && selectedCategory !== 'All Categories'
+          ? `&cat=${encodeURIComponent(selectedCategory)}`
+          : ''
+      router.push(`/products?query=${encodeURIComponent(q)}${catParam}`)
+    } else if (onOpenSearch) {
+      onOpenSearch()
+    } else {
+      router.push('/products')
+    }
+  }
 
   const handleOpenMobileMenu = () => {
     if (typeof window !== 'undefined') {
@@ -71,13 +90,16 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
 
           {/* Bottom Row: Search Bar */}
           <div className="w-full">
-            <div className="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm focus-within:border-[#B92025] transition-colors">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center border border-slate-300 rounded-xl overflow-hidden bg-white shadow-sm focus-within:border-[#B92025] transition-colors"
+            >
               <input
                 type="text"
-                onClick={onOpenSearch}
-                readOnly
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search tools, medical supplies..."
-                className="flex-1 px-3 py-2 text-xs font-normal text-slate-800 outline-none placeholder:text-slate-400 bg-transparent min-w-0 cursor-pointer"
+                className="flex-1 px-3 py-2 text-xs font-normal text-slate-800 outline-none placeholder:text-slate-400 bg-transparent min-w-0"
               />
 
               <div className="relative border-l border-slate-200 bg-transparent hidden sm:block">
@@ -97,14 +119,13 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
               </div>
 
               <button
-                type="button"
-                onClick={onOpenSearch}
+                type="submit"
                 className="bg-[#B92025] hover:bg-[#96161B] text-white px-3.5 py-2.5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 aria-label="Search"
               >
                 <Search className="w-4 h-4" />
               </button>
-            </div>
+            </form>
           </div>
         </div>
 
@@ -114,13 +135,16 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
         <div className="hidden md:flex items-center justify-between gap-6">
           {/* LEFT: SEARCH BAR WITH CATEGORY SELECTOR */}
           <div className="w-auto flex-1 max-w-md">
-            <div className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white shadow-sm focus-within:border-[#B92025] transition-colors">
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white shadow-sm focus-within:border-[#B92025] transition-colors"
+            >
               <input
                 type="text"
-                onClick={onOpenSearch}
-                readOnly
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search Instruments, supplies, brands..."
-                className="flex-1 px-3.5 py-2 text-xs font-normal text-slate-800 outline-none placeholder:text-slate-400 bg-transparent min-w-0 cursor-pointer"
+                className="flex-1 px-3.5 py-2 text-xs font-normal text-slate-800 outline-none placeholder:text-slate-400 bg-transparent min-w-0"
               />
 
               <div className="relative border-l border-slate-200 bg-transparent">
@@ -140,14 +164,13 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
               </div>
 
               <button
-                type="button"
-                onClick={onOpenSearch}
+                type="submit"
                 className="bg-[#B92025] hover:bg-[#96161B] text-white px-3.5 py-2.5 transition-colors flex items-center justify-center shrink-0 cursor-pointer"
                 title="Search"
               >
                 <Search className="w-4 h-4" />
               </button>
-            </div>
+            </form>
           </div>
 
           {/* CENTER: ALPHA WHOLESALE MEDICAL SUPPLIES LLC LOGO */}
@@ -164,17 +187,8 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
             </Link>
           </div>
 
-          {/* RIGHT: ADMIN & CART */}
+          {/* RIGHT: CART (ADMIN BUTTON REMOVED AS REQUESTED) */}
           <div className="flex items-center justify-end gap-5 flex-1 max-w-md">
-            <Link
-              href="/admin"
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-[#B92025] px-2.5 py-1.5 rounded-md hover:bg-slate-50 transition-colors"
-              title="Admin Portal"
-            >
-              <User className="w-3.5 h-3.5 text-[#B92025]" />
-              <span>Admin</span>
-            </Link>
-
             <button
               type="button"
               onClick={onOpenCart}

@@ -323,7 +323,7 @@ export default function FAQPage() {
                 Email Sale
               </a>
               <a
-                href="https://wa.me/1123456789?text=Hello%20Alpha%20Medical%20Supplies%20Team,%20I%20need%20help%20with%20an%20order."
+                href="https://wa.me/15615289764?text=Hello%20Alpha%20Medical%20Supplies%20Team,%20I%20need%20help%20with%20an%20order."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-6 sm:px-7 py-3 rounded-md bg-white hover:bg-slate-50 text-slate-800 border border-slate-300 hover:border-[#B92025] hover:text-[#B92025] text-xs sm:text-sm font-bold shadow-sm transition-all duration-200 cursor-pointer"

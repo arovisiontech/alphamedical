@@ -32,8 +32,9 @@ export default function ProductsPage() {
         cartCount={cartItems.length}
       />
       <MainRedNavbar />
-      <EntSurgeryBanner />
-      <ShopCatalogWithFilters onAddToCart={handleAddToCart} />
+      <main className="flex-1 pb-12 sm:pb-16">
+        <ShopCatalogWithFilters onAddToCart={handleAddToCart} />
+      </main>
       <PublicFooter />
 
       <PublicSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
