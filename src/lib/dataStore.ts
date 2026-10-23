@@ -21,6 +21,8 @@ import {
 import {
   savePersistentData,
   getLocalStorageSync,
+  getItemIDB,
+  setItemIDB,
 } from '@/src/lib/persistentStorage'
 import { GeoStoreSettings } from '@/src/types/storeSettings'
 
@@ -179,58 +181,241 @@ if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined') {
   } catch (e) {}
 }
 
-export function getStoredProducts(): ProductItem[] {
-  if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
+// Dedicated constant of baseline seed product IDs
+export const SEED_PRODUCT_IDS = new Set<string>(INITIAL_PRODUCTS_SEED.map((p) => p.id))
+
+// GET ALL PROTECTED USER UPLOADED PRODUCTS
+export function getUserUploadedProducts(): ProductItem[] {
+  if (typeof window === 'undefined') return []
   try {
-    const rawV6 = localStorage.getItem('alpha_products_v6')
-    if (rawV6) {
-      try {
-        const parsed = JSON.parse(rawV6)
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed
-      } catch (err) {}
+    const raw = localStorage.getItem('alpha_user_uploaded_products')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) {}
+  return []
+}
+
+// GET DELETED PRODUCT IDS (DELIBERATELY DELETED BY USER)
+export function getDeletedProductIds(): string[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem('alpha_deleted_product_ids')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) {}
+  return []
+}
+
+// MARK PRODUCT AS DELETED
+export function markProductAsDeleted(id: string): void {
+  if (typeof window === 'undefined' || !id) return
+  try {
+    const deleted = getDeletedProductIds()
+    if (!deleted.includes(id)) {
+      deleted.push(id)
+      localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(deleted))
+      savePersistentData('alpha_deleted_product_ids', deleted)
     }
 
-    // Merge any previous user-created products from v5/v4 with the fresh seed
-    let merged = [...INITIAL_PRODUCTS_SEED]
-    const rawPrev = localStorage.getItem('alpha_products_v5') || localStorage.getItem('alpha_products_v4')
-    if (rawPrev) {
-      try {
-        const parsedPrev = JSON.parse(rawPrev)
-        if (Array.isArray(parsedPrev)) {
-          parsedPrev.forEach((p: ProductItem) => {
-            if (p && p.id && !merged.some((m) => m.id === p.id || m.sku === p.sku)) {
-              merged.push(p)
+    // Also remove from alpha_user_uploaded_products so it does not resurrect
+    const userProds = getUserUploadedProducts().filter((p) => p.id !== id)
+    localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))
+    savePersistentData('alpha_user_uploaded_products', userProds)
+  } catch (e) {}
+}
+
+let isRescueRun = false
+
+// RESCUE SCANNER: AUTOMATICALLY FINDS & RESTORES CLIENT'S PRODUCTS FROM ANY PREVIOUS VERSION
+export function rescueHistoricalUserProducts(): ProductItem[] {
+  if (typeof window === 'undefined') return []
+
+  const rescuedMap = new Map<string, ProductItem>()
+  const deletedIds = getDeletedProductIds()
+
+  // 1. Existing user-uploaded products
+  getUserUploadedProducts().forEach((p) => {
+    if (p && p.id && !deletedIds.includes(p.id)) {
+      rescuedMap.set(p.id, p)
+    }
+  })
+
+  // 2. Scan all historical localStorage keys where client's uploads might exist
+  const historicalKeys = [
+    'alpha_products_v6',
+    'alpha_products_v5',
+    'alpha_products_v4',
+    'alpha_products_v3',
+    'alpha_products_v2',
+    'alpha_products',
+    'alpha_products_user_managed',
+    'alpha_store_products',
+  ]
+
+  historicalKeys.forEach((key) => {
+    try {
+      const raw = localStorage.getItem(key)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed)) {
+          parsed.forEach((p: ProductItem) => {
+            if (p && p.id && !deletedIds.includes(p.id)) {
+              const isSeed = SEED_PRODUCT_IDS.has(p.id)
+              // If it's NOT a seed product, OR marked user created, or has custom title/id: RESCUE IT!
+              if (!isSeed || p.is_user_created) {
+                if (!rescuedMap.has(p.id)) {
+                  p.is_user_created = true
+                  rescuedMap.set(p.id, p)
+                }
+              }
             }
           })
         }
-      } catch (e) {}
+      }
+    } catch (e) {}
+  })
+
+  const rescuedList = Array.from(rescuedMap.values())
+
+  // Persist immediately into protected store so it can NEVER be lost again
+  if (rescuedList.length > 0) {
+    try {
+      localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(rescuedList))
+      savePersistentData('alpha_user_uploaded_products', rescuedList)
+    } catch (e) {}
+  }
+
+  // Also asynchronously query IndexedDB for any previous items
+  if (!isRescueRun) {
+    isRescueRun = true
+    getItemIDB<ProductItem[]>('alpha_user_uploaded_products')
+      .then((idbProds) => {
+        if (Array.isArray(idbProds) && idbProds.length > 0) {
+          let hasNew = false
+          idbProds.forEach((p) => {
+            if (p && p.id && !deletedIds.includes(p.id) && !rescuedMap.has(p.id)) {
+              rescuedMap.set(p.id, p)
+              hasNew = true
+            }
+          })
+          if (hasNew) {
+            const updated = Array.from(rescuedMap.values())
+            localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(updated))
+            window.dispatchEvent(new Event('alpha_content_updated'))
+          }
+        }
+      })
+      .catch(() => {})
+  }
+
+  return rescuedList
+}
+
+// NON-DESTRUCTIVE SERVER MERGE: Server responses NEVER wipe user uploads!
+export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[] {
+  if (typeof window === 'undefined' || !Array.isArray(serverProds)) return getStoredProducts()
+
+  const userProds = rescueHistoricalUserProducts()
+  const deletedIds = getDeletedProductIds()
+
+  const combinedMap = new Map<string, ProductItem>()
+
+  // 1. User uploaded products ALWAYS have top priority and CANNOT be removed by server
+  userProds.forEach((up) => {
+    if (up && up.id && !deletedIds.includes(up.id)) {
+      combinedMap.set(up.id, up)
     }
+  })
 
-    const serialized = JSON.stringify(merged)
+  // 2. Add server products (if not deleted and not overriding user product)
+  serverProds.forEach((sp) => {
+    if (sp && sp.id && !deletedIds.includes(sp.id)) {
+      if (!combinedMap.has(sp.id)) {
+        combinedMap.set(sp.id, sp)
+      }
+    }
+  })
+
+  // 3. Add any baseline seeds missing
+  INITIAL_PRODUCTS_SEED.forEach((seed) => {
+    if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
+      combinedMap.set(seed.id, seed)
+    }
+  })
+
+  const merged = Array.from(combinedMap.values())
+  const serialized = JSON.stringify(merged)
+  localStorage.setItem('alpha_products_v6', serialized)
+  localStorage.setItem('alpha_products_v5', serialized)
+
+  // Send user products to server if server was missing them!
+  const serverMissingUserProds = userProds.filter((up) => !serverProds.some((sp) => sp.id === up.id))
+  if (serverMissingUserProds.length > 0) {
+    fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: serialized,
+    }).catch(() => {})
+  }
+
+  window.dispatchEvent(new Event('alpha_content_updated'))
+  return merged
+}
+
+export function getStoredProducts(): ProductItem[] {
+  if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
+  try {
+    // 1. Run rescue scanner to guarantee all user uploads exist
+    const userProds = rescueHistoricalUserProducts()
+    const deletedIds = getDeletedProductIds()
+
+    // 2. Build complete merged list
+    const mergedMap = new Map<string, ProductItem>()
+
+    // User products come FIRST
+    userProds.forEach((p) => {
+      if (p && p.id && !deletedIds.includes(p.id)) {
+        mergedMap.set(p.id, p)
+      }
+    })
+
+    // Baseline seeds come next
+    INITIAL_PRODUCTS_SEED.forEach((seedProd) => {
+      if (!deletedIds.includes(seedProd.id)) {
+        if (!mergedMap.has(seedProd.id)) {
+          const skuConflict =
+            seedProd.sku && Array.from(mergedMap.values()).some((m) => m.sku === seedProd.sku)
+          if (!skuConflict) {
+            mergedMap.set(seedProd.id, seedProd)
+          }
+        }
+      }
+    })
+
+    const finalProducts = Array.from(mergedMap.values())
+
+    // Update fast-access cache
+    const serialized = JSON.stringify(finalProducts)
     localStorage.setItem('alpha_products_v6', serialized)
-    localStorage.setItem('alpha_products_v5', serialized)
-    localStorage.removeItem('alpha_products_v4')
-    localStorage.removeItem('alpha_products_v3')
-    localStorage.removeItem('alpha_products_v2')
-    localStorage.removeItem('alpha_products')
 
-    // Always background-sync latest from /api/products
+    // Always background-sync latest from /api/products NON-DESTRUCTIVELY
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
         .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
-            const serverStr = JSON.stringify(serverProds)
-            localStorage.setItem('alpha_products_v6', serverStr)
-            localStorage.setItem('alpha_products_v5', serverStr)
-            window.dispatchEvent(new Event('alpha_content_updated'))
+            syncWithServerProducts(serverProds)
           }
         })
         .catch(() => {})
     }
 
-    return merged
+    return finalProducts
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
   }
@@ -240,6 +425,33 @@ export function getStoredProducts(): ProductItem[] {
 export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
+      // 1. Separate user-uploaded products and preserve them in dedicated immutable store
+      const userProds: ProductItem[] = []
+      const currentDeleted = getDeletedProductIds()
+      const newDeletedSet = new Set(currentDeleted)
+
+      products.forEach((p) => {
+        if (!SEED_PRODUCT_IDS.has(p.id) || p.is_user_created) {
+          userProds.push({ ...p, is_user_created: true })
+        }
+      })
+
+      // If user deleted any product that previously existed in stored products, track its deletion
+      const currentStored = getStoredProducts()
+      currentStored.forEach((p) => {
+        if (!products.some((newP) => newP.id === p.id)) {
+          newDeletedSet.add(p.id)
+        }
+      })
+
+      const finalDeleted = Array.from(newDeletedSet)
+      localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(finalDeleted))
+      savePersistentData('alpha_deleted_product_ids', finalDeleted)
+
+      // SAVE TO PROTECTED USER STORE IN BOTH LOCALSTORAGE AND INDEXEDDB
+      localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))
+      savePersistentData('alpha_user_uploaded_products', userProds)
+
       const serialized = JSON.stringify(products)
       localStorage.setItem('alpha_products_v6', serialized)
       localStorage.setItem('alpha_products_v5', serialized)
@@ -271,15 +483,11 @@ export function saveStoredProducts(products: ProductItem[]): void {
 export function resetToCleanBaselineProducts(): ProductItem[] {
   if (typeof window !== 'undefined') {
     try {
-      localStorage.removeItem('alpha_products_v3')
-      localStorage.removeItem('alpha_products_v2')
-      localStorage.removeItem('alpha_products')
-      const serialized = JSON.stringify(INITIAL_PRODUCTS_SEED)
-      localStorage.setItem('alpha_products_v4', serialized)
-      localStorage.setItem('alpha_products_v3', serialized)
-      localStorage.setItem('alpha_products_v2', serialized)
-      localStorage.setItem('alpha_products', serialized)
-      localStorage.setItem('alpha_products_user_managed', 'false')
+      const userProds = getUserUploadedProducts()
+      const combined = [...userProds, ...INITIAL_PRODUCTS_SEED]
+      const serialized = JSON.stringify(combined)
+      localStorage.setItem('alpha_products_v6', serialized)
+      localStorage.setItem('alpha_products_v5', serialized)
       window.dispatchEvent(new Event('alpha_content_updated'))
 
       fetch('/api/products', {
@@ -287,6 +495,7 @@ export function resetToCleanBaselineProducts(): ProductItem[] {
         headers: { 'Content-Type': 'application/json' },
         body: serialized,
       }).catch((e) => console.warn('Failed to reset products on API:', e))
+      return combined
     } catch (e) {}
   }
   return INITIAL_PRODUCTS_SEED

@@ -23,6 +23,7 @@ import {
 import {
   getStoredProducts,
   getStoredCategories,
+  syncWithServerProducts,
   INITIAL_PRODUCTS_SEED,
   INITIAL_CATEGORIES_SEED,
 } from '@/src/lib/dataStore'
@@ -77,7 +78,8 @@ function ShopCatalogContent({
       .then((res) => res.json())
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
-          setProducts(serverProds.filter((p: any) => p.is_published !== false))
+          syncWithServerProducts(serverProds)
+          loadData()
         }
       })
       .catch(() => {})

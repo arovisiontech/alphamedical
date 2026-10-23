@@ -48,6 +48,7 @@ export interface ProductItem {
   sizes?: string[]
   stock_quantity?: number
   quantity_discounts?: QuantityDiscountTier[]
+  is_user_created?: boolean
 }
 
 export interface QuantityDiscountTier {

@@ -42,6 +42,7 @@ import {
   getStoredCategories,
   saveStoredCategories,
   resetToCleanBaselineProducts,
+  markProductAsDeleted,
 } from '@/src/lib/dataStore'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
@@ -484,7 +485,7 @@ function AdminProductsContent() {
               sku: formData.sku,
               price: Number(formData.price),
               original_price: Number(formData.original_price),
-              weight: formData.weight || '140g',
+              weight: formData.weight || undefined,
               badge: formData.badge || null,
               category_id: resolvedCatId,
               category_name: resolvedCatName,
@@ -504,12 +505,13 @@ function AdminProductsContent() {
               is_new_arrival: formData.is_new_arrival,
               is_featured: formData.is_featured,
               is_published: formData.is_published,
+              is_user_created: true,
               specifications: {
                 ...(p.specifications || {}),
                 Category: resolvedCatName,
                 Subcategory: resolvedSubcatName,
                 Group: resolvedSubSubcatName,
-                Weight: formData.weight || '140g',
+                ...(formData.weight ? { Weight: formData.weight } : {}),
               },
               updated_at: new Date().toISOString(),
             }
@@ -530,7 +532,7 @@ function AdminProductsContent() {
         sub_subcategory_name: resolvedSubSubcatName,
         price: Number(formData.price),
         original_price: Number(formData.original_price),
-        weight: formData.weight || '140g',
+        weight: formData.weight || undefined,
         badge: formData.badge || null,
         short_description: formData.short_description || `High quality medical equipment for ${resolvedCatName}.`,
         full_description: formData.full_description || `Precision engineered medical device for ${resolvedCatName} - ${resolvedSubcatName}. Built to last with hospital grade compliance.`,
@@ -544,7 +546,7 @@ function AdminProductsContent() {
           Category: resolvedCatName,
           Subcategory: resolvedSubcatName,
           Group: resolvedSubSubcatName,
-          Weight: formData.weight || '140g',
+          ...(formData.weight ? { Weight: formData.weight } : {}),
           'Quality Grade': 'Medical Grade German Stainless Steel',
           Sterilization: 'Autoclavable (134°C)',
         },
@@ -554,6 +556,7 @@ function AdminProductsContent() {
         is_new_arrival: formData.is_new_arrival,
         is_featured: formData.is_featured,
         is_published: formData.is_published,
+        is_user_created: true,
         seo_title: `${formData.title} - Alpha Medical Supplies`,
         seo_description: formData.short_description,
         sort_order: products.length + 1,
@@ -575,6 +578,7 @@ function AdminProductsContent() {
   const handleDelete = (id: string) => {
     const target = products.find((p) => p.id === id)
     if (confirm(`Are you sure you want to delete "${target?.title || 'this product'}"? This action will permanently remove it.`)) {
+      markProductAsDeleted(id)
       const updated = products.filter((p) => p.id !== id)
       setProducts(updated)
       saveStoredProducts(updated)
