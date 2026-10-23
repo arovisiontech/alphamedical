@@ -9,8 +9,34 @@ export const revalidate = 0
 
 const dataFilePath = path.join(process.cwd(), 'src', 'data', 'products.json')
 const tmpFilePath = path.join(os.tmpdir(), 'alpha_products.json')
+const deletedFilePath = path.join(os.tmpdir(), 'alpha_deleted_product_ids.json')
 
-const g = globalThis as unknown as { __alpha_products?: ProductItem[] }
+const g = globalThis as unknown as {
+  __alpha_products?: ProductItem[]
+  __alpha_deleted_ids?: Set<string>
+}
+
+function getDeletedProductIdsFromFile(): Set<string> {
+  if (g.__alpha_deleted_ids) return g.__alpha_deleted_ids
+  g.__alpha_deleted_ids = new Set<string>()
+  try {
+    if (fs.existsSync(deletedFilePath)) {
+      const data = JSON.parse(fs.readFileSync(deletedFilePath, 'utf-8'))
+      if (Array.isArray(data)) {
+        data.forEach((id: string) => g.__alpha_deleted_ids!.add(id))
+      }
+    }
+  } catch (e) {}
+  return g.__alpha_deleted_ids
+}
+
+function saveDeletedProductIdToFile(id: string): void {
+  const ids = getDeletedProductIdsFromFile()
+  ids.add(id)
+  try {
+    fs.writeFileSync(deletedFilePath, JSON.stringify(Array.from(ids)), 'utf-8')
+  } catch (e) {}
+}
 
 function getStoredProductsFromFile(): ProductItem[] {
   // 1. Check in-memory global store first (reflects latest live edits/deletions)
@@ -76,11 +102,14 @@ function saveProductsToFile(products: ProductItem[]): boolean {
 
 export async function GET(req: NextRequest) {
   const products = getStoredProductsFromFile()
-  return NextResponse.json(products, {
+  const deletedIds = getDeletedProductIdsFromFile()
+  const activeProducts = products.filter((p) => !deletedIds.has(p.id))
+  return NextResponse.json(activeProducts, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
       'Pragma': 'no-cache',
       'Expires': '0',
+      'x-deleted-product-ids': JSON.stringify(Array.from(deletedIds)),
     },
   })
 }
@@ -92,9 +121,18 @@ export async function POST(req: NextRequest) {
 
     if (Array.isArray(body)) {
       // Entire array save
-      updatedProducts = body
+      const current = getStoredProductsFromFile()
+      // If any existing product was omitted from body, mark it as deleted so it can never resurrect
+      current.forEach((cp) => {
+        if (!body.some((bp) => bp.id === cp.id)) {
+          saveDeletedProductIdToFile(cp.id)
+        }
+      })
+      const deletedIds = getDeletedProductIdsFromFile()
+      updatedProducts = body.filter((p) => !deletedIds.has(p.id))
     } else if (body && body.action === 'delete' && body.id) {
-      // Delete single item
+      // Delete single item permanently
+      saveDeletedProductIdToFile(body.id)
       const current = getStoredProductsFromFile()
       updatedProducts = current.filter((p) => p.id !== body.id)
     } else if (body && body.action === 'saveSingle' && body.product) {

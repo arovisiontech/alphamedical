@@ -64,7 +64,26 @@ function AdminProductsContent() {
   const [drilldownCategory, setDrilldownCategory] = useState<CategoryItem | null>(null)
   const [drilldownSubcategory, setDrilldownSubcategory] = useState<CategoryItem | null>(null)
 
-  // Add Category Modal
+  // Unified Add / Edit / Remove Category, Subcategory & Group Modal
+  const [categoryModal, setCategoryModal] = useState<{
+    isOpen: boolean
+    mode: 'add_main' | 'edit_main' | 'add_sub' | 'edit_sub' | 'add_group' | 'edit_group'
+    targetCategory: CategoryItem | null
+    parentId: string | null
+    name: string
+    icon: string
+    description: string
+  }>({
+    isOpen: false,
+    mode: 'add_main',
+    targetCategory: null,
+    parentId: null,
+    name: '',
+    icon: '✂️',
+    description: '',
+  })
+
+  // Add Category Modal (legacy fallbacks)
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false)
   const [newCategoryData, setNewCategoryData] = useState({
     name: '',
@@ -73,7 +92,7 @@ function AdminProductsContent() {
     description: '',
   })
 
-  // Add Subcategory Modal
+  // Add Subcategory Modal (legacy fallbacks)
   const [isAddSubcategoryOpen, setIsAddSubcategoryOpen] = useState(false)
   const [newSubcategoryData, setNewSubcategoryData] = useState({
     parent_id: '',
@@ -429,6 +448,247 @@ function AdminProductsContent() {
     saveStoredCategories(updatedCats)
     showToast(`New subcategory "${newSubcat.name}" created!`)
     return newSubcat
+  }
+
+  // ==========================================
+  // COMPREHENSIVE CATEGORY CRUD HANDLERS
+  // ==========================================
+  const handleOpenCategoryModal = (
+    mode: 'add_main' | 'edit_main' | 'add_sub' | 'edit_sub' | 'add_group' | 'edit_group',
+    targetCategory: CategoryItem | null = null,
+    parentId: string | null = null
+  ) => {
+    let initialIcon = '📁'
+    if (mode === 'add_main') initialIcon = '✂️'
+    else if (mode === 'add_sub') initialIcon = '📂'
+    else if (mode === 'add_group') initialIcon = '🔹'
+    else if (targetCategory?.icon) initialIcon = targetCategory.icon
+
+    setCategoryModal({
+      isOpen: true,
+      mode,
+      targetCategory,
+      parentId: parentId || targetCategory?.parent_id || null,
+      name: targetCategory?.name || '',
+      icon: initialIcon,
+      description: targetCategory?.description || '',
+    })
+  }
+
+  const handleSaveCategoryModal = (e: React.FormEvent) => {
+    e.preventDefault()
+    const { mode, targetCategory, parentId, name, icon, description } = categoryModal
+    if (!name.trim()) return
+
+    const trimmedName = name.trim()
+    const cleanSlug = trimmedName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
+
+    let updatedCats: CategoryItem[] = []
+
+    if (mode === 'add_main') {
+      const newCat: CategoryItem = {
+        id: `cat-${cleanSlug}-${Date.now()}`,
+        parent_id: null,
+        name: trimmedName,
+        slug: cleanSlug,
+        icon: icon || '📁',
+        description: description || `${trimmedName} equipment & instruments.`,
+        sort_order: categories.filter((c) => !c.parent_id || c.level === 0).length + 1,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        product_count: 0,
+        level: 0,
+      }
+      updatedCats = [...categories, newCat]
+      setActiveMainCatId(newCat.id)
+      setActiveSubcatId(null)
+      showToast(`Category "${newCat.name}" created successfully!`)
+    } else if (mode === 'edit_main' && targetCategory) {
+      const oldName = targetCategory.name
+      updatedCats = categories.map((c) =>
+        c.id === targetCategory.id
+          ? {
+              ...c,
+              name: trimmedName,
+              icon: icon || c.icon || '📁',
+              description: description,
+              updated_at: new Date().toISOString(),
+            }
+          : c
+      )
+      // Cascade rename to products if name changed
+      if (oldName !== trimmedName) {
+        const updatedProds = products.map((p) => {
+          if (p.category_id === targetCategory.id || p.category_name?.toLowerCase() === oldName.toLowerCase()) {
+            return {
+              ...p,
+              category_name: trimmedName,
+              specifications: {
+                ...(p.specifications || {}),
+                Category: trimmedName,
+              },
+              updated_at: new Date().toISOString(),
+            }
+          }
+          return p
+        })
+        setProducts(updatedProds)
+        saveStoredProducts(updatedProds)
+      }
+      showToast(`Category "${trimmedName}" updated successfully!`)
+    } else if (mode === 'add_sub') {
+      const resolvedParentId = parentId || activeMainCatId
+      const newSub: CategoryItem = {
+        id: `sub-${cleanSlug}-${Date.now()}`,
+        parent_id: resolvedParentId,
+        name: trimmedName,
+        slug: cleanSlug,
+        icon: icon || '📂',
+        description: description || `${trimmedName} specialized instruments and tools.`,
+        sort_order: categories.filter((c) => c.parent_id === resolvedParentId).length + 1,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        product_count: 0,
+        level: 1,
+      }
+      updatedCats = [...categories, newSub]
+      setActiveSubcatId(newSub.id)
+      showToast(`Subcategory "${newSub.name}" created successfully!`)
+    } else if (mode === 'edit_sub' && targetCategory) {
+      const oldName = targetCategory.name
+      updatedCats = categories.map((c) =>
+        c.id === targetCategory.id
+          ? {
+              ...c,
+              name: trimmedName,
+              icon: icon || c.icon || '📂',
+              description: description,
+              parent_id: parentId || c.parent_id,
+              updated_at: new Date().toISOString(),
+            }
+          : c
+      )
+      // Cascade rename to products
+      if (oldName !== trimmedName) {
+        const updatedProds = products.map((p) => {
+          if (p.subcategory_id === targetCategory.id || p.subcategory_name?.toLowerCase() === oldName.toLowerCase()) {
+            return {
+              ...p,
+              subcategory_name: trimmedName,
+              specifications: {
+                ...(p.specifications || {}),
+                Subcategory: trimmedName,
+              },
+              updated_at: new Date().toISOString(),
+            }
+          }
+          return p
+        })
+        setProducts(updatedProds)
+        saveStoredProducts(updatedProds)
+      }
+      showToast(`Subcategory "${trimmedName}" updated successfully!`)
+    } else if (mode === 'add_group') {
+      const resolvedParentId = parentId || activeSubcatId
+      if (!resolvedParentId) {
+        showToast('Please select a subcategory first.')
+        return
+      }
+      const newGroup: CategoryItem = {
+        id: `grp-${cleanSlug}-${Date.now()}`,
+        parent_id: resolvedParentId,
+        name: trimmedName,
+        slug: cleanSlug,
+        icon: '🔹',
+        description: description || `${trimmedName} instrument collection.`,
+        sort_order: categories.filter((c) => c.parent_id === resolvedParentId).length + 1,
+        is_published: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        product_count: 0,
+        level: 2,
+      }
+      updatedCats = [...categories, newGroup]
+      showToast(`Group "${newGroup.name}" created successfully!`)
+    } else if (mode === 'edit_group' && targetCategory) {
+      const oldName = targetCategory.name
+      updatedCats = categories.map((c) =>
+        c.id === targetCategory.id
+          ? {
+              ...c,
+              name: trimmedName,
+              description: description,
+              parent_id: parentId || c.parent_id,
+              updated_at: new Date().toISOString(),
+            }
+          : c
+      )
+      // Cascade rename to products
+      if (oldName !== trimmedName) {
+        const updatedProds = products.map((p) => {
+          if (p.sub_subcategory_id === targetCategory.id || p.sub_subcategory_name?.toLowerCase() === oldName.toLowerCase()) {
+            return {
+              ...p,
+              sub_subcategory_name: trimmedName,
+              specifications: {
+                ...(p.specifications || {}),
+                Group: trimmedName,
+              },
+              updated_at: new Date().toISOString(),
+            }
+          }
+          return p
+        })
+        setProducts(updatedProds)
+        saveStoredProducts(updatedProds)
+      }
+      showToast(`Group "${trimmedName}" updated successfully!`)
+    }
+
+    setCategories(updatedCats)
+    saveStoredCategories(updatedCats)
+    setCategoryModal((prev) => ({ ...prev, isOpen: false }))
+  }
+
+  const handleDeleteCategory = (cat: CategoryItem) => {
+    // Find all child and grandchild IDs
+    const toDelete = new Set<string>([cat.id])
+    let added = true
+    while (added) {
+      added = false
+      categories.forEach((c) => {
+        if (c.parent_id && toDelete.has(c.parent_id) && !toDelete.has(c.id)) {
+          toDelete.add(c.id)
+          added = true
+        }
+      })
+    }
+
+    const typeLabel = cat.level === 0 ? 'Main Category' : cat.level === 1 ? 'Subcategory' : 'Group'
+    const nestedCount = toDelete.size - 1
+    const confirmText = nestedCount > 0
+      ? `Are you sure you want to delete ${typeLabel} "${cat.name}" and its ${nestedCount} nested subcategories/groups? (Products will NOT be deleted).`
+      : `Are you sure you want to delete ${typeLabel} "${cat.name}"? (Products will NOT be deleted).`
+
+    if (!confirm(confirmText)) return
+
+    const remaining = categories.filter((c) => !toDelete.has(c.id))
+    setCategories(remaining)
+    saveStoredCategories(remaining)
+
+    // If active main cat was deleted, switch activeMainCatId
+    if (toDelete.has(activeMainCatId)) {
+      const nextMain = remaining.find((c) => !c.parent_id || c.level === 0)
+      setActiveMainCatId(nextMain?.id || '')
+      setActiveSubcatId(null)
+    } else if (activeSubcatId && toDelete.has(activeSubcatId)) {
+      const nextSub = remaining.find((c) => c.parent_id === activeMainCatId && c.level === 1)
+      setActiveSubcatId(nextSub?.id || null)
+    }
+
+    showToast(`"${cat.name}" removed successfully! Live on website & saved across reload.`)
   }
 
   // ==========================================
@@ -789,9 +1049,19 @@ function AdminProductsContent() {
 
           {/* LEVEL 0: MAIN CATEGORIES TABS */}
           <div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#96161B]" />
-              <span>Main Categories</span>
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#96161B]" />
+                <span>Main Categories</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleOpenCategoryModal('add_main')}
+                className="text-xs font-bold text-[#96161B] hover:text-[#7d1216] bg-red-50 hover:bg-red-100 border border-red-200/80 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Category</span>
+              </button>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
               {mainCategories.map((cat) => {
@@ -800,23 +1070,48 @@ function AdminProductsContent() {
                 const isActive = activeMainCatId === cat.id
 
                 return (
-                  <button
+                  <div
                     key={cat.id}
-                    type="button"
                     onClick={() => {
                       setActiveMainCatId(cat.id)
                       const firstSub = childSubs[0]?.id || null
                       setActiveSubcatId(firstSub)
                     }}
-                    className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`relative group/cat p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
                       isActive
                         ? 'border-[#96161B] bg-gradient-to-br from-red-50/80 to-white shadow-md shadow-red-950/5 ring-2 ring-[#96161B]/20'
                         : 'border-slate-200 hover:border-slate-300 bg-slate-50/70 hover:bg-white'
                     }`}
                   >
+                    {/* Action buttons (Edit & Delete) on Category Card */}
+                    <div className="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-70 group-hover/cat:opacity-100 transition-opacity z-10">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleOpenCategoryModal('edit_main', cat)
+                        }}
+                        className="p-1.5 rounded-lg bg-white/95 hover:bg-slate-100 border border-slate-200 text-slate-600 hover:text-slate-900 shadow-2xs transition-colors cursor-pointer"
+                        title={`Edit category ${cat.name}`}
+                      >
+                        <Edit2 className="w-3 h-3 text-slate-700" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCategory(cat)
+                        }}
+                        className="p-1.5 rounded-lg bg-white/95 hover:bg-red-50 border border-slate-200 text-slate-400 hover:text-red-600 shadow-2xs transition-colors cursor-pointer"
+                        title={`Delete category ${cat.name}`}
+                      >
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                      </button>
+                    </div>
+
                     <div>
                       <div className="text-xl mb-1">{cat.icon || '📁'}</div>
-                      <div className={`font-black text-xs sm:text-sm line-clamp-1 ${isActive ? 'text-[#96161B]' : 'text-slate-800'}`}>
+                      <div className={`font-black text-xs sm:text-sm line-clamp-1 pr-14 ${isActive ? 'text-[#96161B]' : 'text-slate-800'}`}>
                         {cat.name}
                       </div>
                     </div>
@@ -828,7 +1123,7 @@ function AdminProductsContent() {
                         {catProds.length} Prods
                       </span>
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>
@@ -841,8 +1136,16 @@ function AdminProductsContent() {
 
             if (currentSubs.length === 0) {
               return (
-                <div className="p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center">
-                  <p className="text-xs text-slate-500 font-semibold">No subcategories defined for this category.</p>
+                <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center space-y-3">
+                  <p className="text-xs text-slate-500 font-semibold">No subcategories defined for {currentMainCat?.name}.</p>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenCategoryModal('add_sub', null, activeMainCatId)}
+                    className="text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] px-4 py-2 rounded-xl transition-all cursor-pointer inline-flex items-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Create First Subcategory</span>
+                  </button>
                 </div>
               )
             }
@@ -855,13 +1158,11 @@ function AdminProductsContent() {
                     <span>Subcategories ({currentMainCat?.name})</span>
                   </div>
                   <button
-                    onClick={() => {
-                      setNewSubcategoryData({ parent_id: activeMainCatId, name: '', description: '' })
-                      setIsAddSubcategoryOpen(true)
-                    }}
-                    className="text-[11px] font-bold text-indigo-700 hover:underline flex items-center gap-1 cursor-pointer"
+                    type="button"
+                    onClick={() => handleOpenCategoryModal('add_sub', null, activeMainCatId)}
+                    className="text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
                   >
-                    <Plus className="w-3 h-3" />
+                    <Plus className="w-3.5 h-3.5" />
                     <span>New Subcategory</span>
                   </button>
                 </div>
@@ -907,7 +1208,37 @@ function AdminProductsContent() {
                           </div>
 
                           <div className="flex items-center gap-2 self-end sm:self-center" onClick={(e) => e.stopPropagation()}>
+                            {/* Edit Subcategory */}
                             <button
+                              type="button"
+                              onClick={() => handleOpenCategoryModal('edit_sub', subcat, activeMainCatId)}
+                              className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors shadow-2xs cursor-pointer"
+                              title={`Edit subcategory ${subcat.name}`}
+                            >
+                              <Edit2 className="w-3.5 h-3.5 text-slate-700" />
+                            </button>
+                            {/* Delete Subcategory */}
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteCategory(subcat)}
+                              className="p-1.5 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors shadow-2xs cursor-pointer"
+                              title={`Delete subcategory ${subcat.name}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                            </button>
+                            {/* Add Group */}
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCategoryModal('add_group', null, subcat.id)}
+                              className="text-xs font-bold text-slate-700 hover:text-indigo-700 bg-slate-100 hover:bg-indigo-50 border border-slate-200 px-2.5 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                              title={`Add an instrument group in ${subcat.name}`}
+                            >
+                              <Plus className="w-3 h-3 text-indigo-600" />
+                              <span>+ Group</span>
+                            </button>
+                            {/* Add Product in Subcategory */}
+                            <button
+                              type="button"
                               onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
                               className="text-xs font-bold text-indigo-700 hover:text-white hover:bg-indigo-600 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
                               title="Add product directly into this subcategory"
@@ -916,8 +1247,9 @@ function AdminProductsContent() {
                               <span>Add Product in {subcat.name}</span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => setActiveSubcatId(isOpen ? null : subcat.id)}
-                              className="text-xs font-bold text-slate-400 hover:text-slate-700 p-1.5 rounded-lg"
+                              className="text-xs font-bold text-slate-400 hover:text-slate-700 p-1.5 rounded-lg cursor-pointer"
                             >
                               {isOpen ? 'Collapse' : 'Expand'}
                             </button>
@@ -931,13 +1263,24 @@ function AdminProductsContent() {
                               <div>
                                 <div className="flex items-center justify-between mb-3">
                                   <span className="text-xs font-bold text-slate-600">Direct Products in {subcat.name}:</span>
-                                  <button
-                                    onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
-                                    className="text-xs font-bold text-[#96161B] hover:underline flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                    <span>Add Product</span>
-                                  </button>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenCategoryModal('add_group', null, subcat.id)}
+                                      className="text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 px-2.5 py-1 rounded-xl flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>Add 1st Group</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAdd(activeMainCatId, subcat.id)}
+                                      className="text-xs font-bold text-[#96161B] hover:underline flex items-center gap-1 cursor-pointer"
+                                    >
+                                      <Plus className="w-3 h-3" />
+                                      <span>Add Product</span>
+                                    </button>
+                                  </div>
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                   {subcatProds.map((prod) => (
@@ -969,6 +1312,24 @@ function AdminProductsContent() {
                                         <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full">
                                           {groupProds.length} {groupProds.length === 1 ? 'Product' : 'Products'}
                                         </span>
+                                        {/* Edit Group */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleOpenCategoryModal('edit_group', group, subcat.id)}
+                                          className="p-1 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+                                          title={`Edit group ${group.name}`}
+                                        >
+                                          <Edit2 className="w-3.5 h-3.5" />
+                                        </button>
+                                        {/* Delete Group */}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleDeleteCategory(group)}
+                                          className="p-1 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors cursor-pointer"
+                                          title={`Delete group ${group.name}`}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                                        </button>
                                       </div>
 
                                       <button
@@ -1390,10 +1751,7 @@ function AdminProductsContent() {
               </div>
 
               <button
-                onClick={() => {
-                  setNewSubcategoryData({ parent_id: drilldownCategory.id, name: '', description: '' })
-                  setIsAddSubcategoryOpen(true)
-                }}
+                onClick={() => handleOpenCategoryModal('add_sub', null, drilldownCategory.id)}
                 className="bg-[#96161B] hover:bg-[#7d1216] text-white text-xs font-bold px-4 py-2.5 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-sm w-fit"
               >
                 <Plus className="w-3.5 h-3.5" />
@@ -1409,11 +1767,8 @@ function AdminProductsContent() {
                     No subcategories created yet under &quot;{drilldownCategory.name}&quot;.
                   </p>
                   <button
-                    onClick={() => {
-                      setNewSubcategoryData({ parent_id: drilldownCategory.id, name: '', description: '' })
-                      setIsAddSubcategoryOpen(true)
-                    }}
-                    className="bg-[#96161B] text-white text-xs font-bold px-4 py-2 rounded-xl"
+                    onClick={() => handleOpenCategoryModal('add_sub', null, drilldownCategory.id)}
+                    className="bg-[#96161B] text-white text-xs font-bold px-4 py-2 rounded-xl cursor-pointer"
                   >
                     + Create First Subcategory
                   </button>
@@ -1445,6 +1800,22 @@ function AdminProductsContent() {
                         </div>
 
                         <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenCategoryModal('edit_sub', subcat, drilldownCategory.id)}
+                            className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition-colors shadow-2xs cursor-pointer"
+                            title={`Edit subcategory ${subcat.name}`}
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteCategory(subcat)}
+                            className="p-2 rounded-xl border border-slate-200 bg-white hover:bg-red-50 text-slate-400 hover:text-red-600 transition-colors shadow-2xs cursor-pointer"
+                            title={`Delete subcategory ${subcat.name}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                          </button>
                           <button
                             onClick={() => {
                               handleOpenAdd(drilldownCategory.id, subcat.id)
@@ -1608,75 +1979,148 @@ function AdminProductsContent() {
       )}
 
       {/* ========================================================
-          POPUP 4: ADD CATEGORY MODAL
+          POPUP 4: UNIFIED CATEGORY / SUBCATEGORY / GROUP CRUD MODAL
       ======================================================== */}
-      {isAddCategoryOpen && (
+      {categoryModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in font-sans">
           <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200">
             <button
-              onClick={() => setIsAddCategoryOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer"
+              onClick={() => setCategoryModal((prev) => ({ ...prev, isOpen: false }))}
+              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="mb-5">
               <span className="text-[11px] font-bold text-[#96161B] uppercase tracking-wider">
-                Create Main Category
+                {categoryModal.mode.startsWith('add') ? 'Create Hierarchy Item' : 'Edit Hierarchy Item'}
               </span>
-              <h3 className="text-xl font-black text-slate-900">Add New Category</h3>
+              <h3 className="text-xl font-black text-slate-900">
+                {categoryModal.mode === 'add_main' && 'Add New Main Category'}
+                {categoryModal.mode === 'edit_main' && `Edit Category: ${categoryModal.targetCategory?.name || ''}`}
+                {categoryModal.mode === 'add_sub' && 'Add New Subcategory'}
+                {categoryModal.mode === 'edit_sub' && `Edit Subcategory: ${categoryModal.targetCategory?.name || ''}`}
+                {categoryModal.mode === 'add_group' && 'Add Instrument Group'}
+                {categoryModal.mode === 'edit_group' && `Edit Group: ${categoryModal.targetCategory?.name || ''}`}
+              </h3>
+              <p className="text-xs text-slate-500 mt-1">
+                {categoryModal.mode.includes('edit')
+                  ? 'Changes will immediately update across the website, filters, and products.'
+                  : 'New items will be immediately available on the website storefront.'}
+              </p>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!newCategoryData.name.trim()) return
-                handleCreateCategory(
-                  newCategoryData.name,
-                  newCategoryData.icon,
-                  newCategoryData.description
-                )
-                setNewCategoryData({ name: '', slug: '', icon: '✂️', description: '' })
-                setIsAddCategoryOpen(false)
-              }}
-              className="space-y-4"
-            >
+            <form onSubmit={handleSaveCategoryModal} className="space-y-4">
+              {/* Parent category selector for Subcategory */}
+              {(categoryModal.mode === 'add_sub' || categoryModal.mode === 'edit_sub') && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Parent Main Category *
+                  </label>
+                  <select
+                    required
+                    value={categoryModal.parentId || activeMainCatId}
+                    onChange={(e) => setCategoryModal({ ...categoryModal, parentId: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#96161B]"
+                  >
+                    {mainCategories.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.icon || '📁'} {c.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Parent subcategory selector for Group */}
+              {(categoryModal.mode === 'add_group' || categoryModal.mode === 'edit_group') && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Parent Subcategory *
+                  </label>
+                  <select
+                    required
+                    value={categoryModal.parentId || activeSubcatId || ''}
+                    onChange={(e) => setCategoryModal({ ...categoryModal, parentId: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#96161B]"
+                  >
+                    {categories
+                      .filter((c) => c.level === 1)
+                      .map((c) => {
+                        const parent = categories.find((p) => p.id === c.parent_id)
+                        return (
+                          <option key={c.id} value={c.id}>
+                            {parent ? `${parent.name} ➔ ` : ''}{c.name}
+                          </option>
+                        )
+                      })}
+                  </select>
+                </div>
+              )}
+
+              {/* Name */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Category Title *
+                  {categoryModal.mode.includes('group') ? 'Group Name *' : categoryModal.mode.includes('sub') ? 'Subcategory Name *' : 'Category Name *'}
                 </label>
                 <input
                   type="text"
                   required
-                  value={newCategoryData.name}
-                  onChange={(e) => setNewCategoryData({ ...newCategoryData, name: e.target.value })}
-                  placeholder="e.g. Surgical Instruments, Dental Tools"
+                  autoFocus
+                  value={categoryModal.name}
+                  onChange={(e) => setCategoryModal({ ...categoryModal, name: e.target.value })}
+                  placeholder={
+                    categoryModal.mode.includes('group')
+                      ? 'e.g. Sterile Gloves, Bone Rongeurs, Needle Holders'
+                      : categoryModal.mode.includes('sub')
+                      ? 'e.g. Dental & Oral Surgery, Disposables'
+                      : 'e.g. Surgical Instruments, Medical Supplies'
+                  }
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-[#96161B]"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Icon (Emoji)
-                </label>
-                <input
-                  type="text"
-                  value={newCategoryData.icon}
-                  onChange={(e) => setNewCategoryData({ ...newCategoryData, icon: e.target.value })}
-                  placeholder="✂️, 🩹, 🩺, 🥽"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[#96161B]"
-                />
-              </div>
+              {/* Icon (for Main Categories and Subcategories) */}
+              {!categoryModal.mode.includes('group') && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Icon (Emoji)
+                  </label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      value={categoryModal.icon}
+                      onChange={(e) => setCategoryModal({ ...categoryModal, icon: e.target.value })}
+                      className="w-20 px-3 py-2 text-center text-lg rounded-xl border border-slate-300 outline-none focus:ring-2 focus:ring-[#96161B]"
+                    />
+                    <div className="flex flex-wrap gap-1.5 flex-1">
+                      {['✂️', '🩹', '🥽', '🩺', '🏷️', '🦷', '🦴', '🔬', '💉', '🛏️', '🏥', '📁', '📂', '⚡'].map((emoji) => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setCategoryModal({ ...categoryModal, icon: emoji })}
+                          className={`w-7 h-7 rounded-lg text-sm border flex items-center justify-center hover:scale-110 transition-transform cursor-pointer ${
+                            categoryModal.icon === emoji ? 'border-[#96161B] bg-red-50' : 'border-slate-200 bg-slate-50'
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
 
+              {/* Description */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Description
                 </label>
                 <textarea
                   rows={2}
-                  value={newCategoryData.description}
-                  onChange={(e) => setNewCategoryData({ ...newCategoryData, description: e.target.value })}
-                  placeholder="Brief summary of instruments and tools in this category..."
+                  value={categoryModal.description}
+                  onChange={(e) => setCategoryModal({ ...categoryModal, description: e.target.value })}
+                  placeholder="Short description displayed on website storefront and filters..."
                   className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-[#96161B]"
                 />
               </div>
@@ -1684,116 +2128,16 @@ function AdminProductsContent() {
               <div className="pt-2 flex items-center justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsAddCategoryOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
+                  onClick={() => setCategoryModal((prev) => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] rounded-xl shadow-sm"
+                  className="px-5 py-2 text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] rounded-xl shadow-sm cursor-pointer"
                 >
-                  Create Category
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================
-          POPUP 5: ADD SUBCATEGORY MODAL
-      ======================================================== */}
-      {isAddSubcategoryOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in font-sans">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl relative border border-slate-200">
-            <button
-              onClick={() => setIsAddSubcategoryOpen(false)}
-              className="absolute top-5 right-5 text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-
-            <div className="mb-5">
-              <span className="text-[11px] font-bold text-[#96161B] uppercase tracking-wider">
-                Create Subcategory
-              </span>
-              <h3 className="text-xl font-black text-slate-900">Add New Subcategory</h3>
-            </div>
-
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                if (!newSubcategoryData.name.trim() || !newSubcategoryData.parent_id) return
-                handleCreateSubcategory(
-                  newSubcategoryData.parent_id,
-                  newSubcategoryData.name,
-                  newSubcategoryData.description
-                )
-                setNewSubcategoryData({ parent_id: '', name: '', description: '' })
-                setIsAddSubcategoryOpen(false)
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Parent Category *
-                </label>
-                <select
-                  required
-                  value={newSubcategoryData.parent_id}
-                  onChange={(e) => setNewSubcategoryData({ ...newSubcategoryData, parent_id: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs font-semibold outline-none focus:ring-2 focus:ring-[#96161B]"
-                >
-                  <option value="">Select Parent Category...</option>
-                  {mainCategories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.icon || '📁'} {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Subcategory Title *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={newSubcategoryData.name}
-                  onChange={(e) => setNewSubcategoryData({ ...newSubcategoryData, name: e.target.value })}
-                  placeholder="e.g. Dental & Oral Surgery, Bone Forceps"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-semibold outline-none focus:ring-2 focus:ring-[#96161B]"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Description
-                </label>
-                <textarea
-                  rows={2}
-                  value={newSubcategoryData.description}
-                  onChange={(e) => setNewSubcategoryData({ ...newSubcategoryData, description: e.target.value })}
-                  placeholder="Description of instruments in this subcategory..."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-xs outline-none focus:ring-2 focus:ring-[#96161B]"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsAddSubcategoryOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#96161B] hover:bg-[#7d1216] rounded-xl shadow-sm"
-                >
-                  Create Subcategory
+                  {categoryModal.mode.startsWith('add') ? 'Create & Save' : 'Save Changes'}
                 </button>
               </div>
             </form>

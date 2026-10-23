@@ -85,6 +85,28 @@ let isCategoriesSyncInitiated = false
 
 export function getStoredCategories(): CategoryItem[] {
   if (typeof window === 'undefined') return INITIAL_CATEGORIES_SEED
+
+  // Background sync from server /api/categories on initial load
+  if (!isCategoriesSyncInitiated) {
+    isCategoriesSyncInitiated = true
+    fetch('/api/categories?t=' + Date.now(), { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverCats) => {
+        if (Array.isArray(serverCats) && serverCats.length > 0) {
+          const currentRaw = localStorage.getItem('alpha_categories_v4')
+          const serverStr = JSON.stringify(serverCats)
+          if (currentRaw !== serverStr) {
+            localStorage.setItem('alpha_categories_v4', serverStr)
+            localStorage.setItem('alpha_categories_v3', serverStr)
+            localStorage.setItem('alpha_categories_v2', serverStr)
+            localStorage.setItem('alpha_categories', serverStr)
+            window.dispatchEvent(new Event('alpha_content_updated'))
+          }
+        }
+      })
+      .catch(() => {})
+  }
+
   try {
     const rawV4 = localStorage.getItem('alpha_categories_v4')
     if (rawV4) {
@@ -107,28 +129,30 @@ export function getStoredCategories(): CategoryItem[] {
     localStorage.setItem('alpha_categories_v3', seedStr)
     localStorage.setItem('alpha_categories_v2', seedStr)
     localStorage.setItem('alpha_categories', seedStr)
-
-    // Sync from server /api/categories
-    if (!isCategoriesSyncInitiated) {
-      isCategoriesSyncInitiated = true
-      fetch('/api/categories?t=' + Date.now(), { cache: 'no-store' })
-        .then((res) => res.json())
-        .then((serverCats) => {
-          if (Array.isArray(serverCats) && serverCats.length > 0) {
-            const serverStr = JSON.stringify(serverCats)
-            localStorage.setItem('alpha_categories_v4', serverStr)
-            localStorage.setItem('alpha_categories_v3', serverStr)
-            localStorage.setItem('alpha_categories_v2', serverStr)
-            localStorage.setItem('alpha_categories', serverStr)
-            window.dispatchEvent(new Event('alpha_content_updated'))
-          }
-        })
-        .catch(() => {})
-    }
   } catch (e) {
     console.error('Failed to read alpha_categories:', e)
   }
   return INITIAL_CATEGORIES_SEED
+}
+
+export function deleteStoredCategory(id: string): CategoryItem[] {
+  if (typeof window === 'undefined') return []
+  const current = getStoredCategories()
+  // Recursively find all child IDs
+  const toDelete = new Set<string>([id])
+  let added = true
+  while (added) {
+    added = false
+    current.forEach((c) => {
+      if (c.parent_id && toDelete.has(c.parent_id) && !toDelete.has(c.id)) {
+        toDelete.add(c.id)
+        added = true
+      }
+    })
+  }
+  const remaining = current.filter((c) => !toDelete.has(c.id))
+  saveStoredCategories(remaining)
+  return remaining
 }
 
 export function saveStoredCategories(categories: CategoryItem[]): void {
@@ -225,6 +249,37 @@ export function markProductAsDeleted(id: string): void {
     const userProds = getUserUploadedProducts().filter((p) => p.id !== id)
     localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))
     savePersistentData('alpha_user_uploaded_products', userProds)
+
+    // Remove from ALL historical keys in localStorage so scanner never resurrects it
+    const historicalKeys = [
+      'alpha_products_v6',
+      'alpha_products_v5',
+      'alpha_products_v4',
+      'alpha_products_v3',
+      'alpha_products_v2',
+      'alpha_products',
+      'alpha_products_user_managed',
+      'alpha_store_products',
+    ]
+    historicalKeys.forEach((key) => {
+      try {
+        const raw = localStorage.getItem(key)
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (Array.isArray(parsed)) {
+            const filtered = parsed.filter((p: any) => p && p.id !== id)
+            localStorage.setItem(key, JSON.stringify(filtered))
+          }
+        }
+      } catch (err) {}
+    })
+
+    // Immediately notify server of single item deletion
+    fetch('/api/products', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'delete', id }),
+    }).catch(() => {})
   } catch (e) {}
 }
 
@@ -340,12 +395,14 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
     }
   })
 
-  // 3. Add any baseline seeds missing
-  INITIAL_PRODUCTS_SEED.forEach((seed) => {
-    if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
-      combinedMap.set(seed.id, seed)
-    }
-  })
+  // 3. Add any baseline seeds missing ONLY if server has zero products
+  if (serverProds.length === 0) {
+    INITIAL_PRODUCTS_SEED.forEach((seed) => {
+      if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
+        combinedMap.set(seed.id, seed)
+      }
+    })
+  }
 
   const merged = Array.from(combinedMap.values())
   const serialized = JSON.stringify(merged)
@@ -406,7 +463,20 @@ export function getStoredProducts(): ProductItem[] {
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-        .then((res) => res.json())
+        .then((res) => {
+          const deletedHeader = res.headers.get('x-deleted-product-ids')
+          if (deletedHeader) {
+            try {
+              const serverDeleted = JSON.parse(deletedHeader)
+              if (Array.isArray(serverDeleted) && serverDeleted.length > 0) {
+                const localDeleted = getDeletedProductIds()
+                const combined = Array.from(new Set([...localDeleted, ...serverDeleted]))
+                localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(combined))
+              }
+            } catch (e) {}
+          }
+          return res.json()
+        })
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
             syncWithServerProducts(serverProds)
