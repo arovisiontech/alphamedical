@@ -918,9 +918,15 @@ function AdminProductsContent() {
       const matches =
         p.category_id === selectedCat ||
         p.subcategory_id === selectedCat ||
+        p.sub_subcategory_id === selectedCat ||
         childIds.includes(p.category_id || '') ||
+        childIds.includes(p.subcategory_id || '') ||
+        childIds.includes(p.sub_subcategory_id || '') ||
         (catObj && p.category_name?.toLowerCase() === catObj.name.toLowerCase()) ||
-        (catObj && p.specifications?.Subcategory?.toLowerCase() === catObj.name.toLowerCase())
+        (catObj && p.subcategory_name?.toLowerCase() === catObj.name.toLowerCase()) ||
+        (catObj && p.sub_subcategory_name?.toLowerCase() === catObj.name.toLowerCase()) ||
+        (catObj && p.specifications?.Subcategory?.toLowerCase() === catObj.name.toLowerCase()) ||
+        (catObj && p.specifications?.Group?.toLowerCase() === catObj.name.toLowerCase())
       if (!matches) return false
     }
 

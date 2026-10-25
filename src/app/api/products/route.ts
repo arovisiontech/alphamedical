@@ -109,7 +109,6 @@ export async function GET(req: NextRequest) {
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
       'Pragma': 'no-cache',
       'Expires': '0',
-      'x-deleted-product-ids': JSON.stringify(Array.from(deletedIds)),
     },
   })
 }
@@ -120,21 +119,22 @@ export async function POST(req: NextRequest) {
     let updatedProducts: ProductItem[] = []
 
     if (Array.isArray(body)) {
-      // Entire array save
-      const current = getStoredProductsFromFile()
-      // If any existing product was omitted from body, mark it as deleted so it can never resurrect
-      current.forEach((cp) => {
-        if (!body.some((bp) => bp.id === cp.id)) {
-          saveDeletedProductIdToFile(cp.id)
-        }
-      })
+      // Entire array save - never auto-delete omitted products!
       const deletedIds = getDeletedProductIdsFromFile()
       updatedProducts = body.filter((p) => !deletedIds.has(p.id))
     } else if (body && body.action === 'delete' && body.id) {
-      // Delete single item permanently
+      // Delete single item permanently only when explicitly requested
       saveDeletedProductIdToFile(body.id)
       const current = getStoredProductsFromFile()
       updatedProducts = current.filter((p) => p.id !== body.id)
+    } else if (body && body.action === 'restoreProduct' && body.id) {
+      const ids = getDeletedProductIdsFromFile()
+      ids.delete(body.id)
+      try {
+        fs.writeFileSync(deletedFilePath, JSON.stringify(Array.from(ids)), 'utf-8')
+      } catch (e) {}
+      const current = getStoredProductsFromFile()
+      updatedProducts = current
     } else if (body && body.action === 'saveSingle' && body.product) {
       // Upsert single item
       const current = getStoredProductsFromFile()

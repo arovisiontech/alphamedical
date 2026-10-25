@@ -225,10 +225,20 @@ export function getUserUploadedProducts(): ProductItem[] {
 export function getDeletedProductIds(): string[] {
   if (typeof window === 'undefined') return []
   try {
+    const rawExplicit = localStorage.getItem('alpha_explicit_deleted_ids')
+    if (rawExplicit) {
+      const parsed = JSON.parse(rawExplicit)
+      if (Array.isArray(parsed)) {
+        return parsed.filter((id: string) => !SEED_PRODUCT_IDS.has(id))
+      }
+    }
     const raw = localStorage.getItem('alpha_deleted_product_ids')
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
+      if (Array.isArray(parsed)) {
+        // Never allow seed products to be treated as deleted unless explicitly in explicit_deleted_ids
+        return parsed.filter((id: string) => !SEED_PRODUCT_IDS.has(id))
+      }
     }
   } catch (e) {}
   return []
@@ -241,7 +251,9 @@ export function markProductAsDeleted(id: string): void {
     const deleted = getDeletedProductIds()
     if (!deleted.includes(id)) {
       deleted.push(id)
+      localStorage.setItem('alpha_explicit_deleted_ids', JSON.stringify(deleted))
       localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(deleted))
+      savePersistentData('alpha_explicit_deleted_ids', deleted)
       savePersistentData('alpha_deleted_product_ids', deleted)
     }
 
@@ -395,14 +407,12 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
     }
   })
 
-  // 3. Add any baseline seeds missing ONLY if server has zero products
-  if (serverProds.length === 0) {
-    INITIAL_PRODUCTS_SEED.forEach((seed) => {
-      if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
-        combinedMap.set(seed.id, seed)
-      }
-    })
-  }
+  // 3. Always guarantee all baseline seeds exist unless deliberately deleted
+  INITIAL_PRODUCTS_SEED.forEach((seed) => {
+    if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
+      combinedMap.set(seed.id, seed)
+    }
+  })
 
   const merged = Array.from(combinedMap.values())
   const serialized = JSON.stringify(merged)
@@ -440,15 +450,11 @@ export function getStoredProducts(): ProductItem[] {
       }
     })
 
-    // Baseline seeds come next
+    // Baseline seeds come next - all 56 medical products always guaranteed
     INITIAL_PRODUCTS_SEED.forEach((seedProd) => {
       if (!deletedIds.includes(seedProd.id)) {
         if (!mergedMap.has(seedProd.id)) {
-          const skuConflict =
-            seedProd.sku && Array.from(mergedMap.values()).some((m) => m.sku === seedProd.sku)
-          if (!skuConflict) {
-            mergedMap.set(seedProd.id, seedProd)
-          }
+          mergedMap.set(seedProd.id, seedProd)
         }
       }
     })
@@ -463,20 +469,7 @@ export function getStoredProducts(): ProductItem[] {
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-        .then((res) => {
-          const deletedHeader = res.headers.get('x-deleted-product-ids')
-          if (deletedHeader) {
-            try {
-              const serverDeleted = JSON.parse(deletedHeader)
-              if (Array.isArray(serverDeleted) && serverDeleted.length > 0) {
-                const localDeleted = getDeletedProductIds()
-                const combined = Array.from(new Set([...localDeleted, ...serverDeleted]))
-                localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(combined))
-              }
-            } catch (e) {}
-          }
-          return res.json()
-        })
+        .then((res) => res.json())
         .then((serverProds) => {
           if (Array.isArray(serverProds) && serverProds.length > 0) {
             syncWithServerProducts(serverProds)
@@ -497,26 +490,11 @@ export function saveStoredProducts(products: ProductItem[]): void {
     try {
       // 1. Separate user-uploaded products and preserve them in dedicated immutable store
       const userProds: ProductItem[] = []
-      const currentDeleted = getDeletedProductIds()
-      const newDeletedSet = new Set(currentDeleted)
-
       products.forEach((p) => {
         if (!SEED_PRODUCT_IDS.has(p.id) || p.is_user_created) {
           userProds.push({ ...p, is_user_created: true })
         }
       })
-
-      // If user deleted any product that previously existed in stored products, track its deletion
-      const currentStored = getStoredProducts()
-      currentStored.forEach((p) => {
-        if (!products.some((newP) => newP.id === p.id)) {
-          newDeletedSet.add(p.id)
-        }
-      })
-
-      const finalDeleted = Array.from(newDeletedSet)
-      localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(finalDeleted))
-      savePersistentData('alpha_deleted_product_ids', finalDeleted)
 
       // SAVE TO PROTECTED USER STORE IN BOTH LOCALSTORAGE AND INDEXEDDB
       localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))

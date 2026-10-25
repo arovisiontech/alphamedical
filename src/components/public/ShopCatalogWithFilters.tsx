@@ -76,20 +76,7 @@ function ShopCatalogContent({
 
     // Fetch fresh products and categories from server API
     fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-      .then((res) => {
-        const deletedHeader = res.headers.get('x-deleted-product-ids')
-        if (deletedHeader) {
-          try {
-            const serverDeleted = JSON.parse(deletedHeader)
-            if (Array.isArray(serverDeleted) && serverDeleted.length > 0) {
-              const localDeleted = getDeletedProductIds()
-              const combined = Array.from(new Set([...localDeleted, ...serverDeleted]))
-              localStorage.setItem('alpha_deleted_product_ids', JSON.stringify(combined))
-            }
-          } catch (e) {}
-        }
-        return res.json()
-      })
+      .then((res) => res.json())
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
           syncWithServerProducts(serverProds)
