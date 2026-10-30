@@ -7,6 +7,7 @@ import { Check, ShieldCheck, ShoppingBag, Eye, ArrowRight, FileText } from 'luci
 import { getStoredProducts, getStoredCategories } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface ProductCatalogShowcaseSectionProps {
   onAddToQuote?: (product: ProductItem) => void
@@ -92,7 +93,7 @@ export default function ProductCatalogShowcaseSection({ onAddToQuote }: ProductC
             >
               {/* IMAGE HEADER */}
               <div className="relative aspect-[4/3] w-full bg-slate-50 overflow-hidden p-4">
-                <Image
+                <SafeProductImage
                   src={prod.featured_image || '/images/extracted/image_7.png'}
                   alt={prod.title}
                   fill
@@ -196,7 +197,7 @@ export default function ProductCatalogShowcaseSection({ onAddToQuote }: ProductC
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="relative aspect-square bg-slate-50 rounded-2xl overflow-hidden p-4 border border-slate-100">
-                <Image
+                <SafeProductImage
                   src={selectedProductForModal.featured_image || '/images/extracted/image_7.png'}
                   alt={selectedProductForModal.title}
                   fill

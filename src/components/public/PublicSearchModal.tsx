@@ -7,6 +7,7 @@ import { Search, X, ShieldCheck, ArrowRight } from 'lucide-react'
 import { getStoredProducts, getStoredCategories } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface PublicSearchModalProps {
   isOpen: boolean
@@ -149,7 +150,7 @@ export default function PublicSearchModal({ isOpen, onClose }: PublicSearchModal
                         className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 border border-slate-100 hover:border-slate-300 transition-colors group"
                       >
                         <div className="relative w-12 h-12 bg-white rounded-lg overflow-hidden shrink-0 border border-slate-200">
-                          <Image
+                          <SafeProductImage
                             src={prod.featured_image || '/images/extracted/image_7.png'}
                             alt={prod.title}
                             fill

@@ -22,6 +22,7 @@ import {
 } from '@/src/types/section'
 import { ProductItem } from '@/src/types/product'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface DiscountProductsSectionProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
@@ -192,7 +193,7 @@ export default function DiscountProductsSection({
                     href={`/products/${item.slug || item.id}`}
                     className="block relative w-full h-44 sm:h-48 2xl:h-56 my-3 flex items-center justify-center p-2 bg-slate-50/50 rounded-xl group-hover:bg-slate-50 transition-colors cursor-pointer overflow-hidden"
                   >
-                    <Image
+                    <SafeProductImage
                       src={item.featured_image || '/images/products/image-399.png'}
                       alt={item.title}
                       fill

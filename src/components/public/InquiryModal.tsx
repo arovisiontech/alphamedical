@@ -18,6 +18,7 @@ import {
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { getStoredContactMessages, saveStoredContactMessages } from '@/src/lib/dataStore'
 import { ContactMessage } from '@/src/types/media'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 export default function InquiryModal() {
   const { isInquiryModalOpen, closeInquiryModal, activeInquiryProduct, countryName, countryCode } =
@@ -150,7 +151,7 @@ ${formData.message || 'Please dispatch official catalog & commercial quote.'}`,
               {activeInquiryProduct && (
                 <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center gap-4">
                   <div className="relative w-16 h-16 bg-white rounded-xl overflow-hidden border border-slate-200 shrink-0">
-                    <Image
+                    <SafeProductImage
                       src={activeInquiryProduct.featured_image || '/images/products/image-399.png'}
                       alt={activeInquiryProduct.title || 'Product'}
                       fill

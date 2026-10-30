@@ -34,6 +34,7 @@ import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { getStoredProducts } from '@/src/lib/dataStore'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface ProductDetailClientProps {
   initialProduct: ProductItem | null
@@ -562,11 +563,10 @@ export default function ProductDetailClient({
                   }`}
                   aria-label={`View angle ${idx + 1}`}
                 >
-                  <Image
+                  <SafeProductImage
                     src={thumb}
                     alt={`${product.title} angle ${idx + 1}`}
                     fill
-                    unoptimized
                     sizes="96px"
                     className="object-contain p-1"
                   />
@@ -609,11 +609,10 @@ export default function ProductDetailClient({
 
               {/* MAIN LARGE INSTRUMENT VIEW */}
               <div className="relative w-full aspect-square max-w-[480px] 2xl:max-w-[580px] flex items-center justify-center">
-                <Image
+                <SafeProductImage
                   src={currentImage}
                   alt={product.title}
                   fill
-                  unoptimized
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-contain p-4 transition-transform duration-500 ease-out group-hover:scale-105"
                   priority
@@ -623,11 +622,10 @@ export default function ProductDetailClient({
               {/* ANNOTATION CALLOUT 1 */}
               <div className="hidden sm:flex items-center gap-3 absolute top-12 right-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none max-w-[200px]">
                 <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
-                  <Image
+                  <SafeProductImage
                     src={gallery[1] || currentImage}
                     alt={product.title}
                     fill
-                    unoptimized
                     className="object-contain p-0.5"
                   />
                 </div>
@@ -642,11 +640,10 @@ export default function ProductDetailClient({
               {/* ANNOTATION CALLOUT 2 */}
               <div className="hidden sm:flex items-center gap-3 absolute bottom-12 left-6 bg-white/95 backdrop-blur-sm border border-slate-200/90 shadow-lg rounded-2xl p-2.5 z-10 animate-fade-in hover-card-3d pointer-events-none max-w-[200px]">
                 <div className="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 overflow-hidden relative shrink-0">
-                  <Image
+                  <SafeProductImage
                     src={gallery[2] || gallery[0] || currentImage}
                     alt={product.title}
                     fill
-                    unoptimized
                     className="object-contain p-0.5"
                   />
                 </div>
@@ -1212,7 +1209,7 @@ export default function ProductDetailClient({
                     href={`/products/${relProd.slug || relProd.id}`}
                     className="block relative aspect-[4/3] w-full my-2 flex items-center justify-center bg-slate-50/50 rounded-xl overflow-hidden cursor-pointer"
                   >
-                    <Image
+                    <SafeProductImage
                       src={relImg}
                       alt={relProd.title}
                       fill
@@ -1276,11 +1273,10 @@ export default function ProductDetailClient({
           </button>
 
           <div className="relative w-full max-w-4xl max-h-[85vh] aspect-square flex items-center justify-center">
-            <Image
+            <SafeProductImage
               src={currentImage}
               alt={product.title}
               fill
-              unoptimized
               className="object-contain"
               priority
             />

@@ -17,6 +17,7 @@ import {
 import { getStoredProducts, INITIAL_PRODUCTS_SEED } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface FeaturedProductsSectionProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
@@ -210,7 +211,7 @@ export default function FeaturedProductsSection({
                   href={`/products/${prod.slug || prod.id}`}
                   className="block relative aspect-[4/3] w-full my-2 flex items-center justify-center cursor-pointer"
                 >
-                  <Image
+                  <SafeProductImage
                     src={imageSrc}
                     alt={prod.title}
                     fill

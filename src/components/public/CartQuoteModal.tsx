@@ -16,6 +16,7 @@ import {
 } from 'lucide-react'
 import { ProductItem } from '@/src/types/product'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface CartQuoteModalProps {
   isOpen: boolean
@@ -323,7 +324,7 @@ export default function CartQuoteModal({
                     className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200"
                   >
                     <div className="relative w-14 h-14 bg-white rounded-xl overflow-hidden shrink-0 border border-slate-200">
-                      <Image
+                      <SafeProductImage
                         src={item.featured_image || '/images/products/image-399.png'}
                         alt={item.title}
                         fill

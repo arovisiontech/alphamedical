@@ -47,6 +47,7 @@ import {
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
 import { compressImageFile } from '@/src/lib/imageCompressor'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 function AdminProductsContent() {
   const searchParams = useSearchParams()
@@ -349,18 +350,40 @@ function AdminProductsContent() {
 
     setIsUploadingImage(true)
     try {
-      const { dataUrl } = await compressImageFile(rawFile, 800, 800, 0.85)
-      if (dataUrl) {
+      // 1. Compress image to clean, lightweight web size (~30-50KB)
+      const { dataUrl, file: compressedFile } = await compressImageFile(rawFile, 600, 600, 0.75)
+      let finalUrl = dataUrl
+
+      // 2. Try real file upload to /api/upload
+      try {
+        const uploadForm = new FormData()
+        uploadForm.append('file', compressedFile || rawFile)
+        uploadForm.append('type', 'product')
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadForm,
+        })
+        if (res.ok) {
+          const data = await res.json()
+          if (data?.success && data?.url) {
+            finalUrl = data.url
+          }
+        }
+      } catch (uploadErr) {
+        console.warn('API file upload fallback to compressed dataUrl:', uploadErr)
+      }
+
+      if (finalUrl) {
         setFormData((prev) => ({
           ...prev,
-          featured_image: dataUrl,
-          gallery_images: prev.gallery_images.length === 0 ? [dataUrl] : prev.gallery_images,
+          featured_image: finalUrl,
+          gallery_images: prev.gallery_images.length === 0 ? [finalUrl] : prev.gallery_images,
         }))
-        showToast('Featured view large image loaded & ready!')
+        showToast('Product image uploaded successfully & ready!')
       }
     } catch (err) {
       console.error(err)
-      showToast('Error uploading image')
+      showToast('Error uploading image. Please try again.')
     } finally {
       setIsUploadingImage(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -376,8 +399,26 @@ function AdminProductsContent() {
       const newUrls: string[] = []
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const { dataUrl } = await compressImageFile(file, 800, 800, 0.85)
-        if (dataUrl) newUrls.push(dataUrl)
+        const { dataUrl, file: compressedFile } = await compressImageFile(file, 600, 600, 0.75)
+        let finalUrl = dataUrl
+
+        try {
+          const uploadForm = new FormData()
+          uploadForm.append('file', compressedFile || file)
+          uploadForm.append('type', 'product')
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadForm,
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.success && data?.url) {
+              finalUrl = data.url
+            }
+          }
+        } catch (uploadErr) {}
+
+        if (finalUrl) newUrls.push(finalUrl)
       }
       setFormData((prev) => ({
         ...prev,
@@ -733,6 +774,11 @@ function AdminProductsContent() {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
 
+    const resolvedFeaturedImage =
+      formData.featured_image && formData.featured_image.trim().length > 0
+        ? formData.featured_image.trim()
+        : '/images/products/image-399.png'
+
     let updated: ProductItem[] = []
 
     if (editingProduct) {
@@ -755,8 +801,8 @@ function AdminProductsContent() {
               sub_subcategory_name: resolvedSubSubcatName,
               short_description: formData.short_description,
               full_description: formData.full_description,
-              featured_image: formData.featured_image,
-              gallery_images: formData.gallery_images,
+              featured_image: resolvedFeaturedImage,
+              gallery_images: formData.gallery_images.length > 0 ? formData.gallery_images : [resolvedFeaturedImage],
               stock_quantity: Number(formData.stock_quantity) || 100,
               sizes: parsedSizes.length > 0 ? parsedSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm'],
               quantity_discounts: discountTiers,
@@ -796,8 +842,8 @@ function AdminProductsContent() {
         badge: formData.badge || null,
         short_description: formData.short_description || `High quality medical equipment for ${resolvedCatName}.`,
         full_description: formData.full_description || `Precision engineered medical device for ${resolvedCatName} - ${resolvedSubcatName}. Built to last with hospital grade compliance.`,
-        featured_image: formData.featured_image || '/images/products/image-399.png',
-        gallery_images: formData.gallery_images.length > 0 ? formData.gallery_images : [formData.featured_image || '/images/products/image-399.png'],
+        featured_image: resolvedFeaturedImage,
+        gallery_images: formData.gallery_images.length > 0 ? formData.gallery_images : [resolvedFeaturedImage],
         stock_quantity: Number(formData.stock_quantity) || 100,
         sizes: parsedSizes.length > 0 ? parsedSizes : ['12.5cm', '14.0cm', '15.5cm', '18.0cm', '20.5cm'],
         quantity_discounts: discountTiers,
@@ -1506,11 +1552,10 @@ function AdminProductsContent() {
                           className="relative w-14 h-14 bg-slate-50 rounded-xl overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center cursor-pointer group"
                           title="Click to view large image"
                         >
-                          <Image
+                          <SafeProductImage
                             src={prod.featured_image || '/images/products/image-399.png'}
                             alt={prod.title}
                             fill
-                            unoptimized
                             className="object-contain p-1 group-hover:scale-110 transition-transform"
                           />
                           <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
@@ -1934,11 +1979,10 @@ function AdminProductsContent() {
                           onClick={() => setPreviewLargeImage(p.featured_image || '/images/products/image-399.png')}
                           className="relative w-14 h-14 bg-slate-50 rounded-xl overflow-hidden shrink-0 border border-slate-200 flex items-center justify-center cursor-pointer"
                         >
-                          <Image
+                          <SafeProductImage
                             src={p.featured_image || '/images/products/image-399.png'}
                             alt={p.title}
                             fill
-                            unoptimized
                             className="object-contain p-1"
                           />
                         </div>
@@ -2172,11 +2216,10 @@ function AdminProductsContent() {
               <X className="w-5 h-5" />
               <span>Close View Large</span>
             </button>
-            <Image
+            <SafeProductImage
               src={previewLargeImage}
               alt="High Resolution Large View"
               fill
-              unoptimized
               className="object-contain"
             />
           </div>
@@ -2599,11 +2642,10 @@ function AdminProductsContent() {
                     {isUploadingImage ? (
                       <div className="w-5 h-5 border-2 border-[#96161B] border-t-transparent rounded-full animate-spin" />
                     ) : (
-                      <Image
+                      <SafeProductImage
                         src={formData.featured_image || '/images/products/image-399.png'}
                         alt="Product Preview"
                         fill
-                        unoptimized
                         className="object-contain p-1.5 group-hover:scale-105 transition-transform"
                       />
                     )}
@@ -2675,13 +2717,11 @@ function AdminProductsContent() {
                         key={gIdx}
                         className="relative group w-16 h-16 rounded-xl bg-white border border-slate-300 p-1 flex items-center justify-center shadow-xs overflow-hidden"
                       >
-                        <Image
+                        <SafeProductImage
                           src={imgUrl}
                           alt={`Angle ${gIdx + 1}`}
                           fill
-                          unoptimized
                           className="object-contain p-0.5 cursor-pointer"
-                          onClick={() => setPreviewLargeImage(imgUrl)}
                         />
                         <button
                           type="button"
@@ -2864,11 +2904,10 @@ function ProductMiniCard({
     <div className="p-3 bg-white rounded-2xl border border-slate-200/90 hover:border-[#96161B]/60 hover:shadow-md transition-all group flex flex-col justify-between">
       <div>
         <div className="relative w-full h-32 bg-slate-50 rounded-xl overflow-hidden border border-slate-100 flex items-center justify-center mb-2.5">
-          <Image
+          <SafeProductImage
             src={prod.featured_image || '/images/products/image-399.png'}
             alt={prod.title}
             fill
-            unoptimized
             className="object-contain p-2 group-hover:scale-105 transition-transform"
           />
           <button

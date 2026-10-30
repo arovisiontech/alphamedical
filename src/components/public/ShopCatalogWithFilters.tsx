@@ -31,6 +31,7 @@ import {
 import { ProductItem } from '@/src/types/product'
 import { CategoryItem } from '@/src/types/category'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface ShopCatalogWithFiltersProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
@@ -973,11 +974,10 @@ function ShopCatalogContent({
                       href={`/products/${prod.slug || prod.id}`}
                       className="block relative aspect-[4/3] w-full my-2 flex items-center justify-center bg-slate-50/50 rounded-xl overflow-hidden cursor-pointer"
                     >
-                      <Image
+                      <SafeProductImage
                         src={imageSrc}
                         alt={prod.title}
                         fill
-                        unoptimized
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                         className="object-contain p-2 group-hover:scale-105 transition-transform duration-500 ease-out"
                       />
