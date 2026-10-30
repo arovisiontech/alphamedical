@@ -851,7 +851,7 @@ function AdminProductsContent() {
   // ==========================================
   const handleToggleBestSeller = (prod: ProductItem) => {
     const updated = products.map((p) =>
-      p.id === prod.id ? { ...p, is_best_seller: !p.is_best_seller, is_featured: !p.is_best_seller } : p
+      p.id === prod.id ? { ...p, is_best_seller: !p.is_best_seller, is_featured: !p.is_best_seller, is_user_created: true } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
@@ -860,7 +860,7 @@ function AdminProductsContent() {
 
   const handleToggleNewArrival = (prod: ProductItem) => {
     const updated = products.map((p) =>
-      p.id === prod.id ? { ...p, is_new_arrival: !p.is_new_arrival } : p
+      p.id === prod.id ? { ...p, is_new_arrival: !p.is_new_arrival, is_user_created: true } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
@@ -869,7 +869,7 @@ function AdminProductsContent() {
 
   const handleToggleInStock = (prod: ProductItem) => {
     const updated = products.map((p) =>
-      p.id === prod.id ? { ...p, in_stock: !(p.in_stock !== false) } : p
+      p.id === prod.id ? { ...p, in_stock: !(p.in_stock !== false), is_user_created: true } : p
     )
     setProducts(updated)
     saveStoredProducts(updated)
@@ -891,11 +891,16 @@ function AdminProductsContent() {
 
   // Manual save all
   const [isSavingAll, setIsSavingAll] = useState(false)
-  const handleSaveAllChanges = () => {
+  const handleSaveAllChanges = async () => {
     setIsSavingAll(true)
     try {
       saveStoredProducts(products)
-      showToast('ALL PRODUCTS SAVED! Live storefront synchronized.')
+      await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(products),
+      }).catch(() => {})
+      showToast('ALL PRODUCTS SAVED! Live storefront and server file synchronized.')
     } finally {
       setIsSavingAll(false)
     }

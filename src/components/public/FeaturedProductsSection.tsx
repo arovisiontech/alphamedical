@@ -39,6 +39,16 @@ export default function FeaturedProductsSection({
   useEffect(() => {
     loadData()
 
+    // Fetch fresh products from server API
+    fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverProds) => {
+        if (Array.isArray(serverProds) && serverProds.length > 0) {
+          loadData()
+        }
+      })
+      .catch(() => {})
+
     const handleUpdate = () => {
       loadData()
     }
@@ -46,9 +56,26 @@ export default function FeaturedProductsSection({
     window.addEventListener('alpha_content_updated', handleUpdate)
     window.addEventListener('storage', handleUpdate)
 
+    let alphaChannel: BroadcastChannel | null = null
+    if (typeof BroadcastChannel !== 'undefined') {
+      try {
+        alphaChannel = new BroadcastChannel('alpha_sync_channel')
+        alphaChannel.onmessage = (event) => {
+          if (event.data?.type === 'products_updated') {
+            loadData()
+          }
+        }
+      } catch (e) {}
+    }
+
     return () => {
       window.removeEventListener('alpha_content_updated', handleUpdate)
       window.removeEventListener('storage', handleUpdate)
+      if (alphaChannel) {
+        try {
+          alphaChannel.close()
+        } catch (e) {}
+      }
     }
   }, [])
 

@@ -1,11 +1,12 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Search, ShoppingCart, ChevronDown, Menu } from 'lucide-react'
-import { ALPHA_CATEGORIES } from '@/src/data/alphaData'
+import { getStoredCategories } from '@/src/lib/dataStore'
+import { CategoryItem } from '@/src/types/category'
 
 interface HeaderNavProps {
   onOpenSearch?: () => void
@@ -17,6 +18,23 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [searchQuery, setSearchQuery] = useState('')
+  const [categories, setCategories] = useState<CategoryItem[]>([])
+
+  useEffect(() => {
+    const loadCats = () => {
+      const stored = getStoredCategories()
+      const main = stored.filter((c) => (!c.parent_id || c.level === 0) && c.is_published !== false)
+      setCategories(main.length > 0 ? main : stored)
+    }
+    loadCats()
+
+    window.addEventListener('alpha_content_updated', loadCats)
+    window.addEventListener('storage', loadCats)
+    return () => {
+      window.removeEventListener('alpha_content_updated', loadCats)
+      window.removeEventListener('storage', loadCats)
+    }
+  }, [])
 
   const handleSearchSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault()
@@ -109,7 +127,7 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
                   className="appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-normal text-slate-600 outline-none cursor-pointer"
                 >
                   <option value="All Categories">All</option>
-                  {ALPHA_CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
                     </option>
@@ -154,7 +172,7 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
                   className="appearance-none bg-transparent pl-2.5 pr-6 py-2 text-xs font-normal text-slate-600 outline-none cursor-pointer"
                 >
                   <option value="All Categories">All Categories</option>
-                  {ALPHA_CATEGORIES.map((c) => (
+                  {categories.map((c) => (
                     <option key={c.id} value={c.name}>
                       {c.name}
                     </option>

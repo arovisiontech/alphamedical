@@ -94,8 +94,8 @@ export function getStoredCategories(): CategoryItem[] {
       .then((serverCats) => {
         if (Array.isArray(serverCats) && serverCats.length > 0) {
           const currentRaw = localStorage.getItem('alpha_categories_v4')
-          const serverStr = JSON.stringify(serverCats)
-          if (currentRaw !== serverStr) {
+          if (!currentRaw) {
+            const serverStr = JSON.stringify(serverCats)
             localStorage.setItem('alpha_categories_v4', serverStr)
             localStorage.setItem('alpha_categories_v3', serverStr)
             localStorage.setItem('alpha_categories_v2', serverStr)
@@ -229,15 +229,14 @@ export function getDeletedProductIds(): string[] {
     if (rawExplicit) {
       const parsed = JSON.parse(rawExplicit)
       if (Array.isArray(parsed)) {
-        return parsed.filter((id: string) => !SEED_PRODUCT_IDS.has(id))
+        return parsed
       }
     }
     const raw = localStorage.getItem('alpha_deleted_product_ids')
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed)) {
-        // Never allow seed products to be treated as deleted unless explicitly in explicit_deleted_ids
-        return parsed.filter((id: string) => !SEED_PRODUCT_IDS.has(id))
+        return parsed
       }
     }
   } catch (e) {}
@@ -382,23 +381,41 @@ export function rescueHistoricalUserProducts(): ProductItem[] {
   return rescuedList
 }
 
-// NON-DESTRUCTIVE SERVER MERGE: Server responses NEVER wipe user uploads!
+// NON-DESTRUCTIVE SERVER MERGE: Server responses NEVER wipe user uploads or resurrect deleted items!
 export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[] {
   if (typeof window === 'undefined' || !Array.isArray(serverProds)) return getStoredProducts()
 
-  const userProds = rescueHistoricalUserProducts()
   const deletedIds = getDeletedProductIds()
+  let currentLocal: ProductItem[] = []
+  try {
+    const raw = localStorage.getItem('alpha_products_v6')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        currentLocal = parsed.filter((p) => p && p.id && !deletedIds.includes(p.id))
+      }
+    }
+  } catch (e) {}
 
+  const userProds = rescueHistoricalUserProducts().filter((p) => p && p.id && !deletedIds.includes(p.id))
   const combinedMap = new Map<string, ProductItem>()
 
-  // 1. User uploaded products ALWAYS have top priority and CANNOT be removed by server
-  userProds.forEach((up) => {
-    if (up && up.id && !deletedIds.includes(up.id)) {
-      combinedMap.set(up.id, up)
+  // 1. Current local products (and user uploads) have top priority (preserves edits & deletions)
+  currentLocal.forEach((lp) => {
+    if (lp && lp.id && !deletedIds.includes(lp.id)) {
+      combinedMap.set(lp.id, lp)
     }
   })
 
-  // 2. Add server products (if not deleted and not overriding user product)
+  userProds.forEach((up) => {
+    if (up && up.id && !deletedIds.includes(up.id)) {
+      if (!combinedMap.has(up.id)) {
+        combinedMap.set(up.id, up)
+      }
+    }
+  })
+
+  // 2. Add server products ONLY if not deleted and not already in combinedMap
   serverProds.forEach((sp) => {
     if (sp && sp.id && !deletedIds.includes(sp.id)) {
       if (!combinedMap.has(sp.id)) {
@@ -407,27 +424,17 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
     }
   })
 
-  // 3. Always guarantee all baseline seeds exist unless deliberately deleted
+  // 3. Fallback seeds ONLY if not deleted and not in combinedMap
   INITIAL_PRODUCTS_SEED.forEach((seed) => {
     if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
       combinedMap.set(seed.id, seed)
     }
   })
 
-  const merged = Array.from(combinedMap.values())
+  const merged = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
   const serialized = JSON.stringify(merged)
   localStorage.setItem('alpha_products_v6', serialized)
   localStorage.setItem('alpha_products_v5', serialized)
-
-  // Send user products to server if server was missing them!
-  const serverMissingUserProds = userProds.filter((up) => !serverProds.some((sp) => sp.id === up.id))
-  if (serverMissingUserProds.length > 0) {
-    fetch('/api/products', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: serialized,
-    }).catch(() => {})
-  }
 
   window.dispatchEvent(new Event('alpha_content_updated'))
   return merged
@@ -436,11 +443,36 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
 export function getStoredProducts(): ProductItem[] {
   if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
   try {
-    // 1. Run rescue scanner to guarantee all user uploads exist
-    const userProds = rescueHistoricalUserProducts()
     const deletedIds = getDeletedProductIds()
 
-    // 2. Build complete merged list
+    // 1. First check if we have an authoritative saved cache in localStorage
+    const rawSaved = localStorage.getItem('alpha_products_v6')
+    if (rawSaved) {
+      try {
+        const parsed = JSON.parse(rawSaved)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const active = parsed.filter((p: ProductItem) => p && p.id && !deletedIds.includes(p.id))
+          if (active.length > 0) {
+            // Background sync once with server
+            if (!isProductsSyncInitiated) {
+              isProductsSyncInitiated = true
+              fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
+                .then((res) => res.json())
+                .then((serverProds) => {
+                  if (Array.isArray(serverProds) && serverProds.length > 0) {
+                    syncWithServerProducts(serverProds)
+                  }
+                })
+                .catch(() => {})
+            }
+            return active
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Fallback: Build initial list from user uploads and baseline seeds
+    const userProds = rescueHistoricalUserProducts()
     const mergedMap = new Map<string, ProductItem>()
 
     // User products come FIRST
@@ -450,7 +482,7 @@ export function getStoredProducts(): ProductItem[] {
       }
     })
 
-    // Baseline seeds come next - all 56 medical products always guaranteed
+    // Baseline seeds come next - ONLY if not deleted
     INITIAL_PRODUCTS_SEED.forEach((seedProd) => {
       if (!deletedIds.includes(seedProd.id)) {
         if (!mergedMap.has(seedProd.id)) {
@@ -459,7 +491,7 @@ export function getStoredProducts(): ProductItem[] {
       }
     })
 
-    const finalProducts = Array.from(mergedMap.values())
+    const finalProducts = Array.from(mergedMap.values()).filter((p) => !deletedIds.includes(p.id))
 
     // Update fast-access cache
     const serialized = JSON.stringify(finalProducts)
@@ -488,19 +520,20 @@ export function getStoredProducts(): ProductItem[] {
 export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
-      // 1. Separate user-uploaded products and preserve them in dedicated immutable store
-      const userProds: ProductItem[] = []
-      products.forEach((p) => {
-        if (!SEED_PRODUCT_IDS.has(p.id) || p.is_user_created) {
-          userProds.push({ ...p, is_user_created: true })
-        }
-      })
+      const deletedIds = getDeletedProductIds()
+      const cleanProducts = products.filter((p) => p && p.id && !deletedIds.includes(p.id))
+
+      // 1. Separate user-uploaded / edited products and preserve them in dedicated store
+      const userProds: ProductItem[] = cleanProducts.map((p) => ({
+        ...p,
+        is_user_created: true,
+      }))
 
       // SAVE TO PROTECTED USER STORE IN BOTH LOCALSTORAGE AND INDEXEDDB
       localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))
       savePersistentData('alpha_user_uploaded_products', userProds)
 
-      const serialized = JSON.stringify(products)
+      const serialized = JSON.stringify(cleanProducts)
       localStorage.setItem('alpha_products_v6', serialized)
       localStorage.setItem('alpha_products_v5', serialized)
       localStorage.setItem('alpha_products_user_managed', 'true')
