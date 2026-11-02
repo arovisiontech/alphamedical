@@ -1,7 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
-import Image from 'next/image'
+import React, { useState, useEffect } from 'react'
 
 interface SafeProductImageProps {
   src?: string | null
@@ -23,41 +22,40 @@ export default function SafeProductImage({
   width,
   height,
   className = 'object-contain',
-  sizes,
   priority = false,
 }: SafeProductImageProps) {
-  const [hasError, setHasError] = useState(false)
+  const sanitizeSrc = (input?: string | null): string => {
+    if (!input || typeof input !== 'string') return DEFAULT_PRODUCT_FALLBACK
+    const trimmed = input.trim()
+    if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return DEFAULT_PRODUCT_FALLBACK
+    return trimmed
+  }
 
-  const rawSrc = hasError || !src || typeof src !== 'string' || !src.trim()
-    ? DEFAULT_PRODUCT_FALLBACK
-    : src.trim()
+  const [currentSrc, setCurrentSrc] = useState<string>(() => sanitizeSrc(src))
 
-  // Base64 data URLs render most reliably with standard HTML <img> in Next.js without loader issues
-  if (rawSrc.startsWith('data:')) {
-    return (
-      <img
-        src={rawSrc}
-        alt={alt || 'Product'}
-        className={`${className} ${fill ? 'absolute inset-0 w-full h-full' : ''}`}
-        onError={() => setHasError(true)}
-        loading={priority ? 'eager' : 'lazy'}
-      />
-    )
+  useEffect(() => {
+    setCurrentSrc(sanitizeSrc(src))
+  }, [src])
+
+  const handleError = () => {
+    if (currentSrc !== DEFAULT_PRODUCT_FALLBACK) {
+      setCurrentSrc(DEFAULT_PRODUCT_FALLBACK)
+    }
   }
 
   return (
-    <Image
-      src={rawSrc}
+    <img
+      key={currentSrc}
+      src={currentSrc}
       alt={alt || 'Product'}
-      fill={fill}
       width={!fill ? width : undefined}
       height={!fill ? height : undefined}
-      unoptimized
-      sizes={sizes}
-      priority={priority}
-      className={className}
-      onError={() => setHasError(true)}
+      className={`${className} ${fill ? 'absolute inset-0 w-full h-full object-contain' : ''}`}
+      onError={handleError}
+      loading={priority ? 'eager' : 'lazy'}
+      decoding="async"
     />
   )
 }
+
 

@@ -350,37 +350,35 @@ function AdminProductsContent() {
 
     setIsUploadingImage(true)
     try {
-      // 1. Compress image to clean, lightweight web size (~30-50KB)
-      const { dataUrl, file: compressedFile } = await compressImageFile(rawFile, 600, 600, 0.75)
-      let finalUrl = dataUrl
+      // 1. Compress image to clean, lightweight web size (~20-40KB)
+      const { dataUrl, file: compressedFile } = await compressImageFile(rawFile, 500, 500, 0.70)
+      let finalUrl = dataUrl || '/images/products/image-399.png'
 
-      // 2. Try real file upload to /api/upload
-      try {
-        const uploadForm = new FormData()
-        uploadForm.append('file', compressedFile || rawFile)
-        uploadForm.append('type', 'product')
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadForm,
-        })
-        if (res.ok) {
-          const data = await res.json()
-          if (data?.success && data?.url) {
-            finalUrl = data.url
+      // 2. On localhost, try saving to public/images/products via /api/upload
+      if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+        try {
+          const uploadForm = new FormData()
+          uploadForm.append('file', compressedFile || rawFile)
+          uploadForm.append('type', 'product')
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            body: uploadForm,
+          })
+          if (res.ok) {
+            const data = await res.json()
+            if (data?.success && data?.url && data.storage === 'disk') {
+              finalUrl = data.url
+            }
           }
-        }
-      } catch (uploadErr) {
-        console.warn('API file upload fallback to compressed dataUrl:', uploadErr)
+        } catch (uploadErr) {}
       }
 
-      if (finalUrl) {
-        setFormData((prev) => ({
-          ...prev,
-          featured_image: finalUrl,
-          gallery_images: prev.gallery_images.length === 0 ? [finalUrl] : prev.gallery_images,
-        }))
-        showToast('Product image uploaded successfully & ready!')
-      }
+      setFormData((prev) => ({
+        ...prev,
+        featured_image: finalUrl,
+        gallery_images: prev.gallery_images.length === 0 ? [finalUrl] : prev.gallery_images,
+      }))
+      showToast('Product image uploaded successfully & ready!')
     } catch (err) {
       console.error(err)
       showToast('Error uploading image. Please try again.')
@@ -399,24 +397,26 @@ function AdminProductsContent() {
       const newUrls: string[] = []
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
-        const { dataUrl, file: compressedFile } = await compressImageFile(file, 600, 600, 0.75)
-        let finalUrl = dataUrl
+        const { dataUrl, file: compressedFile } = await compressImageFile(file, 500, 500, 0.70)
+        let finalUrl = dataUrl || '/images/products/image-399.png'
 
-        try {
-          const uploadForm = new FormData()
-          uploadForm.append('file', compressedFile || file)
-          uploadForm.append('type', 'product')
-          const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadForm,
-          })
-          if (res.ok) {
-            const data = await res.json()
-            if (data?.success && data?.url) {
-              finalUrl = data.url
+        if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          try {
+            const uploadForm = new FormData()
+            uploadForm.append('file', compressedFile || file)
+            uploadForm.append('type', 'product')
+            const res = await fetch('/api/upload', {
+              method: 'POST',
+              body: uploadForm,
+            })
+            if (res.ok) {
+              const data = await res.json()
+              if (data?.success && data?.url && data.storage === 'disk') {
+                finalUrl = data.url
+              }
             }
-          }
-        } catch (uploadErr) {}
+          } catch (uploadErr) {}
+        }
 
         if (finalUrl) newUrls.push(finalUrl)
       }

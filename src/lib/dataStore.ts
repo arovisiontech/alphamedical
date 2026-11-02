@@ -388,7 +388,7 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
   const deletedIds = getDeletedProductIds()
   let currentLocal: ProductItem[] = []
   try {
-    const raw = localStorage.getItem('alpha_products_v6')
+    const raw = localStorage.getItem('alpha_products_v7') || localStorage.getItem('alpha_products_v6')
     if (raw) {
       const parsed = JSON.parse(raw)
       if (Array.isArray(parsed) && parsed.length > 0) {
@@ -433,11 +433,38 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
 
   const merged = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
   const serialized = JSON.stringify(merged)
-  localStorage.setItem('alpha_products_v6', serialized)
-  localStorage.setItem('alpha_products_v5', serialized)
+  try {
+    localStorage.setItem('alpha_products_v7', serialized)
+  } catch (err) {
+    cleanLegacyStorage()
+    try {
+      localStorage.setItem('alpha_products_v7', serialized)
+    } catch (e2) {}
+  }
 
   window.dispatchEvent(new Event('alpha_content_updated'))
   return merged
+}
+
+// Auto clean legacy storage keys to guarantee full 5MB quota is free
+function cleanLegacyStorage() {
+  if (typeof window === 'undefined') return
+  const oldKeys = [
+    'alpha_products_v6',
+    'alpha_products_v5',
+    'alpha_products_v4',
+    'alpha_products_v3',
+    'alpha_products_v2',
+    'alpha_products',
+    'alpha_store_products',
+    'alpha_products_user_managed',
+    'alpha_user_uploaded_products',
+  ]
+  oldKeys.forEach((k) => {
+    try {
+      localStorage.removeItem(k)
+    } catch (e) {}
+  })
 }
 
 export function getStoredProducts(): ProductItem[] {
@@ -445,13 +472,24 @@ export function getStoredProducts(): ProductItem[] {
   try {
     const deletedIds = getDeletedProductIds()
 
-    // 1. First check if we have an authoritative saved cache in localStorage
-    const rawSaved = localStorage.getItem('alpha_products_v6')
+    // 1. First check if we have an authoritative saved cache in localStorage (v7)
+    const rawSaved = localStorage.getItem('alpha_products_v7') || localStorage.getItem('alpha_products_v6')
     if (rawSaved) {
       try {
         const parsed = JSON.parse(rawSaved)
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const active = parsed.filter((p: ProductItem) => p && p.id && !deletedIds.includes(p.id))
+          const active = parsed
+            .filter((p: ProductItem) => p && p.id && !deletedIds.includes(p.id))
+            .map((p: ProductItem) => {
+              let safeImg = p.featured_image || '/images/products/image-399.png'
+              if (typeof safeImg === 'string' && safeImg.length > 100000) {
+                safeImg = '/images/products/image-399.png'
+              }
+              return {
+                ...p,
+                featured_image: safeImg,
+              }
+            })
           if (active.length > 0) {
             // Background sync once with server
             if (!isProductsSyncInitiated) {
@@ -495,7 +533,14 @@ export function getStoredProducts(): ProductItem[] {
 
     // Update fast-access cache
     const serialized = JSON.stringify(finalProducts)
-    localStorage.setItem('alpha_products_v6', serialized)
+    try {
+      localStorage.setItem('alpha_products_v7', serialized)
+    } catch (err) {
+      cleanLegacyStorage()
+      try {
+        localStorage.setItem('alpha_products_v7', serialized)
+      } catch (e2) {}
+    }
 
     // Always background-sync latest from /api/products NON-DESTRUCTIVELY
     if (!isProductsSyncInitiated) {
@@ -521,22 +566,48 @@ export function saveStoredProducts(products: ProductItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const deletedIds = getDeletedProductIds()
-      const cleanProducts = products.filter((p) => p && p.id && !deletedIds.includes(p.id))
+      const cleanProducts = products
+        .filter((p) => p && p.id && !deletedIds.includes(p.id))
+        .map((p) => {
+          // If featured_image is corrupted/oversized (over 100KB), fallback to default
+          let safeImg = p.featured_image || '/images/products/image-399.png'
+          if (typeof safeImg === 'string' && safeImg.length > 100000) {
+            safeImg = '/images/products/image-399.png'
+          }
 
-      // 1. Separate user-uploaded / edited products and preserve them in dedicated store
-      const userProds: ProductItem[] = cleanProducts.map((p) => ({
-        ...p,
-        is_user_created: true,
-      }))
+          let safeGallery = Array.isArray(p.gallery_images)
+            ? p.gallery_images
+                .map((g: any) => (typeof g === 'string' ? g : g?.image_url))
+                .filter(Boolean)
+                .map((imgStr: string) => (imgStr.length > 100000 ? '/images/products/image-399.png' : imgStr))
+            : [safeImg]
 
-      // SAVE TO PROTECTED USER STORE IN BOTH LOCALSTORAGE AND INDEXEDDB
-      localStorage.setItem('alpha_user_uploaded_products', JSON.stringify(userProds))
-      savePersistentData('alpha_user_uploaded_products', userProds)
+          if (safeGallery.length === 0) {
+            safeGallery = [safeImg]
+          }
+
+          return {
+            ...p,
+            featured_image: safeImg,
+            gallery_images: safeGallery,
+            is_user_created: true,
+          }
+        })
+
+      // Clean redundant old keys to guarantee plenty of localStorage space
+      cleanLegacyStorage()
 
       const serialized = JSON.stringify(cleanProducts)
-      localStorage.setItem('alpha_products_v6', serialized)
-      localStorage.setItem('alpha_products_v5', serialized)
-      localStorage.setItem('alpha_products_user_managed', 'true')
+      try {
+        localStorage.setItem('alpha_products_v7', serialized)
+      } catch (quotaErr) {
+        cleanLegacyStorage()
+        try {
+          localStorage.setItem('alpha_products_v7', serialized)
+        } catch (e2) {}
+      }
+
+      savePersistentData('alpha_products_v7', cleanProducts)
       window.dispatchEvent(new Event('alpha_content_updated'))
 
       // Broadcast to other open tabs
@@ -556,9 +627,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
-  savePersistentData('alpha_products_v6', products)
-  savePersistentData('alpha_products_v5', products)
-  savePersistentData('alpha_products_v4', products)
+  savePersistentData('alpha_products_v7', products)
 }
 
 export function resetToCleanBaselineProducts(): ProductItem[] {
