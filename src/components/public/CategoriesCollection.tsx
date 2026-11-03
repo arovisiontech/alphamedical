@@ -11,11 +11,20 @@ import {
   Layers,
   ArrowUpRight,
 } from 'lucide-react'
-import { getStoredCategories, INITIAL_CATEGORIES_SEED } from '@/src/lib/dataStore'
+import {
+  getStoredCategories,
+  INITIAL_CATEGORIES_SEED,
+  getStoredCategoriesHeader,
+  INITIAL_CATEGORIES_COLLECTION_HEADER,
+} from '@/src/lib/dataStore'
 import { CategoryItem } from '@/src/types/category'
+import { CategoriesCollectionHeaderData } from '@/src/types/section'
 
 export default function CategoriesCollection() {
   const [categories, setCategories] = useState<CategoryItem[]>(INITIAL_CATEGORIES_SEED)
+  const [headerData, setHeaderData] = useState<CategoriesCollectionHeaderData>(
+    INITIAL_CATEGORIES_COLLECTION_HEADER
+  )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isHovered, setIsHovered] = useState(false)
   const sliderRef = useRef<HTMLDivElement>(null)
@@ -28,6 +37,7 @@ export default function CategoriesCollection() {
         .filter((c) => c.is_published !== false)
         .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
       setCategories(active.length > 0 ? active : stored)
+      setHeaderData(getStoredCategoriesHeader())
     }
 
     loadCategories()
@@ -92,13 +102,13 @@ export default function CategoriesCollection() {
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 text-xs 2xl:text-sm font-extrabold text-[#B92025] uppercase tracking-widest">
               <span className="w-2.5 h-2.5 rounded-full bg-[#B92025]" />
-              <span>EXPLORE SURGICAL DISCIPLINES</span>
+              <span>{headerData.badge || 'EXPLORE SURGICAL DISCIPLINES'}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl 2xl:text-5xl font-black text-[#18355E] tracking-tight">
-              Categories Collection
+              {headerData.title || 'Categories Collection'}
             </h2>
             <p className="text-slate-600 text-xs sm:text-sm 2xl:text-base font-medium max-w-2xl">
-              Precision surgical instruments and specialty hospital equipment engineered for clinical excellence.
+              {headerData.description || 'Precision surgical instruments and specialty hospital equipment engineered for clinical excellence.'}
             </p>
           </div>
 
@@ -199,23 +209,8 @@ export default function CategoriesCollection() {
           </div>
         </div>
 
-        {/* BOTTOM DOT INDICATORS & BROWSE ALL LINK */}
-        <div className="mt-10 sm:mt-14 flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200">
-          <div className="flex items-center gap-2">
-            {categories.map((_, dotIdx) => (
-              <button
-                key={dotIdx}
-                onClick={() => setCurrentIndex(dotIdx)}
-                className={`transition-all rounded-full ${
-                  currentIndex === dotIdx
-                    ? 'w-8 h-2.5 bg-[#B92025]'
-                    : 'w-2.5 h-2.5 bg-slate-300 hover:bg-slate-400'
-                }`}
-                title={`Go to category slide ${dotIdx + 1}`}
-              />
-            ))}
-          </div>
-
+        {/* BOTTOM ACTION BAR (DOTS REMOVED AS REQUESTED) */}
+        <div className="mt-8 sm:mt-12 flex items-center justify-end pt-5 border-t border-slate-200">
           <Link
             href="/categories"
             className="inline-flex items-center gap-2 text-xs 2xl:text-sm font-extrabold text-[#B92025] hover:text-[#96161B] uppercase tracking-wider group"

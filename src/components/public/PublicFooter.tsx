@@ -249,10 +249,9 @@ export default function PublicFooter() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className="flex items-center justify-between group hover:text-[#96161B] transition-colors py-0.5"
+                    className="block hover:text-[#96161B] hover:translate-x-1 transition-all py-0.5"
                   >
                     <span>{item.name}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#96161B] transition-colors" />
                   </Link>
                 </li>
               ))}
@@ -278,10 +277,9 @@ export default function PublicFooter() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className="flex items-center justify-between group hover:text-[#96161B] transition-colors py-0.5"
+                    className="block hover:text-[#96161B] hover:translate-x-1 transition-all py-0.5"
                   >
                     <span>{item.name}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#96161B] transition-colors" />
                   </Link>
                 </li>
               ))}
@@ -305,10 +303,9 @@ export default function PublicFooter() {
                 <li key={item.name}>
                   <Link
                     href={item.href}
-                    className="flex items-center justify-between group hover:text-[#96161B] transition-colors py-0.5"
+                    className="block hover:text-[#96161B] hover:translate-x-1 transition-all py-0.5"
                   >
                     <span>{item.name}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-[#96161B] transition-colors" />
                   </Link>
                 </li>
               ))}

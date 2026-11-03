@@ -1,3 +1,9 @@
+export interface CategoriesCollectionHeaderData {
+  badge: string
+  title: string
+  description: string
+}
+
 export interface WhyChooseFeature {
   id: string
   title: string

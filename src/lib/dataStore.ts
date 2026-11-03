@@ -17,6 +17,7 @@ import {
   FaqItem,
   BulkInquiryBadge,
   FaqBulkInquiryData,
+  CategoriesCollectionHeaderData,
 } from '@/src/types/section'
 import {
   savePersistentData,
@@ -133,6 +134,36 @@ export function getStoredCategories(): CategoryItem[] {
     console.error('Failed to read alpha_categories:', e)
   }
   return INITIAL_CATEGORIES_SEED
+}
+
+export const INITIAL_CATEGORIES_COLLECTION_HEADER: CategoriesCollectionHeaderData = {
+  badge: 'EXPLORE SURGICAL DISCIPLINES',
+  title: 'Categories Collection',
+  description:
+    'Precision surgical instruments and specialty hospital equipment engineered for clinical excellence.',
+}
+
+export function getStoredCategoriesHeader(): CategoriesCollectionHeaderData {
+  if (typeof window === 'undefined') return INITIAL_CATEGORIES_COLLECTION_HEADER
+  try {
+    const data = getLocalStorageSync<CategoriesCollectionHeaderData | null>(
+      'alpha_categories_header_v1',
+      null
+    )
+    if (data && data.title) return data
+  } catch (e) {
+    console.error('Failed to read alpha_categories_header:', e)
+  }
+  return INITIAL_CATEGORIES_COLLECTION_HEADER
+}
+
+export function saveStoredCategoriesHeader(data: CategoriesCollectionHeaderData): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_categories_header_v1', JSON.stringify(data))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_categories_header_v1', data)
 }
 
 export function deleteStoredCategory(id: string): CategoryItem[] {
@@ -851,7 +882,7 @@ export const INITIAL_VIDEO_WHY_CHOOSE_SEED: VideoWhyChooseData = {
   video_button_text: 'Watch Video',
   video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
   poster_image: '/images/surgical-video-poster.jpg',
-  section_title: 'Why Choose SurgiStore?',
+  section_title: 'Why Choose ALPHA Medical Supplies?',
   section_subtitle: 'Trusted by professionals. Chosen for quality.',
   features: [
     {
@@ -897,7 +928,12 @@ export function getStoredVideoWhyChoose(): VideoWhyChooseData {
   if (typeof window === 'undefined') return INITIAL_VIDEO_WHY_CHOOSE_SEED
   try {
     const dataV2 = getLocalStorageSync<VideoWhyChooseData | null>('alpha_video_why_choose_v2', null)
-    if (dataV2 && dataV2.section_title) return dataV2
+    if (dataV2 && dataV2.section_title) {
+      if (dataV2.section_title.includes('SurgiStore')) {
+        dataV2.section_title = 'Why Choose ALPHA Medical Supplies?'
+      }
+      return dataV2
+    }
   } catch (e) {
     console.error('Failed to read alpha_video_why_choose:', e)
   }
