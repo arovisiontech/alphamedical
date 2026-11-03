@@ -1065,6 +1065,34 @@ function AdminProductsContent() {
               <RefreshCw className="w-4 h-4" />
             </button>
 
+            {/* DELETE ALL PRODUCTS (RESET TO 0) */}
+            {products.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    confirm(
+                      'Are you sure you want to delete ALL products across all devices and start fresh from 0? This action cannot be undone.'
+                    )
+                  ) {
+                    setProducts([])
+                    saveStoredProducts([])
+                    fetch('/api/products', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: '[]',
+                    }).catch(() => {})
+                    showToast('All products deleted! Catalog is clean 0 on all devices.')
+                  }
+                }}
+                className="flex items-center gap-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-bold text-xs sm:text-sm px-4 py-3 rounded-2xl transition-all cursor-pointer"
+                title="Delete all products to start completely fresh from 0"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Delete All (Start 0)</span>
+              </button>
+            )}
+
             {/* ADD NEW PRODUCT BUTTON */}
             <button
               id="admin-add-product-btn"

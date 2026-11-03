@@ -85,12 +85,21 @@ export default function ProductCatalogShowcaseSection({ onAddToQuote }: ProductC
         </div>
 
         {/* PRODUCTS GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProducts.map((prod) => (
-            <div
-              key={prod.id}
-              className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
-            >
+        {filteredProducts.length === 0 ? (
+          <div className="bg-slate-50 rounded-2xl border border-slate-200 p-12 text-center space-y-3">
+            <ShieldCheck className="w-10 h-10 text-slate-300 mx-auto" />
+            <h3 className="text-base font-bold text-slate-700">Catalog Ready For Next Upload</h3>
+            <p className="text-xs text-slate-400 max-w-sm mx-auto">
+              No products found in this category. New items added in Admin will appear here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredProducts.map((prod) => (
+              <div
+                key={prod.id}
+                className="group bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+              >
               {/* IMAGE HEADER */}
               <div className="relative aspect-[4/3] w-full bg-slate-50 overflow-hidden p-4">
                 <SafeProductImage
@@ -171,6 +180,7 @@ export default function ProductCatalogShowcaseSection({ onAddToQuote }: ProductC
             </div>
           ))}
         </div>
+        )}
 
         {/* VIEW ALL FOOTER CTA */}
         <div className="mt-12 text-center">

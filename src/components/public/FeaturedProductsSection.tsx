@@ -179,8 +179,19 @@ export default function FeaturedProductsSection({
           </div>
         </div>
 
-        {/* PRODUCT CARDS GRID (100% MATCHING SCREENSHOT IMAGE 399) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-4 4xl:grid-cols-6 gap-6 sm:gap-6 2xl:gap-8 3xl:gap-10">
+        {/* PRODUCT CARDS GRID */}
+        {finalProducts.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-200/90 p-12 text-center space-y-3 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-red-50 text-[#96161B] flex items-center justify-center mx-auto">
+              <Sparkles className="w-6 h-6" />
+            </div>
+            <h3 className="text-base font-black text-slate-800">Catalog Ready for New Products</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              The product catalog is currently clear. New medical instruments will appear here immediately once uploaded.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-4 4xl:grid-cols-6 gap-6 sm:gap-6 2xl:gap-8 3xl:gap-10">
           {finalProducts.map((prod) => {
             const qty = quantities[prod.id] || 1
             const isAdded = addedState[prod.id]
@@ -327,6 +338,7 @@ export default function FeaturedProductsSection({
             )
           })}
         </div>
+        )}
 
         {/* View All Bar on 64-inch / Ultra-wide displays */}
         <div className="mt-12 text-center">

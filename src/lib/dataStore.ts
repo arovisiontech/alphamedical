@@ -388,30 +388,21 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
   const deletedIds = getDeletedProductIds()
   let currentLocal: ProductItem[] = []
   try {
-    const raw = localStorage.getItem('alpha_products_v7') || localStorage.getItem('alpha_products_v6')
+    const raw = localStorage.getItem('alpha_products_v9')
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) {
+      if (Array.isArray(parsed)) {
         currentLocal = parsed.filter((p) => p && p.id && !deletedIds.includes(p.id))
       }
     }
   } catch (e) {}
 
-  const userProds = rescueHistoricalUserProducts().filter((p) => p && p.id && !deletedIds.includes(p.id))
   const combinedMap = new Map<string, ProductItem>()
 
-  // 1. Current local products (and user uploads) have top priority (preserves edits & deletions)
+  // 1. Current local products have top priority (preserves edits & additions)
   currentLocal.forEach((lp) => {
     if (lp && lp.id && !deletedIds.includes(lp.id)) {
       combinedMap.set(lp.id, lp)
-    }
-  })
-
-  userProds.forEach((up) => {
-    if (up && up.id && !deletedIds.includes(up.id)) {
-      if (!combinedMap.has(up.id)) {
-        combinedMap.set(up.id, up)
-      }
     }
   })
 
@@ -424,21 +415,14 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
     }
   })
 
-  // 3. Fallback seeds ONLY if not deleted and not in combinedMap
-  INITIAL_PRODUCTS_SEED.forEach((seed) => {
-    if (!deletedIds.includes(seed.id) && !combinedMap.has(seed.id)) {
-      combinedMap.set(seed.id, seed)
-    }
-  })
-
   const merged = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
   const serialized = JSON.stringify(merged)
   try {
-    localStorage.setItem('alpha_products_v7', serialized)
+    localStorage.setItem('alpha_products_v9', serialized)
   } catch (err) {
     cleanLegacyStorage()
     try {
-      localStorage.setItem('alpha_products_v7', serialized)
+      localStorage.setItem('alpha_products_v9', serialized)
     } catch (e2) {}
   }
 
@@ -446,10 +430,12 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
   return merged
 }
 
-// Auto clean legacy storage keys to guarantee full 5MB quota is free
+// Auto clean legacy storage keys to guarantee full 5MB quota is free and enforce clean 0-product reset
 function cleanLegacyStorage() {
   if (typeof window === 'undefined') return
   const oldKeys = [
+    'alpha_products_v8',
+    'alpha_products_v7',
     'alpha_products_v6',
     'alpha_products_v5',
     'alpha_products_v4',
@@ -468,16 +454,16 @@ function cleanLegacyStorage() {
 }
 
 export function getStoredProducts(): ProductItem[] {
-  if (typeof window === 'undefined') return INITIAL_PRODUCTS_SEED
+  if (typeof window === 'undefined') return []
   try {
     const deletedIds = getDeletedProductIds()
 
-    // 1. First check if we have an authoritative saved cache in localStorage (v7)
-    const rawSaved = localStorage.getItem('alpha_products_v7') || localStorage.getItem('alpha_products_v6')
-    if (rawSaved) {
+    // 1. Authoritative v9 clean store (starts at 0 as requested by client)
+    const rawSaved = localStorage.getItem('alpha_products_v9')
+    if (rawSaved !== null) {
       try {
         const parsed = JSON.parse(rawSaved)
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           const active = parsed
             .filter((p: ProductItem) => p && p.id && !deletedIds.includes(p.id))
             .map((p: ProductItem) => {
@@ -490,59 +476,28 @@ export function getStoredProducts(): ProductItem[] {
                 featured_image: safeImg,
               }
             })
-          if (active.length > 0) {
-            // Background sync once with server
-            if (!isProductsSyncInitiated) {
-              isProductsSyncInitiated = true
-              fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-                .then((res) => res.json())
-                .then((serverProds) => {
-                  if (Array.isArray(serverProds) && serverProds.length > 0) {
-                    syncWithServerProducts(serverProds)
-                  }
-                })
-                .catch(() => {})
-            }
-            return active
+
+          // Background sync with /api/products
+          if (!isProductsSyncInitiated) {
+            isProductsSyncInitiated = true
+            fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
+              .then((res) => res.json())
+              .then((serverProds) => {
+                if (Array.isArray(serverProds)) {
+                  syncWithServerProducts(serverProds)
+                }
+              })
+              .catch(() => {})
           }
+          return active
         }
       } catch (e) {}
     }
 
-    // 2. Fallback: Build initial list from user uploads and baseline seeds
-    const userProds = rescueHistoricalUserProducts()
-    const mergedMap = new Map<string, ProductItem>()
+    // Clean all legacy keys once so other devices reset to 0 products
+    cleanLegacyStorage()
+    localStorage.setItem('alpha_products_v9', '[]')
 
-    // User products come FIRST
-    userProds.forEach((p) => {
-      if (p && p.id && !deletedIds.includes(p.id)) {
-        mergedMap.set(p.id, p)
-      }
-    })
-
-    // Baseline seeds come next - ONLY if not deleted
-    INITIAL_PRODUCTS_SEED.forEach((seedProd) => {
-      if (!deletedIds.includes(seedProd.id)) {
-        if (!mergedMap.has(seedProd.id)) {
-          mergedMap.set(seedProd.id, seedProd)
-        }
-      }
-    })
-
-    const finalProducts = Array.from(mergedMap.values()).filter((p) => !deletedIds.includes(p.id))
-
-    // Update fast-access cache
-    const serialized = JSON.stringify(finalProducts)
-    try {
-      localStorage.setItem('alpha_products_v7', serialized)
-    } catch (err) {
-      cleanLegacyStorage()
-      try {
-        localStorage.setItem('alpha_products_v7', serialized)
-      } catch (e2) {}
-    }
-
-    // Always background-sync latest from /api/products NON-DESTRUCTIVELY
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
@@ -555,11 +510,11 @@ export function getStoredProducts(): ProductItem[] {
         .catch(() => {})
     }
 
-    return finalProducts
+    return []
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
   }
-  return INITIAL_PRODUCTS_SEED
+  return []
 }
 
 export function saveStoredProducts(products: ProductItem[]): void {
@@ -599,15 +554,15 @@ export function saveStoredProducts(products: ProductItem[]): void {
 
       const serialized = JSON.stringify(cleanProducts)
       try {
-        localStorage.setItem('alpha_products_v7', serialized)
+        localStorage.setItem('alpha_products_v9', serialized)
       } catch (quotaErr) {
         cleanLegacyStorage()
         try {
-          localStorage.setItem('alpha_products_v7', serialized)
+          localStorage.setItem('alpha_products_v9', serialized)
         } catch (e2) {}
       }
 
-      savePersistentData('alpha_products_v7', cleanProducts)
+      savePersistentData('alpha_products_v9', cleanProducts)
       window.dispatchEvent(new Event('alpha_content_updated'))
 
       // Broadcast to other open tabs
@@ -627,7 +582,7 @@ export function saveStoredProducts(products: ProductItem[]): void {
       }).catch((e) => console.warn('Failed to sync products to API:', e))
     } catch (e) {}
   }
-  savePersistentData('alpha_products_v7', products)
+  savePersistentData('alpha_products_v9', products)
 }
 
 export function resetToCleanBaselineProducts(): ProductItem[] {

@@ -33,9 +33,22 @@ interface NavItem {
 
 export default function MainRedNavbar() {
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const closeTimerRef = React.useRef<NodeJS.Timeout | null>(null)
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [openAccordion, setOpenAccordion] = useState<string | null>(null)
   const [mobileSearchQuery, setMobileSearchQuery] = useState('')
+
+  const handleMouseEnter = (name: string) => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    setActiveDropdown(name)
+  }
+
+  const handleMouseLeave = () => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
+    closeTimerRef.current = setTimeout(() => {
+      setActiveDropdown(null)
+    }, 220)
+  }
 
   // Listen to external triggers from HeaderNav
   useEffect(() => {
@@ -177,8 +190,8 @@ export default function MainRedNavbar() {
               <div
                 key={item.name}
                 className="relative"
-                onMouseEnter={() => item.hasDropdown && setActiveDropdown(item.name)}
-                onMouseLeave={() => setActiveDropdown(null)}
+                onMouseEnter={() => item.hasDropdown && handleMouseEnter(item.name)}
+                onMouseLeave={() => item.hasDropdown && handleMouseLeave()}
               >
                 <Link
                   href={item.href}
@@ -189,10 +202,12 @@ export default function MainRedNavbar() {
                   {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/90 shrink-0" />}
                 </Link>
 
-                {/* MEGA MENU DROPDOWN */}
+                {/* MEGA MENU DROPDOWN WITH UNBREAKABLE HOVER BRIDGE */}
                 {item.hasDropdown && activeDropdown === item.name && (
                   <div
-                    className={`absolute top-full w-[760px] 2xl:w-[860px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid grid-cols-3 gap-6 sm:gap-8 ${
+                    onMouseEnter={() => handleMouseEnter(item.name)}
+                    onMouseLeave={() => handleMouseLeave()}
+                    className={`absolute top-full w-[760px] 2xl:w-[860px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid grid-cols-3 gap-6 sm:gap-8 before:absolute before:-top-4 before:left-0 before:w-full before:h-4 before:content-[''] ${
                       item.name === 'Surgical Instruments'
                         ? 'left-0'
                         : item.name === 'Brands' || item.name === 'Equipment' || item.name === 'Resources'

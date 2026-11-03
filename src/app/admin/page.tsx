@@ -112,11 +112,17 @@ export default function AdminDashboardPage() {
               <span>Manage Products</span>
             </Link>
             <Link
-              href="/admin/content"
-              className="flex items-center gap-2 bg-[#B92025]/30 hover:bg-[#B92025] text-white font-bold text-xs px-4 py-3 rounded-xl border border-red-500/30 transition-all shadow"
+              href="/admin/orders"
+              className="flex items-center gap-2 bg-[#B92025]/40 hover:bg-[#B92025] text-white font-bold text-xs px-4 py-3 rounded-xl border border-red-500/40 transition-all shadow"
             >
               <Sparkles className="w-4 h-4 text-red-300" />
-              <span>Hero Banners</span>
+              <span>Orders & Dispatch</span>
+            </Link>
+            <Link
+              href="/admin/homepage"
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-xs px-4 py-3 rounded-xl border border-white/20 transition-colors"
+            >
+              <span>Home Page CMS</span>
             </Link>
             <Link
               href="/admin/contact-messages"

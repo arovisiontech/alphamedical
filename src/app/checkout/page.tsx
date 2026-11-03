@@ -92,6 +92,31 @@ function CheckoutContent() {
     }
     if (match) {
       setOrderedProduct(match)
+    } else {
+      setOrderedProduct({
+        id: 'checkout-item-sample',
+        title: 'Custom Medical Supply Order',
+        slug: 'custom-medical-order',
+        sku: 'AMS-9021',
+        price: 53.90,
+        original_price: 64.90,
+        featured_image: '/images/products/image-399.png',
+        category_id: 'cat-surg-inst',
+        category_name: 'Surgical Instruments',
+        short_description: 'Custom surgical instrument procurement order.',
+        full_description: 'High-grade surgical stainless steel instruments.',
+        features: ['Hospital Grade', 'Autoclavable'],
+        specifications: {},
+        catalogue_pdf: null,
+        is_featured: false,
+        is_published: true,
+        seo_title: null,
+        seo_description: null,
+        sort_order: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        in_stock: true,
+      })
     }
   }, [productSlug])
 

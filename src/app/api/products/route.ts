@@ -44,19 +44,7 @@ function getStoredProductsFromFile(): ProductItem[] {
     return g.__alpha_products
   }
 
-  // 2. Check /tmp on serverless environments
-  try {
-    if (fs.existsSync(tmpFilePath)) {
-      const content = fs.readFileSync(tmpFilePath, 'utf-8')
-      const parsed = JSON.parse(content)
-      if (Array.isArray(parsed)) {
-        g.__alpha_products = parsed
-        return parsed
-      }
-    }
-  } catch (e) {}
-
-  // 3. Fallback to src/data/products.json
+  // 2. Fallback to src/data/products.json (authoritative clean base)
   try {
     if (fs.existsSync(dataFilePath)) {
       const content = fs.readFileSync(dataFilePath, 'utf-8')

@@ -19,6 +19,8 @@ import {
   ShieldCheck,
   Globe,
   HelpCircle,
+  Truck,
+  Factory,
 } from 'lucide-react'
 
 export default function AdminSidebar() {
@@ -27,6 +29,9 @@ export default function AdminSidebar() {
   const navItems = [
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Products & Categories', href: '/admin/products', icon: Package },
+    { name: 'Orders & Dispatch', href: '/admin/orders', icon: Truck },
+    { name: 'Home Page CMS', href: '/admin/homepage', icon: Sparkles },
+    { name: 'Production Page CMS', href: '/admin/production', icon: Factory },
     { name: 'PDF Catalogues', href: '/admin/catalogues', icon: FileText },
     { name: 'FAQs Knowledgebase', href: '/admin/faqs', icon: HelpCircle },
     { name: 'Media Library', href: '/admin/media', icon: ImageIcon },
@@ -34,7 +39,7 @@ export default function AdminSidebar() {
     { name: 'Content & Banners', href: '/admin/content', icon: Sparkles },
     { name: 'Trust Badges & Features', href: '/admin/features', icon: ShieldCheck },
     { name: 'Sections & Compliances', href: '/admin/sections', icon: Globe },
-    { name: 'Analytics & Stats', href: '/admin/statistics', icon: BarChart3 },
+    { name: 'Analytics & Financials', href: '/admin/statistics', icon: BarChart3 },
     { name: 'Store & Geo Settings', href: '/admin/settings', icon: Settings },
     { name: 'User Access', href: '/admin/users', icon: Users },
   ]
