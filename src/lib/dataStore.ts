@@ -1348,7 +1348,7 @@ export const INITIAL_GEO_STORE_SETTINGS_SEED: GeoStoreSettings = {
   paypal_client_id: 'sb',
   paypal_secret_key: '',
   usa_bank_enabled: true,
-  stripe_publishable_key: 'pk_test_sample',
+  stripe_publishable_key: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
   stripe_secret_key: '',
   ach_direct_debit_enabled: true,
   credit_cards_enabled: true,
@@ -1372,7 +1372,9 @@ export function getStoredGeoStoreSettings(): GeoStoreSettings {
       'alpha_geo_store_settings_v1',
       null
     )
-    if (data && data.store_mode) return data
+    if (data && data.store_mode) {
+      return data
+    }
   } catch (e) {
     console.error('Failed to read alpha_geo_store_settings:', e)
   }

@@ -69,6 +69,8 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const isCanceled = searchParams.get('canceled') === 'true'
 
   useEffect(() => {
     if (queryQty) setQuantity(queryQty)
@@ -147,17 +149,67 @@ function CheckoutContent() {
     setTimeout(() => setCouponMessage(null), 4000)
   }
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
+    setErrorMessage(null)
 
+    if (!email || !address || !city || !postCode) {
+      setErrorMessage('Please fill in all required contact and billing fields (Email, Address, City, Postal Code).')
+      return
+    }
+
+    setIsSubmitting(true)
     const generatedRef = `ALPH-${Math.floor(100000 + Math.random() * 900000)}`
     setOrderNumber(generatedRef)
 
-    setTimeout(() => {
-      setIsSubmitting(false)
-      setOrderPlaced(true)
-    }, 1200)
+    if (paymentMethod === 'card') {
+      try {
+        const payload = {
+          items: orderedProduct
+            ? [
+                {
+                  id: orderedProduct.id,
+                  title: orderedProduct.title,
+                  sku: orderedProduct.sku,
+                  price: productPrice,
+                  quantity: quantity,
+                  featured_image: orderedProduct.featured_image,
+                },
+              ]
+            : [],
+          customer: { firstName, lastName, email, phone, company },
+          shippingAddress: { address, address2, city, postCode, country, region },
+          shippingCost,
+          discountAmount,
+          orderRef: generatedRef,
+        }
+
+        const res = await fetch('/api/checkout/stripe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        })
+
+        const data = await res.json()
+
+        if (data.url) {
+          // Direct redirect to Stripe Checkout
+          window.location.href = data.url
+          return
+        } else {
+          setErrorMessage(data.error || 'Failed to initialize Stripe card checkout.')
+          setIsSubmitting(false)
+        }
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Payment network error. Please try again.')
+        setIsSubmitting(false)
+      }
+    } else {
+      setTimeout(() => {
+        setIsSubmitting(false)
+        setOrderPlaced(true)
+      }, 1200)
+    }
   }
 
   return (
@@ -248,7 +300,22 @@ function CheckoutContent() {
       {/* =========================================================================
           MAIN CHECKOUT STAGE: 2 COLUMNS (LEFT: 6 STEPS, RIGHT: STICKY ORDER SUMMARY)
       ========================================================================= */}
-      <main className="flex-1 max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 py-8 sm:py-12 w-full">
+      <main className="flex-1 max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 py-8 sm:py-12 w-full space-y-6">
+        {/* STRIPE NOTIFICATION BANNERS */}
+        {isCanceled && (
+          <div className="bg-amber-50 border border-amber-300 text-amber-900 px-5 py-4 rounded-2xl flex items-center gap-3 text-xs sm:text-sm font-medium animate-fade-in shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+            <span>Card payment was canceled on Stripe. You can review your details and proceed whenever you are ready.</span>
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="bg-red-50 border border-red-300 text-red-900 px-5 py-4 rounded-2xl flex items-center gap-3 text-xs sm:text-sm font-bold animate-fade-in shadow-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
         <form onSubmit={handlePlaceOrder}>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 2xl:gap-12 items-start">
             
@@ -810,10 +877,16 @@ function CheckoutContent() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
+                  className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
                 >
                   <Lock className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Processing Order...' : 'PLACE ORDER'}</span>
+                  <span>
+                    {isSubmitting
+                      ? 'Connecting To Secure Stripe Gateway...'
+                      : paymentMethod === 'card'
+                      ? 'PAY WITH CARD (STRIPE)'
+                      : 'PLACE ORDER'}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
