@@ -26,6 +26,7 @@ import {
   setItemIDB,
 } from '@/src/lib/persistentStorage'
 import { GeoStoreSettings } from '@/src/types/storeSettings'
+import { CheckoutSettings } from '@/src/types/checkoutSettings'
 
 export type {
   ProductItem,
@@ -1389,6 +1390,118 @@ export function saveStoredGeoStoreSettings(data: GeoStoreSettings): void {
   }
   savePersistentData('alpha_geo_store_settings_v1', data)
 }
+
+// ==============================================================================
+// INITIAL CHECKOUT SETTINGS SEED (MATCHING SCREENSHOT 2)
+// ==============================================================================
+export const INITIAL_CHECKOUT_SETTINGS_SEED: CheckoutSettings = {
+  page_title: 'SECURE CHECKOUT',
+  page_subtitle: 'Complete Your Order Safely And Securely',
+
+  // Step 1: Login / Register
+  step1_title: 'Login Or Register',
+  step1_subtitle: 'Already Have An Account?',
+  allow_guest_checkout: true,
+  guest_badge_text: 'Checkout As Guest',
+  guest_badge_subtext: 'no account required',
+
+  // Step 2: Personal details
+  step2_title: 'Your Personal Details',
+
+  // Step 3: Billing Address
+  step3_title: 'Billing Address',
+  allowed_countries: [
+    'Pakistan',
+    'United States',
+    'United Kingdom',
+    'Canada',
+    'Germany',
+    'United Arab Emirates',
+    'Saudi Arabia',
+  ],
+  default_country: 'Pakistan',
+  allowed_regions: [
+    'Punjab',
+    'Sindh',
+    'Khyber Pakhtunkhwa',
+    'Balochistan',
+    'Islamabad',
+    'California',
+    'Texas',
+    'New York',
+  ],
+
+  // Step 4: Shipping Method
+  step4_title: 'Shipping Method',
+  shipping_name: 'Fast International Shipping',
+  shipping_description: 'reliable worldwide delivery',
+  shipping_cost: 30.99,
+  free_shipping_threshold: 100,
+  free_shipping_quantity: 10,
+
+  // Step 5: Payment Method
+  step5_title: 'Payment Method',
+  step5_subtitle: 'Direct card payment — no cash on delivery',
+  step5_badge: 'Stripe 256-Bit SSL Encrypted',
+  card_title: 'Credit / Debit Card',
+  card_badge: 'Direct Online',
+  card_description: 'Visa, Mastercard, American Express, Discover (3D-Secure & SCA verified)',
+  card_footnote: "Card details are processed directly through Stripe's certified PCI Level 1 gateway.",
+  button_text: 'PAY WITH CARD (STRIPE)',
+
+  // Step 6: Coupons
+  step6_title: 'Coupon / Voucher / Reward',
+  enable_coupons: true,
+  coupon_code_1: 'ALPHA10',
+  coupon_discount_percent_1: 10,
+  coupon_code_2: 'SURGICAL',
+  coupon_discount_fixed_2: 5.0,
+
+  // Security Notice Box
+  security_box_title: 'Your Payment Information Is Secure',
+  security_box_desc: 'We Use 256-Bit SSL Encryption To Protect Your Data',
+
+  // Summary Card Guarantee Box
+  guarantee_title: 'Guaranteed Safe & Secure Checkout',
+  guarantee_desc: '256-Bit SSL Encryption • Powered by Stripe',
+
+  // 4 Trust Badges
+  trust_badge_1: 'Secure Checkout',
+  trust_badge_2: 'Worldwide Shipping',
+  trust_badge_3: 'Premium Quality',
+  trust_badge_4: 'Expert Support',
+
+  footer_text: '© 2026 ALPHA Wholesale Medical Supplies LLC. All Rights Reserved. ISO 13485:2016 Certified.',
+  updated_at: new Date().toISOString(),
+}
+
+export function getStoredCheckoutSettings(): CheckoutSettings {
+  if (typeof window === 'undefined') return INITIAL_CHECKOUT_SETTINGS_SEED
+  try {
+    const data = getLocalStorageSync<CheckoutSettings | null>(
+      'alpha_checkout_settings_v1',
+      null
+    )
+    if (data && data.page_title) {
+      return data
+    }
+  } catch (e) {
+    console.error('Failed to read alpha_checkout_settings:', e)
+  }
+  return INITIAL_CHECKOUT_SETTINGS_SEED
+}
+
+export function saveStoredCheckoutSettings(data: CheckoutSettings): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_checkout_settings_v1', JSON.stringify(data))
+      window.dispatchEvent(new Event('alpha_checkout_updated'))
+      window.dispatchEvent(new Event('alpha_content_updated'))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_checkout_settings_v1', data)
+}
+
 
 
 

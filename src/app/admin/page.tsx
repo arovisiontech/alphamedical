@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Sparkles,
+  CreditCard,
 } from 'lucide-react'
 import {
   getStoredProducts,
@@ -117,6 +118,13 @@ export default function AdminDashboardPage() {
             >
               <Sparkles className="w-4 h-4 text-red-300" />
               <span>Orders & Dispatch</span>
+            </Link>
+            <Link
+              href="/admin/checkout"
+              className="flex items-center gap-2 bg-[#B92025] hover:bg-[#96161B] text-white font-bold text-xs px-4 py-3 rounded-xl border border-red-400 transition-all shadow"
+            >
+              <CreditCard className="w-4 h-4 text-white" />
+              <span>Checkout Page CMS</span>
             </Link>
             <Link
               href="/admin/homepage"

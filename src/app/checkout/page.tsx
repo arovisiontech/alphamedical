@@ -25,8 +25,13 @@ import {
   Sparkles,
   ShoppingBag,
 } from 'lucide-react'
-import { getStoredProducts } from '@/src/lib/dataStore'
+import {
+  getStoredProducts,
+  getStoredCheckoutSettings,
+  INITIAL_CHECKOUT_SETTINGS_SEED,
+} from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
+import { CheckoutSettings } from '@/src/types/checkoutSettings'
 import {
   VisaIcon,
   MastercardIcon,
@@ -78,6 +83,20 @@ function CheckoutContent() {
   const [orderNumber, setOrderNumber] = useState('')
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const isCanceled = searchParams.get('canceled') === 'true'
+
+  // Dynamic Checkout Settings from CMS
+  const [checkoutSettings, setCheckoutSettings] = useState<CheckoutSettings>(INITIAL_CHECKOUT_SETTINGS_SEED)
+
+  useEffect(() => {
+    setCheckoutSettings(getStoredCheckoutSettings())
+    const handleUpdate = () => setCheckoutSettings(getStoredCheckoutSettings())
+    window.addEventListener('alpha_checkout_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('alpha_checkout_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
 
   useEffect(() => {
     if (queryQty) setQuantity(queryQty)
@@ -131,16 +150,32 @@ function CheckoutContent() {
 
   const productPrice = queryPrice !== null && !isNaN(queryPrice) ? queryPrice : (orderedProduct?.price ?? 53.90)
   const subTotal = productPrice * quantity
-  const shippingCost = (quantity >= 10 || subTotal >= 100) ? 0.00 : 30.99
+  const shippingCost =
+    quantity >= (checkoutSettings.free_shipping_quantity || 10) ||
+    subTotal >= (checkoutSettings.free_shipping_threshold || 100)
+      ? 0.0
+      : (checkoutSettings.shipping_cost ?? 30.99)
   const total = Math.max(0, subTotal + shippingCost - discountAmount)
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault()
     if (!couponCode.trim()) return
-    if (couponCode.toUpperCase() === 'ALPHA10' || couponCode.toUpperCase() === 'SURGICAL') {
-      const discount = subTotal * 0.1
+    const code = couponCode.toUpperCase()
+    if (
+      code === (checkoutSettings.coupon_code_1 || 'ALPHA10').toUpperCase() ||
+      code === 'ALPHA10'
+    ) {
+      const pct = checkoutSettings.coupon_discount_percent_1 || 10
+      const discount = subTotal * (pct / 100)
       setDiscountAmount(discount)
-      setCouponMessage('Coupon applied! 10% discount saved.')
+      setCouponMessage(`Coupon applied! ${pct}% discount saved.`)
+    } else if (
+      code === (checkoutSettings.coupon_code_2 || 'SURGICAL').toUpperCase() ||
+      code === 'SURGICAL'
+    ) {
+      const fixed = checkoutSettings.coupon_discount_fixed_2 || 5.0
+      setDiscountAmount(fixed)
+      setCouponMessage(`Voucher code applied: $${fixed.toFixed(2)} discount.`)
     } else {
       setDiscountAmount(5.0)
       setCouponMessage('Voucher code applied: $5.00 discount.')
@@ -295,11 +330,13 @@ function CheckoutContent() {
       <section className="bg-white border-b border-slate-200/80 py-6 sm:py-8 px-4 sm:px-8">
         <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto">
           <h1 className="text-2xl sm:text-3xl md:text-4xl 2xl:text-5xl font-black uppercase tracking-tight">
-            <span>SECURE </span>
-            <span className="text-[#96161B]">CHECKOUT</span>
+            <span>{(checkoutSettings.page_title || 'SECURE CHECKOUT').split(' ')[0]} </span>
+            <span className="text-[#96161B]">
+              {(checkoutSettings.page_title || 'SECURE CHECKOUT').split(' ').slice(1).join(' ') || 'CHECKOUT'}
+            </span>
           </h1>
           <p className="text-xs sm:text-sm 2xl:text-base text-slate-500 mt-1 font-medium">
-            Complete Your Order Safely And Securely
+            {checkoutSettings.page_subtitle || 'Complete Your Order Safely And Securely'}
           </p>
         </div>
       </section>
@@ -342,24 +379,30 @@ function CheckoutContent() {
                     </span>
                     <div>
                       <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900 leading-tight">
-                        Login Or Register
+                        {checkoutSettings.step1_title || 'Login Or Register'}
                       </h2>
                       <span className="text-xs text-slate-400 font-medium">
-                        Already Have An Account?
+                        {checkoutSettings.step1_subtitle || 'Already Have An Account?'}
                       </span>
                     </div>
                   </div>
 
                   {/* Right: Checkout as Guest */}
-                  <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-                    <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
-                      <User className="w-4 h-4" />
+                  {checkoutSettings.allow_guest_checkout !== false && (
+                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
+                      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
+                        <User className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold text-slate-800">
+                          {checkoutSettings.guest_badge_text || 'Checkout As Guest'}
+                        </div>
+                        <div className="text-[10px] text-slate-400">
+                          {checkoutSettings.guest_badge_subtext || 'no account required'}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-xs font-bold text-slate-800">Checkout As Guest</div>
-                      <div className="text-[10px] text-slate-400">no account required</div>
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-6 pt-2 text-xs sm:text-sm font-bold text-slate-700">
@@ -395,7 +438,7 @@ function CheckoutContent() {
                     2
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    Your Personal Details
+                    {checkoutSettings.step2_title || 'Your Personal Details'}
                   </h2>
                 </div>
 
@@ -479,7 +522,7 @@ function CheckoutContent() {
                     3
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    Billing Address
+                    {checkoutSettings.step3_title || 'Billing Address'}
                   </h2>
                 </div>
 
@@ -556,13 +599,17 @@ function CheckoutContent() {
                         onChange={(e) => setCountry(e.target.value)}
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none focus:border-[#96161B] cursor-pointer text-slate-900"
                       >
-                        <option value="Pakistan">Pakistan</option>
-                        <option value="United States">United States</option>
-                        <option value="United Kingdom">United Kingdom</option>
-                        <option value="Canada">Canada</option>
-                        <option value="Germany">Germany</option>
-                        <option value="United Arab Emirates">UAE</option>
-                        <option value="Saudi Arabia">Saudi Arabia</option>
+                        {(checkoutSettings.allowed_countries?.length ? checkoutSettings.allowed_countries : [
+                          'Pakistan',
+                          'United States',
+                          'United Kingdom',
+                          'Canada',
+                          'Germany',
+                          'United Arab Emirates',
+                          'Saudi Arabia',
+                        ]).map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
                       </select>
                     </div>
 
@@ -575,14 +622,18 @@ function CheckoutContent() {
                         onChange={(e) => setRegion(e.target.value)}
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none focus:border-[#96161B] cursor-pointer text-slate-900"
                       >
-                        <option value="Punjab">Punjab</option>
-                        <option value="Sindh">Sindh</option>
-                        <option value="Khyber Pakhtunkhwa">KPK</option>
-                        <option value="Balochistan">Balochistan</option>
-                        <option value="Islamabad">Islamabad</option>
-                        <option value="California">California</option>
-                        <option value="Texas">Texas</option>
-                        <option value="New York">New York</option>
+                        {(checkoutSettings.allowed_regions?.length ? checkoutSettings.allowed_regions : [
+                          'Punjab',
+                          'Sindh',
+                          'Khyber Pakhtunkhwa',
+                          'Balochistan',
+                          'Islamabad',
+                          'California',
+                          'Texas',
+                          'New York',
+                        ]).map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -598,7 +649,7 @@ function CheckoutContent() {
                     4
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    Shipping Method
+                    {checkoutSettings.step4_title || 'Shipping Method'}
                   </h2>
                 </div>
 
@@ -612,10 +663,10 @@ function CheckoutContent() {
                     />
                     <div>
                       <span className="font-extrabold text-xs sm:text-sm text-slate-900 block">
-                        Fast International Shipping
+                        {checkoutSettings.shipping_name || 'Fast International Shipping'}
                       </span>
                       <span className="text-[11px] text-slate-400">
-                        reliable worldwide delivery
+                        {checkoutSettings.shipping_description || 'reliable worldwide delivery'}
                       </span>
                     </div>
                   </div>
@@ -636,17 +687,17 @@ function CheckoutContent() {
                     </span>
                     <div>
                       <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                        Payment Method
+                        {checkoutSettings.step5_title || 'Payment Method'}
                       </h2>
                       <span className="text-[11px] text-slate-400">
-                        Direct card payment — no cash on delivery
+                        {checkoutSettings.step5_subtitle || 'Direct card payment — no cash on delivery'}
                       </span>
                     </div>
                   </div>
 
                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>Stripe 256-Bit SSL Encrypted</span>
+                    <span>{checkoutSettings.step5_badge || 'Stripe 256-Bit SSL Encrypted'}</span>
                   </div>
                 </div>
 
@@ -659,13 +710,13 @@ function CheckoutContent() {
                       </div>
                       <div>
                         <div className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
-                          <span>Credit / Debit Card</span>
+                          <span>{checkoutSettings.card_title || 'Credit / Debit Card'}</span>
                           <span className="bg-[#96161B] text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
-                            Direct Online
+                            {checkoutSettings.card_badge || 'Direct Online'}
                           </span>
                         </div>
                         <span className="text-xs text-slate-500 font-medium block mt-0.5">
-                          Visa, Mastercard, American Express, Discover (3D-Secure & SCA verified)
+                          {checkoutSettings.card_description || 'Visa, Mastercard, American Express, Discover (3D-Secure & SCA verified)'}
                         </span>
                       </div>
                     </div>
@@ -682,7 +733,7 @@ function CheckoutContent() {
                   <div className="pt-3 border-t border-red-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-600">
                     <div className="flex items-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Card details are processed directly through Stripe&apos;s certified PCI Level 1 gateway.</span>
+                      <span>{checkoutSettings.card_footnote || "Card details are processed directly through Stripe's certified PCI Level 1 gateway."}</span>
                     </div>
                     <StripeBadge />
                   </div>
@@ -692,60 +743,62 @@ function CheckoutContent() {
               {/* =========================================================
                   STEP 6: COUPON / VOUCHER / REWARD
               ========================================================= */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                  <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                    6
-                  </span>
-                  <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    Coupon / Voucher / Reward
-                  </h2>
+              {checkoutSettings.enable_coupons !== false && (
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
+                  <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
+                    <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
+                      6
+                    </span>
+                    <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
+                      {checkoutSettings.step6_title || 'Coupon / Voucher / Reward'}
+                    </h2>
+                  </div>
+
+                  {couponMessage && (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
+                      {couponMessage}
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Coupon Input */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                        placeholder="enter your coupon"
+                        className="flex-1 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        className="bg-[#96161B] hover:bg-[#7d1216] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                      >
+                        Submit
+                      </button>
+                    </div>
+
+                    {/* Gift Certificate Input */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={giftCertificate}
+                        onChange={(e) => setGiftCertificate(e.target.value)}
+                        placeholder="enter your gift certificate code here"
+                        className="flex-1 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyGift}
+                        className="bg-[#96161B] hover:bg-[#7d1216] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </div>
                 </div>
-
-                {couponMessage && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold">
-                    {couponMessage}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Coupon Input */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      placeholder="enter your coupon"
-                      className="flex-1 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyCoupon}
-                      className="bg-[#96161B] hover:bg-[#7d1216] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0"
-                    >
-                      Submit
-                    </button>
-                  </div>
-
-                  {/* Gift Certificate Input */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={giftCertificate}
-                      onChange={(e) => setGiftCertificate(e.target.value)}
-                      placeholder="enter your gift certificate code here"
-                      className="flex-1 bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleApplyGift}
-                      className="bg-[#96161B] hover:bg-[#7d1216] text-white px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer shrink-0"
-                    >
-                      Submit
-                    </button>
-                  </div>
-                </div>
-              </div>
+              )}
 
             </div>
 
@@ -828,7 +881,7 @@ function CheckoutContent() {
                     <span className="font-bold text-slate-900">${subTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>Fast International Shipping</span>
+                    <span>{checkoutSettings.shipping_name || 'Fast International Shipping'}</span>
                     <span className="font-bold text-slate-900">${shippingCost.toFixed(2)}</span>
                   </div>
                   {discountAmount > 0 && (
@@ -853,10 +906,10 @@ function CheckoutContent() {
                   </div>
                   <div className="leading-tight">
                     <div className="font-extrabold text-xs text-[#96161B]">
-                      Your Payment Information Is Secure
+                      {checkoutSettings.security_box_title || 'Your Payment Information Is Secure'}
                     </div>
                     <div className="text-[11px] text-slate-600 mt-0.5">
-                      We Use 256-Bit SSL Encryption To Protect Your Data
+                      {checkoutSettings.security_box_desc || 'We Use 256-Bit SSL Encryption To Protect Your Data'}
                     </div>
                   </div>
                 </div>
@@ -872,7 +925,7 @@ function CheckoutContent() {
                     {isSubmitting
                       ? 'Connecting To Secure Stripe Gateway...'
                       : paymentMethod === 'card'
-                      ? 'PAY WITH CARD (STRIPE)'
+                      ? (checkoutSettings.button_text || 'PAY WITH CARD (STRIPE)')
                       : 'PLACE ORDER'}
                   </span>
                   <ArrowRight className="w-4 h-4" />
@@ -882,7 +935,7 @@ function CheckoutContent() {
                 <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 text-center space-y-2">
                   <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center justify-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-[#96161B]" />
-                    <span>Guaranteed Safe & Secure Checkout</span>
+                    <span>{checkoutSettings.guarantee_title || 'Guaranteed Safe & Secure Checkout'}</span>
                   </div>
 
                   <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
@@ -894,7 +947,7 @@ function CheckoutContent() {
 
                   <div className="pt-1 flex items-center justify-center gap-2 text-[10px] text-slate-500 font-medium">
                     <Lock className="w-3 h-3 text-slate-400" />
-                    <span>256-Bit SSL Encryption • Powered by Stripe</span>
+                    <span>{checkoutSettings.guarantee_desc || '256-Bit SSL Encryption • Powered by Stripe'}</span>
                   </div>
                 </div>
 
@@ -915,7 +968,7 @@ function CheckoutContent() {
                       />
                     </div>
                     <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 leading-tight">
-                      Secure Checkout
+                      {checkoutSettings.trust_badge_1 || 'Secure Checkout'}
                     </span>
                   </div>
 
@@ -931,7 +984,7 @@ function CheckoutContent() {
                       />
                     </div>
                     <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 leading-tight">
-                      Worldwide Shipping
+                      {checkoutSettings.trust_badge_2 || 'Worldwide Shipping'}
                     </span>
                   </div>
 
@@ -947,7 +1000,7 @@ function CheckoutContent() {
                       />
                     </div>
                     <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 leading-tight">
-                      Premium Quality
+                      {checkoutSettings.trust_badge_3 || 'Premium Quality'}
                     </span>
                   </div>
 
@@ -963,7 +1016,7 @@ function CheckoutContent() {
                       />
                     </div>
                     <span className="text-[10px] 2xl:text-xs font-bold text-slate-800 leading-tight">
-                      Expert Support
+                      {checkoutSettings.trust_badge_4 || 'Expert Support'}
                     </span>
                   </div>
 
@@ -1034,7 +1087,7 @@ function CheckoutContent() {
 
       {/* FOOTER */}
       <footer className="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-400">
-        <p>© 2026 ALPHA Wholesale Medical Supplies LLC. All Rights Reserved. ISO 13485:2016 Certified.</p>
+        <p>{checkoutSettings.footer_text || '© 2026 ALPHA Wholesale Medical Supplies LLC. All Rights Reserved. ISO 13485:2016 Certified.'}</p>
       </footer>
     </div>
   )

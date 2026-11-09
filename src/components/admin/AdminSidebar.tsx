@@ -21,6 +21,7 @@ import {
   HelpCircle,
   Truck,
   Factory,
+  CreditCard,
 } from 'lucide-react'
 
 export default function AdminSidebar() {
@@ -30,6 +31,7 @@ export default function AdminSidebar() {
     { name: 'Dashboard', href: '/admin', icon: LayoutDashboard },
     { name: 'Products & Categories', href: '/admin/products', icon: Package },
     { name: 'Orders & Dispatch', href: '/admin/orders', icon: Truck },
+    { name: 'Checkout Page CMS', href: '/admin/checkout', icon: CreditCard },
     { name: 'Home Page CMS', href: '/admin/homepage', icon: Sparkles },
     { name: 'Production Page CMS', href: '/admin/production', icon: Factory },
     { name: 'PDF Catalogues', href: '/admin/catalogues', icon: FileText },
