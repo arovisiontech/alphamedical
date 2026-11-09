@@ -27,6 +27,13 @@ import {
 } from 'lucide-react'
 import { getStoredProducts } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
+import {
+  VisaIcon,
+  MastercardIcon,
+  AmexIcon,
+  DiscoverIcon,
+  StripeBadge,
+} from '@/src/components/public/PaymentCardIcons'
 
 function CheckoutContent() {
   const router = useRouter()
@@ -619,85 +626,66 @@ function CheckoutContent() {
               </div>
 
               {/* =========================================================
-                  STEP 5: PAYMENT METHOD
+                  STEP 5: PAYMENT METHOD (CREDIT & DEBIT CARD VIA STRIPE)
               ========================================================= */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
-                <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
-                  <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                    5
-                  </span>
-                  <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    Payment Method
-                  </h2>
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
+                      5
+                    </span>
+                    <div>
+                      <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
+                        Payment Method
+                      </h2>
+                      <span className="text-[11px] text-slate-400">
+                        Direct card payment — no cash on delivery
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Stripe 256-Bit SSL Encrypted</span>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Card Option */}
-                  <label
-                    className={`p-4 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'card'
-                        ? 'border-[#96161B] bg-red-50/20 ring-1 ring-[#96161B]'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
+                {/* Credit / Debit Card Option (Full Width & Clean) */}
+                <div className="p-5 rounded-2xl border-2 border-[#96161B] bg-red-50/20 ring-2 ring-red-100/60 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="pay"
-                        checked={paymentMethod === 'card'}
-                        onChange={() => setPaymentMethod('card')}
-                        className="accent-[#96161B] w-4 h-4 cursor-pointer"
-                      />
+                      <div className="w-5 h-5 rounded-full border-2 border-[#96161B] flex items-center justify-center bg-white shrink-0">
+                        <div className="w-2.5 h-2.5 rounded-full bg-[#96161B]" />
+                      </div>
                       <div>
-                        <span className="font-extrabold text-xs sm:text-sm text-slate-900 block">
-                          Credit / Debit Card
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          (3d and sca secured)
+                        <div className="font-extrabold text-sm sm:text-base text-slate-900 flex items-center gap-2">
+                          <span>Credit / Debit Card</span>
+                          <span className="bg-[#96161B] text-white text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider">
+                            Direct Online
+                          </span>
+                        </div>
+                        <span className="text-xs text-slate-500 font-medium block mt-0.5">
+                          Visa, Mastercard, American Express, Discover (3D-Secure & SCA verified)
                         </span>
                       </div>
                     </div>
-                    {/* Card Brand Pills */}
-                    <div className="flex items-center gap-1">
-                      <span className="bg-blue-600 text-white font-black text-[9px] px-1.5 py-0.5 rounded italic">
-                        VISA
-                      </span>
-                      <span className="bg-red-600 text-white font-black text-[9px] px-1 py-0.5 rounded">
-                        MC
-                      </span>
-                      <span className="bg-sky-500 text-white font-black text-[9px] px-1 py-0.5 rounded">
-                        AMEX
-                      </span>
-                    </div>
-                  </label>
 
-                  {/* PayPal Option */}
-                  <label
-                    className={`p-4 rounded-xl border-2 flex items-center justify-between cursor-pointer transition-all ${
-                      paymentMethod === 'paypal'
-                        ? 'border-[#96161B] bg-red-50/20 ring-1 ring-[#96161B]'
-                        : 'border-slate-200 bg-white hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="pay"
-                        checked={paymentMethod === 'paypal'}
-                        onChange={() => setPaymentMethod('paypal')}
-                        className="accent-[#96161B] w-4 h-4 cursor-pointer"
-                      />
-                      <div>
-                        <span className="font-extrabold text-xs sm:text-sm text-slate-900 block">
-                          Paypal
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          american express card
-                        </span>
-                      </div>
+                    {/* Official Crisp Vector Logos */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      <VisaIcon className="h-7 w-auto drop-shadow-xs" />
+                      <MastercardIcon className="h-7 w-auto drop-shadow-xs" />
+                      <AmexIcon className="h-7 w-auto drop-shadow-xs" />
+                      <DiscoverIcon className="h-7 w-auto drop-shadow-xs" />
                     </div>
-                    <span className="text-blue-700 font-black italic text-xs">PayPal</span>
-                  </label>
+                  </div>
+
+                  <div className="pt-3 border-t border-red-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-600">
+                    <div className="flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>Card details are processed directly through Stripe&apos;s certified PCI Level 1 gateway.</span>
+                    </div>
+                    <StripeBadge />
+                  </div>
                 </div>
               </div>
 
@@ -889,6 +877,26 @@ function CheckoutContent() {
                   </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
+
+                {/* GUARANTEED SAFE & SECURE CHECKOUT WITH OFFICIAL CARDS */}
+                <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 text-center space-y-2">
+                  <div className="text-[11px] font-extrabold uppercase tracking-wider text-slate-700 flex items-center justify-center gap-1.5">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#96161B]" />
+                    <span>Guaranteed Safe & Secure Checkout</span>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-2 pt-1 flex-wrap">
+                    <VisaIcon className="h-6 w-auto drop-shadow-xs" />
+                    <MastercardIcon className="h-6 w-auto drop-shadow-xs" />
+                    <AmexIcon className="h-6 w-auto drop-shadow-xs" />
+                    <DiscoverIcon className="h-6 w-auto drop-shadow-xs" />
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-center gap-2 text-[10px] text-slate-500 font-medium">
+                    <Lock className="w-3 h-3 text-slate-400" />
+                    <span>256-Bit SSL Encryption • Powered by Stripe</span>
+                  </div>
+                </div>
 
                 {/* =========================================================
                     4 TRUST ICONS (MATCHING EXACT SVGS PROVIDED BY USER)
