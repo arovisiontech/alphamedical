@@ -108,6 +108,13 @@ export async function POST(req: NextRequest) {
 
     if (Array.isArray(body)) {
       // Entire array save - never auto-delete omitted products!
+      // Safeguard: Prevent accidental empty array wipes
+      if (body.length === 0) {
+        return NextResponse.json(
+          { error: 'Bulk deletion prevented. Use explicit delete action for individual products.' },
+          { status: 400 }
+        )
+      }
       const deletedIds = getDeletedProductIdsFromFile()
       updatedProducts = body.filter((p) => !deletedIds.has(p.id))
     } else if (body && body.action === 'delete' && body.id) {

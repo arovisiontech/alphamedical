@@ -462,7 +462,7 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
   return merged
 }
 
-// Auto clean legacy storage keys to guarantee full 5MB quota is free and enforce clean 0-product reset
+// Auto clean legacy storage keys safely without touching user uploaded products
 function cleanLegacyStorage() {
   if (typeof window === 'undefined') return
   const oldKeys = [
@@ -473,10 +473,6 @@ function cleanLegacyStorage() {
     'alpha_products_v4',
     'alpha_products_v3',
     'alpha_products_v2',
-    'alpha_products',
-    'alpha_store_products',
-    'alpha_products_user_managed',
-    'alpha_user_uploaded_products',
   ]
   oldKeys.forEach((k) => {
     try {
@@ -486,21 +482,25 @@ function cleanLegacyStorage() {
 }
 
 export function getStoredProducts(): ProductItem[] {
-  if (typeof window === 'undefined') return []
+  if (typeof window === 'undefined') {
+    return Array.isArray(INITIAL_PRODUCTS_SEED) ? INITIAL_PRODUCTS_SEED : []
+  }
   try {
     const deletedIds = getDeletedProductIds()
 
-    // 1. Authoritative v9 clean store (starts at 0 as requested by client)
+    // 1. Authoritative v9 clean store
     const rawSaved = localStorage.getItem('alpha_products_v9')
+    let localProds: ProductItem[] = []
+
     if (rawSaved !== null) {
       try {
         const parsed = JSON.parse(rawSaved)
-        if (Array.isArray(parsed)) {
-          const active = parsed
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          localProds = parsed
             .filter((p: ProductItem) => p && p.id && !deletedIds.includes(p.id))
             .map((p: ProductItem) => {
               let safeImg = p.featured_image || '/images/products/image-399.png'
-              if (typeof safeImg === 'string' && safeImg.length > 100000) {
+              if (typeof safeImg === 'string' && safeImg.length > 500000) {
                 safeImg = '/images/products/image-399.png'
               }
               return {
@@ -508,28 +508,38 @@ export function getStoredProducts(): ProductItem[] {
                 featured_image: safeImg,
               }
             })
-
-          // Background sync with /api/products
-          if (!isProductsSyncInitiated) {
-            isProductsSyncInitiated = true
-            fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
-              .then((res) => res.json())
-              .then((serverProds) => {
-                if (Array.isArray(serverProds)) {
-                  syncWithServerProducts(serverProds)
-                }
-              })
-              .catch(() => {})
-          }
-          return active
         }
       } catch (e) {}
     }
 
-    // Clean all legacy keys once so other devices reset to 0 products
-    cleanLegacyStorage()
-    localStorage.setItem('alpha_products_v9', '[]')
+    // 2. Base seed from authoritative src/data/products.json (contains all 127 client products)
+    const baseSeed = Array.isArray(INITIAL_PRODUCTS_SEED) ? INITIAL_PRODUCTS_SEED : []
+    const combinedMap = new Map<string, ProductItem>()
 
+    // Always seed baseline catalog
+    baseSeed.forEach((sp) => {
+      if (sp && sp.id && !deletedIds.includes(sp.id)) {
+        combinedMap.set(sp.id, sp)
+      }
+    })
+
+    // Local products overlay seed (preserves any client additions and edits)
+    localProds.forEach((lp) => {
+      if (lp && lp.id && !deletedIds.includes(lp.id)) {
+        combinedMap.set(lp.id, lp)
+      }
+    })
+
+    const finalProducts = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
+
+    // Persist merged active products into localStorage so new visitors never see 0 products
+    if (finalProducts.length > 0) {
+      try {
+        localStorage.setItem('alpha_products_v9', JSON.stringify(finalProducts))
+      } catch (e) {}
+    }
+
+    // Background sync with /api/products
     if (!isProductsSyncInitiated) {
       isProductsSyncInitiated = true
       fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
@@ -542,11 +552,11 @@ export function getStoredProducts(): ProductItem[] {
         .catch(() => {})
     }
 
-    return []
+    return finalProducts.length > 0 ? finalProducts : baseSeed
   } catch (e) {
     console.error('Failed to read alpha_products:', e)
   }
-  return []
+  return Array.isArray(INITIAL_PRODUCTS_SEED) ? INITIAL_PRODUCTS_SEED : []
 }
 
 export function saveStoredProducts(products: ProductItem[]): void {
