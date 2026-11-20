@@ -95,42 +95,34 @@ export function getStoredCategories(): CategoryItem[] {
       .then((res) => res.json())
       .then((serverCats) => {
         if (Array.isArray(serverCats) && serverCats.length > 0) {
-          const currentRaw = localStorage.getItem('alpha_categories_v4')
-          if (!currentRaw) {
-            const serverStr = JSON.stringify(serverCats)
-            localStorage.setItem('alpha_categories_v4', serverStr)
-            localStorage.setItem('alpha_categories_v3', serverStr)
-            localStorage.setItem('alpha_categories_v2', serverStr)
-            localStorage.setItem('alpha_categories', serverStr)
-            window.dispatchEvent(new Event('alpha_content_updated'))
-          }
+          const serverStr = JSON.stringify(serverCats)
+          localStorage.setItem('alpha_categories_v5', serverStr)
+          window.dispatchEvent(new Event('alpha_content_updated'))
         }
       })
       .catch(() => {})
   }
 
   try {
-    const rawV4 = localStorage.getItem('alpha_categories_v4')
-    if (rawV4) {
+    const rawV5 = localStorage.getItem('alpha_categories_v5')
+    if (rawV5) {
       try {
-        const parsed = JSON.parse(rawV4)
+        const parsed = JSON.parse(rawV5)
         if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed
         }
       } catch (err) {}
     }
 
-    // Auto-clean legacy storage keys containing older category versions
+    // Clean legacy storage keys
+    localStorage.removeItem('alpha_categories_v4')
     localStorage.removeItem('alpha_categories_v3')
     localStorage.removeItem('alpha_categories_v2')
     localStorage.removeItem('alpha_categories')
 
-    // Initialize with clean seed (5 main categories + 8 subcategories + 33 sub-subcategories)
+    // Initialize with authoritative seed (loaded from updated src/data/categories.json)
     const seedStr = JSON.stringify(INITIAL_CATEGORIES_SEED)
-    localStorage.setItem('alpha_categories_v4', seedStr)
-    localStorage.setItem('alpha_categories_v3', seedStr)
-    localStorage.setItem('alpha_categories_v2', seedStr)
-    localStorage.setItem('alpha_categories', seedStr)
+    localStorage.setItem('alpha_categories_v5', seedStr)
   } catch (e) {
     console.error('Failed to read alpha_categories:', e)
   }
@@ -191,10 +183,8 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
   if (typeof window !== 'undefined') {
     try {
       const serialized = JSON.stringify(categories)
+      localStorage.setItem('alpha_categories_v5', serialized)
       localStorage.setItem('alpha_categories_v4', serialized)
-      localStorage.setItem('alpha_categories_v3', serialized)
-      localStorage.setItem('alpha_categories_v2', serialized)
-      localStorage.setItem('alpha_categories', serialized)
       window.dispatchEvent(new Event('alpha_content_updated'))
 
       // Broadcast to other tabs
@@ -213,10 +203,8 @@ export function saveStoredCategories(categories: CategoryItem[]): void {
       }).catch((e) => console.warn('Failed to sync categories to API:', e))
     } catch (e) {}
   }
+  savePersistentData('alpha_categories_v5', categories)
   savePersistentData('alpha_categories_v4', categories)
-  savePersistentData('alpha_categories_v3', categories)
-  savePersistentData('alpha_categories_v2', categories)
-  savePersistentData('alpha_categories', categories)
 }
 
 let isProductsSyncInitiated = false

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import {
@@ -19,6 +19,8 @@ import {
   Building,
   Home,
 } from 'lucide-react'
+import { getStoredCategories, INITIAL_CATEGORIES_SEED } from '@/src/lib/dataStore'
+import { CategoryItem } from '@/src/types/category'
 
 interface NavItem {
   name: string
@@ -37,6 +39,20 @@ export default function MainRedNavbar() {
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [openAccordion, setOpenAccordion] = useState<string | null>(null)
   const [mobileSearchQuery, setMobileSearchQuery] = useState('')
+
+  // Dynamic live categories updated by client in Admin
+  const [categories, setCategories] = useState<CategoryItem[]>(INITIAL_CATEGORIES_SEED)
+
+  useEffect(() => {
+    setCategories(getStoredCategories())
+    const handleUpdate = () => setCategories(getStoredCategories())
+    window.addEventListener('alpha_content_updated', handleUpdate)
+    window.addEventListener('storage', handleUpdate)
+    return () => {
+      window.removeEventListener('alpha_content_updated', handleUpdate)
+      window.removeEventListener('storage', handleUpdate)
+    }
+  }, [])
 
   const handleMouseEnter = (name: string) => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
@@ -73,77 +89,43 @@ export default function MainRedNavbar() {
     setOpenAccordion(openAccordion === name ? null : name)
   }
 
-  const navItems: NavItem[] = [
-    { name: 'Home', href: '/' },
-    {
-      name: 'Surgical Instruments',
-      href: '/products?cat=surgical-instruments',
-      hasDropdown: true,
-      columns: [
-        {
-          title: 'Dental & Oral Surgery',
-          items: ['Bone Rongeurs', 'Dissecting Scissors', 'Extraction Forceps', 'Surgical Needle Holders', 'Cheek Retractors'],
-        },
-        {
-          title: 'Bone Surgery',
-          items: ['Bone Forceps', 'Elevators', 'Surgical Scissors', 'Surgical Needle Holders', 'Cheek Retractors'],
-        },
-        {
-          title: 'Periodontics',
-          items: ['Bone Rongeurs', 'Elevators', 'Surgical Scissors', 'Surgical Needle Holders', 'Cheek Retractors'],
-        },
-      ],
-    },
-    {
-      name: 'Medical Supplies',
-      href: '/products?cat=medical-supplies',
-      hasDropdown: true,
-      columns: [
-        {
-          title: 'Disposables',
-          items: ['Sterile Gloves', 'IV Cannulas', 'Syringes & Needles', 'Gauze Swabs'],
-        },
-        {
-          title: 'Diagnostics',
-          items: ['Stethoscopes', 'Sphygmomanometers', 'Pulse Oximeters', 'Thermometers'],
-        },
-      ],
-    },
-    {
-      name: 'PPE',
-      href: '/products?cat=ppe',
-      hasDropdown: true,
-      columns: [
-        {
-          title: 'Protective Gear',
-          items: ['N95 & Surgical Masks', 'Sterile Isolation Gowns', 'Protective Face Shields', 'Latex & Nitrile Gloves'],
-        },
-      ],
-    },
-    {
-      name: 'Equipment',
-      href: '/products?cat=medical-equipment',
-      hasDropdown: true,
-      columns: [
-        {
-          title: 'Critical Care & OR',
-          items: ['ICU Turbine Ventilators', 'Multiparameter Monitors', 'Emergency Defibrillators', 'Electric ICU Beds'],
-        },
-      ],
-    },
-    {
-      name: 'Brands',
-      href: '/brands',
-      hasDropdown: true,
-      columns: [
-        {
-          title: 'Certified Manufacturers',
-          items: ['ALPHA Surgical Systems', 'German Steel Craft', 'MedEquip Pro', 'SurgiPrecision USA'],
-        },
-      ],
-    },
-    { name: 'Sale', href: '/products?sale=true' },
-    {
+  // Dynamically construct navigation menu reflecting client's exact category & subcategory renames
+  const navItems: NavItem[] = useMemo(() => {
+    const mainCats = categories.filter((c) => !c.parent_id || c.level === 0)
+    const items: NavItem[] = [{ name: 'Home', href: '/' }]
+
+    if (mainCats.length > 0) {
+      mainCats.forEach((mainCat) => {
+        const subcats = categories.filter((s) => s.parent_id === mainCat.id && s.level === 1)
+        const columns = subcats.map((sub) => {
+          const groups = categories.filter((g) => g.parent_id === sub.id && g.level === 2)
+          const itemNames = groups.length > 0 ? groups.map((g) => g.name) : [sub.name]
+          return {
+            title: sub.name,
+            items: itemNames,
+          }
+        })
+
+        items.push({
+          name: mainCat.name,
+          href: mainCat.id === 'cat-brands' ? '/brands' : `/products?cat=${mainCat.slug || mainCat.id}`,
+          hasDropdown: columns.length > 0,
+          columns: columns.length > 0 ? columns : undefined,
+        })
+      })
+    } else {
+      // Clean fallback if categories are still initializing
+      items.push(
+        { name: 'Surgical Instruments', href: '/products?cat=surgical-instruments' },
+        { name: 'Dental instruments', href: '/products?cat=medical-supplies' },
+        { name: 'ENT Instruments', href: '/products?cat=ppe' },
+        { name: 'Hospital Equipment', href: '/products?cat=equipment' },
+        { name: 'Brands', href: '/brands' }
+      )
+    }
+
+    items.push({ name: 'Sale', href: '/products?sale=true' })
+    items.push({
       name: 'Resources',
       href: '/production',
       hasDropdown: true,
@@ -161,9 +143,11 @@ export default function MainRedNavbar() {
           items: ['Help & FAQs', 'B2B Wholesale Inquiries', 'Global Export Support'],
         },
       ],
-    },
-    { name: 'Contact Us', href: '/contact' },
-  ]
+    })
+    items.push({ name: 'Contact Us', href: '/contact' })
+
+    return items
+  }, [categories])
 
   const getDropdownItemHref = (parentName: string, itemTitle: string) => {
     if (parentName === 'Resources') {
@@ -207,10 +191,20 @@ export default function MainRedNavbar() {
                   <div
                     onMouseEnter={() => handleMouseEnter(item.name)}
                     onMouseLeave={() => handleMouseLeave()}
-                    className={`absolute top-full w-[760px] 2xl:w-[860px] bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid grid-cols-3 gap-6 sm:gap-8 before:absolute before:-top-4 before:left-0 before:w-full before:h-4 before:content-[''] ${
-                      item.name === 'Surgical Instruments'
+                    className={`absolute top-full bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid gap-6 sm:gap-8 before:absolute before:-top-4 before:left-0 before:w-full before:h-4 before:content-[''] ${
+                      (item.columns?.length || 0) >= 5
+                        ? 'w-[1050px] 2xl:w-[1250px] grid-cols-5'
+                        : (item.columns?.length || 0) === 4
+                        ? 'w-[900px] 2xl:w-[1020px] grid-cols-4'
+                        : (item.columns?.length || 0) === 2
+                        ? 'w-[560px] grid-cols-2'
+                        : (item.columns?.length || 0) === 1
+                        ? 'w-[320px] grid-cols-1'
+                        : 'w-[760px] 2xl:w-[860px] grid-cols-3'
+                    } ${
+                      item.name.toLowerCase().includes('surgical')
                         ? 'left-0'
-                        : item.name === 'Brands' || item.name === 'Equipment' || item.name === 'Resources'
+                        : item.name === 'Brands' || item.name.toLowerCase().includes('equipment') || item.name === 'Resources'
                         ? 'right-0'
                         : 'left-1/2 -translate-x-1/2'
                     }`}
@@ -266,50 +260,23 @@ export default function MainRedNavbar() {
             className="flex-1 flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            <Link
-              href="/"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-[11px] font-bold text-white shrink-0 transition-colors flex items-center gap-1"
-            >
-              <Home className="w-3 h-3 text-white" />
-              <span>Home</span>
-            </Link>
-            <Link
-              href="/products?cat=surgical-instruments"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
-            >
-              Surgical
-            </Link>
-            <Link
-              href="/products?cat=medical-supplies"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
-            >
-              Supplies
-            </Link>
-            <Link
-              href="/products?cat=ppe"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
-            >
-              PPE
-            </Link>
-            <Link
-              href="/products?cat=medical-equipment"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
-            >
-              Equipment
-            </Link>
-            <Link
-              href="/products?sale=true"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-yellow-400 text-slate-950 text-[11px] font-black shrink-0 shadow-sm flex items-center gap-1"
-            >
-              <Flame className="w-3 h-3 text-red-700" />
-              <span>Sale</span>
-            </Link>
-            <Link
-              href="/catalogues"
-              className="whitespace-nowrap px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[11px] font-bold text-white shrink-0 transition-colors"
-            >
-              Catalogues
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.name}
+                href={item.href}
+                className={`whitespace-nowrap px-2.5 py-1.5 rounded-lg text-[11px] font-bold shrink-0 transition-colors flex items-center gap-1 ${
+                  item.name === 'Sale'
+                    ? 'bg-yellow-400 text-slate-950 font-black'
+                    : item.name === 'Home'
+                    ? 'bg-white/20 hover:bg-white/30 text-white'
+                    : 'bg-white/10 hover:bg-white/20 text-white'
+                }`}
+              >
+                {item.name === 'Home' && <Home className="w-3 h-3 text-white" />}
+                {item.name === 'Sale' && <Flame className="w-3 h-3 text-red-700" />}
+                <span>{item.name}</span>
+              </Link>
+            ))}
           </div>
         </div>
       </nav>
