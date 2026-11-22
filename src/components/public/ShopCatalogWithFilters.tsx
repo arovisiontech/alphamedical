@@ -67,27 +67,47 @@ function ShopCatalogContent({
   const loadData = () => {
     const prods = getStoredProducts().filter((p) => p.is_published !== false)
     const cats = getStoredCategories().filter((c) => c.is_published !== false)
-    setProducts(prods)
-    setCategories(cats)
+    if (prods.length > 0) {
+      setProducts(prods)
+    }
+    if (cats.length > 0) {
+      setCategories(cats)
+    }
   }
 
   useEffect(() => {
     loadData()
     setIsReady(true)
 
-    // Fetch fresh products and categories from server API
+    // Fetch fresh products directly from server API and render them immediately
     fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
-          syncWithServerProducts(serverProds)
-          loadData()
+          const active = serverProds.filter((p: ProductItem) => p.is_published !== false)
+          setProducts(active)
+          try {
+            syncWithServerProducts(serverProds)
+          } catch (e) {}
         }
       })
-      .catch(() => {})
+      .catch((err) => {
+        console.warn('Could not fetch /api/products, using local store:', err)
+      })
       .finally(() => {
         setIsReady(true)
       })
+
+    // Fetch fresh categories directly from server API and render them immediately
+    fetch(`/api/categories?t=${Date.now()}`, { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverCats) => {
+        if (Array.isArray(serverCats) && serverCats.length > 0) {
+          const active = serverCats.filter((c: CategoryItem) => c.is_published !== false)
+          setCategories(active)
+        }
+      })
+      .catch(() => {})
 
     const handleUpdate = () => {
       loadData()

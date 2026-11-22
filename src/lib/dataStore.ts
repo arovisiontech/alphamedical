@@ -436,13 +436,27 @@ export function syncWithServerProducts(serverProds: ProductItem[]): ProductItem[
   })
 
   const merged = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
-  const serialized = JSON.stringify(merged)
+
+  // Slim base64 images when writing to localStorage to strictly fit within 5MB browser quota
   try {
-    localStorage.setItem('alpha_products_v9', serialized)
+    const slimForStorage = merged.map((p) => {
+      let safeImg = p.featured_image || '/images/products/image-399.png'
+      if (typeof safeImg === 'string' && safeImg.length > 50000) {
+        safeImg = '/images/products/image-399.png'
+      }
+      return {
+        ...p,
+        featured_image: safeImg,
+        gallery_images: Array.isArray(p.gallery_images)
+          ? p.gallery_images.filter((g) => typeof g === 'string' && g.length < 50000)
+          : [],
+      }
+    })
+    localStorage.setItem('alpha_products_v9', JSON.stringify(slimForStorage))
   } catch (err) {
     cleanLegacyStorage()
     try {
-      localStorage.setItem('alpha_products_v9', serialized)
+      localStorage.setItem('alpha_products_v9', JSON.stringify(merged.slice(0, 50)))
     } catch (e2) {}
   }
 
@@ -520,10 +534,23 @@ export function getStoredProducts(): ProductItem[] {
 
     const finalProducts = Array.from(combinedMap.values()).filter((p) => !deletedIds.includes(p.id))
 
-    // Persist merged active products into localStorage so new visitors never see 0 products
+    // Persist merged active products into localStorage safely without exceeding quota
     if (finalProducts.length > 0) {
       try {
-        localStorage.setItem('alpha_products_v9', JSON.stringify(finalProducts))
+        const slim = finalProducts.map((p) => {
+          let safeImg = p.featured_image || '/images/products/image-399.png'
+          if (typeof safeImg === 'string' && safeImg.length > 50000) {
+            safeImg = '/images/products/image-399.png'
+          }
+          return {
+            ...p,
+            featured_image: safeImg,
+            gallery_images: Array.isArray(p.gallery_images)
+              ? p.gallery_images.filter((g) => typeof g === 'string' && g.length < 50000)
+              : [],
+          }
+        })
+        localStorage.setItem('alpha_products_v9', JSON.stringify(slim))
       } catch (e) {}
     }
 

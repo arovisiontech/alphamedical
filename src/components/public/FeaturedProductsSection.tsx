@@ -40,12 +40,13 @@ export default function FeaturedProductsSection({
   useEffect(() => {
     loadData()
 
-    // Fetch fresh products from server API
+    // Fetch fresh products from server API and render immediately
     fetch(`/api/products?t=${Date.now()}`, { cache: 'no-store' })
       .then((res) => res.json())
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
-          loadData()
+          const active = serverProds.filter((p: ProductItem) => p.is_published !== false)
+          setProducts(active)
         }
       })
       .catch(() => {})
