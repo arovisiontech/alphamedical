@@ -57,20 +57,49 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
       return
     }
 
-    // If auto_geo, detect via IP
+    // If auto_geo, detect via IP cascade
     if (loadedSettings.store_mode === 'auto_geo') {
-      // Free non-blocking IP detection
-      fetch('https://ipapi.co/json/', { cache: 'no-store' })
-        .then((res) => res.json())
-        .then((data) => {
-          if (data && data.country_code) {
-            setCountryCode(data.country_code.toUpperCase())
+      const detectCountry = async () => {
+        try {
+          const res = await fetch('/api/geo')
+          const data = await res.json()
+          if (data && data.country && data.country.length === 2) {
+            setCountryCode(data.country.toUpperCase())
+            return
           }
-        })
-        .catch(() => {
-          // Fallback to default US if fetch fails
-          setCountryCode(loadedSettings.default_country || 'US')
-        })
+        } catch {}
+
+        try {
+          const r1 = await fetch('https://api.country.is')
+          const d1 = await r1.json()
+          if (d1 && d1.country) {
+            setCountryCode(d1.country.toUpperCase())
+            return
+          }
+        } catch {}
+
+        try {
+          const r2 = await fetch('https://ipapi.co/json/')
+          const d2 = await r2.json()
+          if (d2 && d2.country_code) {
+            setCountryCode(d2.country_code.toUpperCase())
+            return
+          }
+        } catch {}
+
+        try {
+          const r3 = await fetch('https://ipwho.is/')
+          const d3 = await r3.json()
+          if (d3 && d3.country_code) {
+            setCountryCode(d3.country_code.toUpperCase())
+            return
+          }
+        } catch {}
+
+        setCountryCode(loadedSettings.default_country || 'US')
+      }
+
+      detectCountry()
     } else if (loadedSettings.store_mode === 'force_usa_store') {
       setCountryCode('US')
     } else {

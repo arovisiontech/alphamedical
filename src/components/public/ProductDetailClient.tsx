@@ -33,7 +33,7 @@ import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
-import { getStoredProducts } from '@/src/lib/dataStore'
+import { getStoredProducts, addToStoredCart } from '@/src/lib/dataStore'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface ProductDetailClientProps {
@@ -404,31 +404,40 @@ export default function ProductDetailClient({
     .slice(0, 4)
 
   const handleAddToCart = () => {
-    const itemToAdd = {
-      ...product,
+    addToStoredCart(product, quantity, {
+      size: selectedSize,
+      length: selectedLength,
+      type: selectedType,
       price: unitPrice,
-      selected_size: selectedSize,
-      selected_quantity: quantity,
-      selected_length: selectedLength,
-      selected_type: selectedType,
-    }
-    setCartItems((prev) => {
-      const exists = prev.some((i) => i.id === product.id)
-      if (exists) return prev.map((i) => (i.id === product.id ? itemToAdd : i))
-      return [...prev, itemToAdd]
     })
     setIsAddedToCart(true)
     setTimeout(() => setIsAddedToCart(false), 2200)
-    setIsCartOpen(true)
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('alpha_item_added_to_cart', {
+          detail: {
+            product: {
+              ...product,
+              price: unitPrice,
+            },
+            quantity,
+            size: selectedSize,
+            type: selectedType,
+          },
+        })
+      )
+    }
   }
 
   const handleBuyNow = () => {
-    handleAddToCart()
-    router.push(
-      `/checkout?product=${encodeURIComponent(product.slug || product.id)}&qty=${quantity}&size=${encodeURIComponent(
-        selectedSize
-      )}&price=${unitPrice.toFixed(2)}`
-    )
+    addToStoredCart(product, quantity, {
+      size: selectedSize,
+      length: selectedLength,
+      type: selectedType,
+      price: unitPrice,
+    })
+    router.push('/checkout')
   }
 
   const handleInquiryClick = () => {
@@ -935,36 +944,54 @@ export default function ProductDetailClient({
                 </div>
               </div>
 
-              {/* ADD TO CART & BUY NOW BUTTONS */}
+              {/* DUAL-MODE ACTIONS: USA STORE VS INTERNATIONAL B2B INQUIRY */}
               <div className="space-y-2.5 pt-1">
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shimmer-effect"
-                >
-                  <ShoppingCart className="w-4 h-4" />
-                  <span>{isAddedToCart ? 'Added to Cart ✓' : `Add ${quantity} to Cart • $${totalPrice.toFixed(2)}`}</span>
-                </button>
+                {isUsaStore ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleAddToCart}
+                      className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider shadow-lg shadow-red-950/20 flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 shimmer-effect"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>{isAddedToCart ? 'Added to Cart ✓' : `Add ${quantity} to Cart • $${totalPrice.toFixed(2)}`}</span>
+                    </button>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={handleBuyNow}
-                    className="bg-slate-900 hover:bg-black text-white py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
-                  >
-                    <Zap className="w-4 h-4 text-amber-400" />
-                    <span>Buy Now • $${totalPrice.toFixed(2)}</span>
-                  </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={handleBuyNow}
+                        className="bg-slate-900 hover:bg-black text-white py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer shadow-md"
+                      >
+                        <Zap className="w-4 h-4 text-amber-400" />
+                        <span>Buy Now • ${totalPrice.toFixed(2)}</span>
+                      </button>
 
-                  <button
-                    type="button"
-                    onClick={handleInquiryClick}
-                    className="bg-white hover:bg-slate-50 text-[#96161B] border-2 border-[#96161B] py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
-                  >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Inquire Bulk Quote</span>
-                  </button>
-                </div>
+                      <button
+                        type="button"
+                        onClick={handleInquiryClick}
+                        className="bg-white hover:bg-slate-50 text-[#96161B] border-2 border-[#96161B] py-3 px-4 rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                        <span>Inquire Bulk Quote</span>
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleInquiryClick}
+                      className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider shadow-xl shadow-red-950/20 flex items-center justify-center gap-2.5 transition-all cursor-pointer active:scale-95 glow-btn-red shimmer-effect"
+                    >
+                      <MessageSquare className="w-5 h-5" />
+                      <span>Request B2B Quote / Export Inquiry</span>
+                    </button>
+                    <p className="text-center text-xs text-slate-500 font-medium">
+                      International orders are supplied via direct export with custom clearance and freight quotations.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 

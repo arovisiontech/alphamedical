@@ -14,6 +14,7 @@ import {
 } from 'lucide-react'
 import {
   getStoredDiscountProducts,
+  addToStoredCart,
   INITIAL_DISCOUNT_PRODUCTS_SEED,
 } from '@/src/lib/dataStore'
 import {
@@ -68,32 +69,47 @@ export default function DiscountProductsSection({
 
   const handleCartClick = (item: DiscountProductItem) => {
     const qty = quantities[item.id] || 1
+    const cartProduct: ProductItem = {
+      id: item.id,
+      title: item.title,
+      slug: item.slug,
+      sku: item.sku,
+      price: item.price,
+      original_price: item.original_price,
+      featured_image: item.featured_image,
+      category_id: null,
+      short_description: 'Self-retaining orthopedic retractor with sharp prongs.',
+      full_description: null,
+      features: [],
+      specifications: {},
+      catalogue_pdf: null,
+      is_featured: true,
+      is_published: true,
+      seo_title: item.title,
+      seo_description: null,
+      sort_order: item.sort_order,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      in_stock: item.in_stock,
+      badge: item.badge,
+    }
+
+    // Save to centralized store
+    addToStoredCart(cartProduct, qty)
+
+    // Fire popup event
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('alpha_item_added_to_cart', {
+          detail: {
+            product: cartProduct,
+            quantity: qty,
+          },
+        })
+      )
+    }
+
     if (onAddToCart) {
-      // Convert to ProductItem format for cart/drawer
-      const cartProduct: ProductItem = {
-        id: item.id,
-        title: item.title,
-        slug: item.slug,
-        sku: item.sku,
-        price: item.price,
-        original_price: item.original_price,
-        featured_image: item.featured_image,
-        category_id: null,
-        short_description: 'Self-retaining orthopedic retractor with sharp prongs.',
-        full_description: null,
-        features: [],
-        specifications: {},
-        catalogue_pdf: null,
-        is_featured: true,
-        is_published: true,
-        seo_title: item.title,
-        seo_description: null,
-        sort_order: item.sort_order,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        in_stock: item.in_stock,
-        badge: item.badge,
-      }
       onAddToCart(cartProduct, qty)
     }
 

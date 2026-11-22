@@ -24,12 +24,21 @@ import {
   Globe,
   Sparkles,
   ShoppingBag,
+  ShoppingCart,
+  Trash2,
 } from 'lucide-react'
 import {
   getStoredProducts,
   getStoredCheckoutSettings,
   INITIAL_CHECKOUT_SETTINGS_SEED,
+  getStoredCart,
+  addToStoredCart,
+  updateCartQuantity,
+  removeFromStoredCart,
+  clearStoredCart,
+  CartItem,
 } from '@/src/lib/dataStore'
+import SafeProductImage from '@/src/components/public/SafeProductImage'
 import { ProductItem } from '@/src/types/product'
 import { CheckoutSettings } from '@/src/types/checkoutSettings'
 import {
@@ -48,11 +57,9 @@ function CheckoutContent() {
   const querySize = searchParams.get('size') || ''
   const queryPrice = searchParams.get('price') ? parseFloat(searchParams.get('price') || '') : null
 
-  // Product state
-  const [orderedProduct, setOrderedProduct] = useState<ProductItem | null>(null)
-  const [quantity, setQuantity] = useState<number>(queryQty || 1)
-  const [selectedLength, setSelectedLength] = useState<string>(querySize || '15.5cm')
-  const [selectedType, setSelectedType] = useState<string>('2x3 Teeth')
+  // Cart state
+  const [cartItems, setCartItems] = useState<CartItem[]>([])
+  const [isCartLoaded, setIsCartLoaded] = useState(false)
 
   // Form selections matching screenshot
   const [authType, setAuthType] = useState<'login' | 'register'>('login')
@@ -68,14 +75,14 @@ function CheckoutContent() {
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
 
-  // Address
+  // Address (default to United States for USA store)
   const [company, setCompany] = useState('')
   const [address, setAddress] = useState('')
   const [address2, setAddress2] = useState('')
   const [city, setCity] = useState('')
   const [postCode, setPostCode] = useState('')
-  const [country, setCountry] = useState('Pakistan')
-  const [region, setRegion] = useState('Punjab')
+  const [country, setCountry] = useState('United States')
+  const [region, setRegion] = useState('Florida')
 
   // Order state
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -99,63 +106,59 @@ function CheckoutContent() {
   }, [])
 
   useEffect(() => {
-    if (queryQty) setQuantity(queryQty)
-    if (querySize) setSelectedLength(querySize)
-  }, [queryQty, querySize])
+    let items = getStoredCart()
 
-  useEffect(() => {
-    const products = getStoredProducts()
-    let match: ProductItem | undefined
+    // If query parameters specify a product (e.g. from Buy Now button), sync it into cart
     if (productSlug) {
-      match = products.find(
+      const products = getStoredProducts()
+      const match = products.find(
         (p) =>
           p.slug.toLowerCase() === productSlug.toLowerCase() ||
           p.id.toLowerCase() === productSlug.toLowerCase()
       )
+      if (match) {
+        addToStoredCart(match, queryQty || 1, {
+          size: querySize || undefined,
+          price: queryPrice !== null && !isNaN(queryPrice) ? queryPrice : (match.price ?? 53.90),
+        })
+        items = getStoredCart()
+      }
     }
-    if (!match && products.length > 0) {
-      match =
-        products.find((p) => p.title.toLowerCase().includes('tissue forceps') || p.title.toLowerCase().includes('adlerkreutz')) ||
-        products[0]
-    }
-    if (match) {
-      setOrderedProduct(match)
-    } else {
-      setOrderedProduct({
-        id: 'checkout-item-sample',
-        title: 'Custom Medical Supply Order',
-        slug: 'custom-medical-order',
-        sku: 'AMS-9021',
-        price: 53.90,
-        original_price: 64.90,
-        featured_image: '/images/products/image-399.png',
-        category_id: 'cat-surg-inst',
-        category_name: 'Surgical Instruments',
-        short_description: 'Custom surgical instrument procurement order.',
-        full_description: 'High-grade surgical stainless steel instruments.',
-        features: ['Hospital Grade', 'Autoclavable'],
-        specifications: {},
-        catalogue_pdf: null,
-        is_featured: false,
-        is_published: true,
-        seo_title: null,
-        seo_description: null,
-        sort_order: 1,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        in_stock: true,
-      })
-    }
-  }, [productSlug])
 
-  const productPrice = queryPrice !== null && !isNaN(queryPrice) ? queryPrice : (orderedProduct?.price ?? 53.90)
-  const subTotal = productPrice * quantity
+    setCartItems(items)
+    setIsCartLoaded(true)
+
+    const handleCartSync = () => {
+      setCartItems(getStoredCart())
+    }
+    window.addEventListener('alpha_cart_updated', handleCartSync)
+    window.addEventListener('storage', handleCartSync)
+    return () => {
+      window.removeEventListener('alpha_cart_updated', handleCartSync)
+      window.removeEventListener('storage', handleCartSync)
+    }
+  }, [productSlug, queryQty, querySize, queryPrice])
+
+  const totalItemCount = cartItems.reduce((acc, it) => acc + it.quantity, 0)
+  const subTotal = cartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0)
   const shippingCost =
-    quantity >= (checkoutSettings.free_shipping_quantity || 10) ||
-    subTotal >= (checkoutSettings.free_shipping_threshold || 100)
+    cartItems.length === 0
+      ? 0.0
+      : totalItemCount >= (checkoutSettings.free_shipping_quantity || 10) ||
+        subTotal >= (checkoutSettings.free_shipping_threshold || 100)
       ? 0.0
       : (checkoutSettings.shipping_cost ?? 30.99)
   const total = Math.max(0, subTotal + shippingCost - discountAmount)
+
+  const handleQuantityStep = (id: string, newQty: number) => {
+    updateCartQuantity(id, newQty)
+    setCartItems(getStoredCart())
+  }
+
+  const handleRemoveFromCart = (id: string) => {
+    removeFromStoredCart(id)
+    setCartItems(getStoredCart())
+  }
 
   const handleApplyCoupon = (e: React.FormEvent) => {
     e.preventDefault()
@@ -195,6 +198,11 @@ function CheckoutContent() {
     e.preventDefault()
     setErrorMessage(null)
 
+    if (cartItems.length === 0) {
+      setErrorMessage('Your cart is empty. Please add items to your cart before proceeding.')
+      return
+    }
+
     if (!email || !address || !city || !postCode) {
       setErrorMessage('Please fill in all required contact and billing fields (Email, Address, City, Postal Code).')
       return
@@ -207,18 +215,15 @@ function CheckoutContent() {
     if (paymentMethod === 'card') {
       try {
         const payload = {
-          items: orderedProduct
-            ? [
-                {
-                  id: orderedProduct.id,
-                  title: orderedProduct.title,
-                  sku: orderedProduct.sku,
-                  price: productPrice,
-                  quantity: quantity,
-                  featured_image: orderedProduct.featured_image,
-                },
-              ]
-            : [],
+          items: cartItems.map((it) => ({
+            id: it.product.id,
+            title: it.product.title,
+            sku: it.product.sku,
+            price: it.price,
+            quantity: it.quantity,
+            featured_image: it.product.featured_image,
+            size: it.size,
+          })),
           customer: { firstName, lastName, email, phone, company },
           shippingAddress: { address, address2, city, postCode, country, region },
           shippingCost,
@@ -248,6 +253,7 @@ function CheckoutContent() {
       }
     } else {
       setTimeout(() => {
+        clearStoredCart()
         setIsSubmitting(false)
         setOrderPlaced(true)
       }, 1200)
@@ -809,70 +815,106 @@ function CheckoutContent() {
               
               <div className="bg-white rounded-3xl border border-slate-200/90 shadow-lg p-6 sm:p-7 2xl:p-8 space-y-6">
                 
-                {/* HEADER: Your Order / Edit Cart (1) */}
+                {/* HEADER: Your Order / Edit Cart */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900">Your Order</h2>
                   <Link
                     href="/products"
                     className="text-xs sm:text-sm font-bold text-[#96161B] hover:underline cursor-pointer"
                   >
-                    Edit Cart ({quantity})
+                    Edit Cart ({totalItemCount})
                   </Link>
                 </div>
 
-                {/* CART PRODUCT CARD (MATCHING SCREENSHOT EXACT DESIGN) */}
-                <div className="flex items-center gap-4 bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80">
-                  {/* Product Image */}
-                  <div className="relative w-20 h-20 2xl:w-24 2xl:h-24 bg-white rounded-xl border border-slate-200 p-1 shrink-0 overflow-hidden flex items-center justify-center">
-                    <Image
-                      src={orderedProduct?.featured_image || '/images/products/image-399.png'}
-                      alt={orderedProduct?.title || 'Adlerkreutz Tissue Forceps'}
-                      fill
-                      className="object-contain p-1"
-                    />
+                {/* CART ITEMS LIST */}
+                {cartItems.length === 0 ? (
+                  <div className="text-center py-10 px-4 space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-300">
+                    <ShoppingBag className="w-10 h-10 text-slate-300 mx-auto" />
+                    <h3 className="font-bold text-slate-700 text-xs sm:text-sm">Your Cart is Currently Empty</h3>
+                    <p className="text-[11px] text-slate-500">Add instruments or medical supplies to your cart to checkout.</p>
+                    <Link
+                      href="/products"
+                      className="inline-flex items-center justify-center gap-1.5 bg-[#96161B] hover:bg-[#7d1216] text-white py-2 px-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors shadow"
+                    >
+                      Browse Products
+                    </Link>
                   </div>
-
-                  {/* Details */}
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 line-clamp-1">
-                      {orderedProduct?.title || 'Adlerkreutz Tissue Forceps'}
-                    </h3>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      Length: {selectedLength}
-                    </div>
-                    <div className="text-[11px] text-slate-500 font-medium">
-                      Type: {selectedType}
-                    </div>
-                    <div className="text-[11px] text-slate-400 font-mono">
-                      Model: {orderedProduct?.sku || 'AMS020146'}
-                    </div>
-
-                    {/* Quantity Stepper & Item Price */}
-                    <div className="flex items-center justify-between pt-2">
-                      <div className="flex items-center justify-between border border-slate-300 rounded-lg px-2 py-0.5 w-20 bg-white">
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                          className="text-slate-500 hover:text-black font-black text-xs cursor-pointer"
+                ) : (
+                  <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+                    {cartItems.map((item) => {
+                      const itemPrice = item.price ?? 53.90
+                      const lineTotal = itemPrice * item.quantity
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center gap-3 bg-slate-50/90 p-3 rounded-2xl border border-slate-200/90 hover:border-slate-300 transition-colors"
                         >
-                          <Minus className="w-3 h-3" />
-                        </button>
-                        <span className="font-black text-xs text-slate-900">{quantity}</span>
-                        <button
-                          type="button"
-                          onClick={() => setQuantity((q) => q + 1)}
-                          className="text-slate-500 hover:text-black font-black text-xs cursor-pointer"
-                        >
-                          <Plus className="w-3 h-3" />
-                        </button>
-                      </div>
+                          {/* Product Image */}
+                          <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-xl border border-slate-200 p-1 shrink-0 overflow-hidden flex items-center justify-center">
+                            <SafeProductImage
+                              src={item.product?.featured_image || '/images/products/image-399.png'}
+                              alt={item.product?.title || 'Product'}
+                              width={72}
+                              height={72}
+                              className="object-contain w-full h-full"
+                            />
+                          </div>
 
-                      <span className="font-black text-sm text-slate-900">
-                        ${productPrice.toFixed(2)}
-                      </span>
-                    </div>
+                          {/* Details */}
+                          <div className="flex-1 min-w-0 space-y-0.5">
+                            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900 line-clamp-1" title={item.product?.title}>
+                              {item.product?.title}
+                            </h3>
+                            <div className="text-[11px] text-slate-500 font-medium">
+                              Length: {item.length || item.size || 'Standard'}
+                            </div>
+                            <div className="text-[11px] text-slate-400 font-mono">
+                              Model: {item.product?.sku || 'AMS020146'}
+                            </div>
+
+                            {/* Quantity Stepper & Item Price & Remove */}
+                            <div className="flex items-center justify-between pt-1">
+                              <div className="flex items-center justify-between border border-slate-300 rounded-lg px-2 py-0.5 w-20 bg-white">
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuantityStep(item.id, item.quantity - 1)}
+                                  className="text-slate-500 hover:text-black font-black text-xs cursor-pointer"
+                                  aria-label="Decrease quantity"
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </button>
+                                <span className="font-black text-xs text-slate-900 select-none">{item.quantity}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleQuantityStep(item.id, item.quantity + 1)}
+                                  className="text-slate-500 hover:text-black font-black text-xs cursor-pointer"
+                                  aria-label="Increase quantity"
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </button>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="font-black text-xs sm:text-sm text-slate-900">
+                                  ${lineTotal.toFixed(2)}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFromCart(item.id)}
+                                  className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors cursor-pointer"
+                                  title="Remove item"
+                                  aria-label="Remove item"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
-                </div>
+                )}
 
                 {/* PRICE BREAKDOWN (MATCHING SCREENSHOT) */}
                 <div className="space-y-3 text-xs sm:text-sm text-slate-600 border-t border-slate-100 pt-4">
@@ -1050,20 +1092,29 @@ function CheckoutContent() {
               </p>
             </div>
 
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-left space-y-1.5">
-              <div className="flex justify-between font-medium">
-                <span className="text-slate-500">Item:</span>
-                <span className="font-bold text-slate-900 truncate max-w-[180px]">
-                  {orderedProduct?.title}
-                </span>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs text-left space-y-2 max-h-48 overflow-y-auto">
+              <div className="font-bold text-slate-800 pb-1 border-b border-slate-200">
+                Ordered Products ({totalItemCount} {totalItemCount === 1 ? 'item' : 'items'}):
               </div>
-              <div className="flex justify-between font-medium">
+              {cartItems.map((it) => (
+                <div key={it.id} className="flex justify-between items-center text-slate-600">
+                  <span className="truncate max-w-[200px] font-medium">
+                    {it.quantity}x {it.product.title}
+                  </span>
+                  <span className="font-mono font-bold text-slate-900 shrink-0">
+                    ${(it.price * it.quantity).toFixed(2)}
+                  </span>
+                </div>
+              ))}
+              <div className="border-t border-slate-200 pt-1.5 flex justify-between font-medium">
                 <span className="text-slate-500">Total Paid:</span>
                 <span className="font-bold text-[#96161B]">${total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between font-medium">
                 <span className="text-slate-500">Shipping:</span>
-                <span className="font-bold text-slate-900">Fast International (Tracking dispatched)</span>
+                <span className="font-bold text-slate-900">
+                  {shippingCost === 0 ? 'Free Shipping' : `$${shippingCost.toFixed(2)}`}
+                </span>
               </div>
             </div>
 

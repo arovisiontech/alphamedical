@@ -4,6 +4,7 @@ import "./globals.css";
 import { GeoLocationProvider } from "@/src/context/GeoLocationContext";
 import InquiryModal from "@/src/components/public/InquiryModal";
 import FloatingContactCTA from "@/src/components/public/FloatingContactCTA";
+import AddToCartSuccessModal from "@/src/components/public/AddToCartSuccessModal";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <GeoLocationProvider>
           {children}
           <InquiryModal />
+          <AddToCartSuccessModal />
           <FloatingContactCTA />
         </GeoLocationProvider>
       </body>

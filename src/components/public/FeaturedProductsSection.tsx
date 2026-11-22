@@ -14,7 +14,7 @@ import {
   ChevronRight,
   FileText,
 } from 'lucide-react'
-import { getStoredProducts, INITIAL_PRODUCTS_SEED } from '@/src/lib/dataStore'
+import { getStoredProducts, addToStoredCart, INITIAL_PRODUCTS_SEED } from '@/src/lib/dataStore'
 import { ProductItem } from '@/src/types/product'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
@@ -117,6 +117,18 @@ export default function FeaturedProductsSection({
     if (onAddToCart) {
       onAddToCart(prod, qty)
     }
+    // Save to persistent cart
+    addToStoredCart(prod, qty)
+
+    // Trigger popup modal
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('alpha_item_added_to_cart', {
+          detail: { product: prod, quantity: qty },
+        })
+      )
+    }
+
     setAddedState((prev) => ({ ...prev, [prod.id]: true }))
     setTimeout(() => {
       setAddedState((prev) => ({ ...prev, [prod.id]: false }))

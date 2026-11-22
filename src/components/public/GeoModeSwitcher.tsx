@@ -6,6 +6,7 @@ import { useGeoLocation } from '@/src/context/GeoLocationContext'
 
 const PRESET_COUNTRIES = [
   { code: 'US', name: 'United States', flag: '🇺🇸', type: 'store', desc: 'Online Store & Instant Card/PayPal' },
+  { code: 'PK', name: 'Pakistan', flag: '🇵🇰', type: 'inquiry', desc: 'B2B Export Quotations' },
   { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', type: 'inquiry', desc: 'B2B Export Quotations' },
   { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', type: 'inquiry', desc: 'B2B Export Quotations' },
   { code: 'DE', name: 'Germany / EU', flag: '🇩🇪', type: 'inquiry', desc: 'B2B Export Quotations' },

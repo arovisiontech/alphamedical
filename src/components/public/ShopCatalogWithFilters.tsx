@@ -25,6 +25,7 @@ import {
   getStoredCategories,
   syncWithServerProducts,
   getDeletedProductIds,
+  addToStoredCart,
   INITIAL_PRODUCTS_SEED,
   INITIAL_CATEGORIES_SEED,
 } from '@/src/lib/dataStore'
@@ -458,6 +459,18 @@ function ShopCatalogContent({
     if (onAddToCart) {
       onAddToCart(prod, qty)
     }
+    // Save to persistent cart
+    addToStoredCart(prod, qty)
+
+    // Trigger popup modal
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('alpha_item_added_to_cart', {
+          detail: { product: prod, quantity: qty },
+        })
+      )
+    }
+
     setAddedState((prev) => ({ ...prev, [prod.id]: true }))
     setTimeout(() => {
       setAddedState((prev) => ({ ...prev, [prod.id]: false }))

@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { Search, ShoppingCart, ChevronDown, Menu } from 'lucide-react'
-import { getStoredCategories } from '@/src/lib/dataStore'
+import { Search, ShoppingCart, ChevronDown, Menu, FileText } from 'lucide-react'
+import { getStoredCategories, getStoredCartCount } from '@/src/lib/dataStore'
 import { CategoryItem } from '@/src/types/category'
+import { useGeoLocation } from '@/src/context/GeoLocationContext'
 
 interface HeaderNavProps {
   onOpenSearch?: () => void
@@ -16,9 +17,26 @@ interface HeaderNavProps {
 
 export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: HeaderNavProps) {
   const router = useRouter()
+  const { isUsaStore, openInquiryModal } = useGeoLocation()
   const [selectedCategory, setSelectedCategory] = useState('All Categories')
   const [searchQuery, setSearchQuery] = useState('')
   const [categories, setCategories] = useState<CategoryItem[]>([])
+  const [liveCartCount, setLiveCartCount] = useState<number>(cartCount)
+
+  useEffect(() => {
+    const updateCount = () => {
+      setLiveCartCount(getStoredCartCount())
+    }
+    updateCount()
+    window.addEventListener('alpha_cart_updated', updateCount)
+    window.addEventListener('storage', updateCount)
+    return () => {
+      window.removeEventListener('alpha_cart_updated', updateCount)
+      window.removeEventListener('storage', updateCount)
+    }
+  }, [cartCount])
+
+  const displayCartCount = liveCartCount > 0 ? liveCartCount : cartCount
 
   useEffect(() => {
     const loadCats = () => {
@@ -90,20 +108,32 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
               />
             </Link>
 
-            {/* Cart Button */}
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="relative p-2 -mr-1 text-slate-800 hover:text-[#B92025] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-              aria-label="View Cart"
-            >
-              <ShoppingCart className="w-6 h-6 text-[#B92025]" />
-              {cartCount > 0 && (
-                <span className="absolute 0 top-0.5 right-0.5 bg-[#B92025] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+            {/* Cart Button or Quote Button */}
+            {isUsaStore ? (
+              <button
+                type="button"
+                onClick={onOpenCart}
+                className="relative p-2 -mr-1 text-slate-800 hover:text-[#B92025] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                aria-label="View Cart"
+              >
+                <ShoppingCart className="w-6 h-6 text-[#B92025]" />
+                {displayCartCount > 0 && (
+                  <span className="absolute 0 top-0.5 right-0.5 bg-[#B92025] text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow">
+                    {displayCartCount}
+                  </span>
+                )}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openInquiryModal()}
+                className="relative p-1.5 -mr-1 text-[#96161B] hover:bg-red-50 rounded-lg transition-colors cursor-pointer flex items-center gap-1 font-bold text-xs"
+                aria-label="Inquire Quote"
+              >
+                <FileText className="w-5 h-5 text-[#96161B]" />
+                <span className="text-[11px] font-extrabold uppercase">Quote</span>
+              </button>
+            )}
           </div>
 
           {/* Bottom Row: Search Bar */}
@@ -205,24 +235,38 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
             </Link>
           </div>
 
-          {/* RIGHT: CART (ADMIN BUTTON REMOVED AS REQUESTED) */}
+          {/* RIGHT: DUAL MODE (CART FOR USA STORE, B2B QUOTE FOR GLOBAL INQUIRY) */}
           <div className="flex items-center justify-end gap-5 flex-1 max-w-md">
-            <button
-              type="button"
-              onClick={onOpenCart}
-              className="flex items-center gap-2 text-slate-800 hover:text-[#B92025] transition-colors group cursor-pointer"
-              title="View Cart / Quote List"
-            >
-              <div className="relative">
-                <ShoppingCart className="w-6 h-6 text-[#B92025] group-hover:scale-105 transition-transform" />
-                <span className="absolute -top-1.5 -right-2 bg-[#B92025] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
-                  {cartCount}
+            {isUsaStore ? (
+              <button
+                type="button"
+                onClick={onOpenCart}
+                className="flex items-center gap-2 text-slate-800 hover:text-[#B92025] transition-colors group cursor-pointer"
+                title="View Cart / Checkout"
+              >
+                <div className="relative">
+                  <ShoppingCart className="w-6 h-6 text-[#B92025] group-hover:scale-105 transition-transform" />
+                  <span className="absolute -top-1.5 -right-2 bg-[#B92025] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                    {displayCartCount}
+                  </span>
+                </div>
+                <span className="font-bold text-xs sm:text-sm text-slate-800 group-hover:text-[#B92025]">
+                  Cart
                 </span>
-              </div>
-              <span className="font-bold text-xs sm:text-sm text-slate-800 group-hover:text-[#B92025]">
-                Cart
-              </span>
-            </button>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openInquiryModal()}
+                className="flex items-center gap-2 text-white bg-[#96161B] hover:bg-[#7d1216] px-4 py-2 rounded-xl transition-all shadow-sm active:scale-95 group cursor-pointer"
+                title="Request B2B Export Quotation"
+              >
+                <FileText className="w-4 h-4 text-white" />
+                <span className="font-bold text-xs uppercase tracking-wider">
+                  Request B2B Quote
+                </span>
+              </button>
+            )}
           </div>
         </div>
 

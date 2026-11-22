@@ -1527,6 +1527,124 @@ export function saveStoredCheckoutSettings(data: CheckoutSettings): void {
   savePersistentData('alpha_checkout_settings_v1', data)
 }
 
+// ==============================================================================
+// REAL-TIME PERSISTENT SHOPPING CART STORE
+// ==============================================================================
+export interface CartItem {
+  id: string
+  product: ProductItem
+  quantity: number
+  size?: string
+  length?: string
+  selectedLength?: string
+  selectedType?: string
+  price: number
+}
+
+export function getStoredCart(): CartItem[] {
+  if (typeof window === 'undefined') return []
+  try {
+    const raw = localStorage.getItem('alpha_cart_v1')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) return parsed
+    }
+  } catch (e) {}
+  return []
+}
+
+export function saveStoredCart(items: CartItem[]): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_cart_v1', JSON.stringify(items))
+      window.dispatchEvent(new Event('alpha_cart_updated'))
+      if (typeof BroadcastChannel !== 'undefined') {
+        try {
+          const ch = new BroadcastChannel('alpha_sync_channel')
+          ch.postMessage({ type: 'cart_updated', timestamp: Date.now() })
+          ch.close()
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+  savePersistentData('alpha_cart_v1', items)
+}
+
+export function addToStoredCart(
+  product: ProductItem,
+  quantity: number = 1,
+  options?: { size?: string; length?: string; type?: string; price?: number }
+): CartItem[] {
+  const current = getStoredCart()
+  const price = options?.price ?? product.price ?? 53.90
+  const existingIdx = current.findIndex((i) => i.product.id === product.id)
+
+  if (existingIdx >= 0) {
+    current[existingIdx].quantity += quantity
+    if (options?.price !== undefined) current[existingIdx].price = options.price
+    if (options?.size) {
+      current[existingIdx].size = options.size
+      current[existingIdx].selectedLength = options.size
+    }
+    if (options?.length) {
+      current[existingIdx].length = options.length
+      current[existingIdx].selectedLength = options.length
+    }
+    if (options?.type) current[existingIdx].selectedType = options.type
+  } else {
+    current.push({
+      id: `cart-${product.id}-${Date.now()}`,
+      product,
+      quantity,
+      size: options?.size,
+      length: options?.length,
+      selectedLength: options?.length || options?.size || '15.5cm',
+      selectedType: options?.type || 'Standard',
+      price,
+    })
+  }
+
+  saveStoredCart(current)
+  return current
+}
+
+export function removeFromStoredCart(productId: string): CartItem[] {
+  const current = getStoredCart()
+  const filtered = current.filter((i) => i.product.id !== productId && i.id !== productId)
+  saveStoredCart(filtered)
+  return filtered
+}
+
+export function updateCartQuantity(productId: string, quantity: number): CartItem[] {
+  const current = getStoredCart()
+  const updated = current
+    .map((i) => {
+      if (i.product.id === productId || i.id === productId) {
+        return { ...i, quantity: Math.max(1, quantity) }
+      }
+      return i
+    })
+    .filter((i) => i.quantity > 0)
+  saveStoredCart(updated)
+  return updated
+}
+
+export function clearStoredCart(): void {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem('alpha_cart_v1')
+      window.dispatchEvent(new Event('alpha_cart_updated'))
+    } catch (e) {}
+  }
+  savePersistentData('alpha_cart_v1', [])
+}
+
+export function getStoredCartCount(): number {
+  const items = getStoredCart()
+  return items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+}
+
+
 
 
 
