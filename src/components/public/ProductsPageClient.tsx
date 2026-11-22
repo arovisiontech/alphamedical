@@ -31,7 +31,7 @@ export default function ProductsPageClient({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans w-full max-w-[100vw] overflow-x-hidden">
       <TopBar />
       <HeaderNav
         onOpenSearch={() => setIsSearchOpen(true)}

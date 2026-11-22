@@ -171,23 +171,32 @@ export default function MainRedNavbar() {
       {/* =========================================================
           DESKTOP NAVBAR (MATCHING SCREENSHOT 1)
       ========================================================= */}
-      <nav className="hidden lg:block bg-[#96161B] text-white sticky top-0 z-40 shadow-sm border-t border-red-800/40 font-sans">
-        <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-4 sm:px-8 flex items-center justify-center relative">
-          <div className="flex items-center justify-center gap-6 lg:gap-8 xl:gap-10 2xl:gap-14 text-[13px] sm:text-sm 2xl:text-[15px] font-semibold">
+      <nav className="hidden lg:block bg-[#96161B] text-white sticky top-0 z-40 shadow-sm border-t border-red-800/40 font-sans w-full overflow-visible">
+        <div className="w-full max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto px-2 sm:px-4 lg:px-4 xl:px-8 flex items-center justify-between lg:justify-center relative">
+          <div className="flex items-center justify-between lg:justify-center w-full gap-1.5 lg:gap-2 xl:gap-3.5 2xl:gap-6 3xl:gap-8 text-[11px] lg:text-[12px] xl:text-[13px] 2xl:text-[14px] font-semibold">
             {navItems.map((item) => (
               <div
                 key={item.name}
-                className="relative"
+                className="relative shrink-0"
                 onMouseEnter={() => item.hasDropdown && handleMouseEnter(item.name)}
                 onMouseLeave={() => item.hasDropdown && handleMouseLeave()}
               >
                 <Link
                   href={item.href}
-                  className="flex items-center gap-1.5 py-3.5 text-white hover:text-white/80 transition-colors whitespace-nowrap cursor-pointer"
+                  className="flex items-center gap-1 py-3 px-1 lg:px-1.5 xl:px-2.5 2xl:px-3 text-white hover:text-white/80 transition-colors whitespace-nowrap cursor-pointer"
                 >
-                  {item.name === 'Home' && <Home className="w-3.5 h-3.5 text-white/90 shrink-0" />}
-                  <span>{item.name}</span>
-                  {item.hasDropdown && <ChevronDown className="w-3.5 h-3.5 text-white/90 shrink-0" />}
+                  {item.name === 'Home' && <Home className="w-3 h-3 xl:w-3.5 xl:h-3.5 text-white/90 shrink-0" />}
+                  <span>
+                    {item.name === 'Brands & Manufacturers' ? (
+                      <>
+                        <span className="hidden xl:inline">Brands &amp; Manufacturers</span>
+                        <span className="xl:hidden">Brands</span>
+                      </>
+                    ) : (
+                      item.name
+                    )}
+                  </span>
+                  {item.hasDropdown && <ChevronDown className="w-3 h-3 text-white/90 shrink-0" />}
                 </Link>
 
                 {/* MEGA MENU DROPDOWN WITH UNBREAKABLE HOVER BRIDGE */}
@@ -195,20 +204,20 @@ export default function MainRedNavbar() {
                   <div
                     onMouseEnter={() => handleMouseEnter(item.name)}
                     onMouseLeave={() => handleMouseLeave()}
-                    className={`absolute top-full bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-6 sm:p-7 z-50 animate-fade-in grid gap-6 sm:gap-8 before:absolute before:-top-4 before:left-0 before:w-full before:h-4 before:content-[''] ${
+                    className={`absolute top-full bg-white text-slate-900 shadow-2xl border border-slate-200 rounded-2xl p-5 sm:p-6 z-50 animate-fade-in grid gap-5 sm:gap-6 max-w-[calc(100vw-32px)] before:absolute before:-top-4 before:left-0 before:w-full before:h-4 before:content-[''] ${
                       (item.columns?.length || 0) >= 5
-                        ? 'w-[1050px] 2xl:w-[1250px] grid-cols-5'
+                        ? 'w-[980px] 2xl:w-[1200px] grid-cols-5'
                         : (item.columns?.length || 0) === 4
-                        ? 'w-[900px] 2xl:w-[1020px] grid-cols-4'
+                        ? 'w-[840px] 2xl:w-[980px] grid-cols-4'
                         : (item.columns?.length || 0) === 2
-                        ? 'w-[560px] grid-cols-2'
+                        ? 'w-[520px] grid-cols-2'
                         : (item.columns?.length || 0) === 1
-                        ? 'w-[320px] grid-cols-1'
-                        : 'w-[760px] 2xl:w-[860px] grid-cols-3'
+                        ? 'w-[300px] grid-cols-1'
+                        : 'w-[720px] 2xl:w-[820px] grid-cols-3'
                     } ${
                       item.name.toLowerCase().includes('surgical')
                         ? 'left-0'
-                        : item.name === 'Brands' || item.name.toLowerCase().includes('equipment') || item.name === 'Resources'
+                        : item.name === 'Brands' || item.name.toLowerCase().includes('equipment') || item.name === 'Resources' || item.name === 'Contact Us'
                         ? 'right-0'
                         : 'left-1/2 -translate-x-1/2'
                     }`}

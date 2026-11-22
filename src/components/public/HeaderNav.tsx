@@ -59,7 +59,7 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
   }
 
   return (
-    <div className="bg-white border-b border-slate-200 py-2.5 sm:py-3 md:py-4 px-3 sm:px-6 lg:px-8">
+    <div className="bg-white border-b border-slate-200 py-2.5 sm:py-3 md:py-4 px-3 sm:px-6 lg:px-8 w-full overflow-hidden">
       <div className="max-w-7xl 2xl:max-w-[1900px] 3xl:max-w-[2400px] 4xl:max-w-[3000px] mx-auto">
         
         {/* =========================================================
@@ -150,9 +150,9 @@ export default function HeaderNav({ onOpenSearch, onOpenCart, cartCount = 0 }: H
         {/* =========================================================
             DESKTOP LAYOUT (>= md SCREENS)
         ========================================================= */}
-        <div className="hidden md:flex items-center justify-between gap-6">
+        <div className="hidden md:flex items-center justify-between gap-4 lg:gap-6 w-full">
           {/* LEFT: SEARCH BAR WITH CATEGORY SELECTOR */}
-          <div className="w-auto flex-1 max-w-md">
+          <div className="w-auto flex-1 max-w-xs lg:max-w-md">
             <form
               onSubmit={handleSearchSubmit}
               className="flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white shadow-sm focus-within:border-[#B92025] transition-colors"

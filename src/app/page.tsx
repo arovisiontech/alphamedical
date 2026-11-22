@@ -32,7 +32,7 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans">
+    <div className="min-h-screen bg-white flex flex-col font-sans w-full max-w-[100vw] overflow-x-hidden">
       {/* 1. TOP ANNOUNCEMENT BAR */}
       <TopBar />
 
