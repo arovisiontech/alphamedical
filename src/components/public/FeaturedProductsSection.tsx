@@ -21,20 +21,26 @@ import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface FeaturedProductsSectionProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
+  initialProducts?: ProductItem[]
 }
 
 export default function FeaturedProductsSection({
   onAddToCart,
+  initialProducts,
 }: FeaturedProductsSectionProps) {
   const { isUsaStore, openInquiryModal } = useGeoLocation()
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS_SEED)
+  const [products, setProducts] = useState<ProductItem[]>(
+    initialProducts && initialProducts.length > 0 ? initialProducts : INITIAL_PRODUCTS_SEED
+  )
   const [activeTab, setActiveTab] = useState<'best_sellers' | 'new_arrivals'>('new_arrivals')
   const [quantities, setQuantities] = useState<Record<string, number>>({})
   const [addedState, setAddedState] = useState<Record<string, boolean>>({})
 
   const loadData = () => {
-    const all = getStoredProducts()
-    setProducts(all)
+    const all = getStoredProducts().filter((p) => p.is_published !== false)
+    if (all.length > 0) {
+      setProducts(all)
+    }
   }
 
   useEffect(() => {
@@ -46,7 +52,9 @@ export default function FeaturedProductsSection({
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
           const active = serverProds.filter((p: ProductItem) => p.is_published !== false)
-          setProducts(active)
+          if (active.length > 0) {
+            setProducts(active)
+          }
         }
       })
       .catch(() => {})

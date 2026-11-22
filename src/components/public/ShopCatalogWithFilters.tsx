@@ -36,17 +36,25 @@ import SafeProductImage from '@/src/components/public/SafeProductImage'
 interface ShopCatalogWithFiltersProps {
   onAddToCart?: (prod: ProductItem, qty: number) => void
   initialCategory?: string
+  initialProducts?: ProductItem[]
+  initialCategories?: CategoryItem[]
 }
 
 function ShopCatalogContent({
   onAddToCart,
   initialCategory,
+  initialProducts,
+  initialCategories,
 }: ShopCatalogWithFiltersProps) {
   const { isUsaStore, openInquiryModal } = useGeoLocation()
   const searchParams = useSearchParams()
 
-  const [products, setProducts] = useState<ProductItem[]>(INITIAL_PRODUCTS_SEED)
-  const [categories, setCategories] = useState<CategoryItem[]>(INITIAL_CATEGORIES_SEED)
+  const [products, setProducts] = useState<ProductItem[]>(
+    initialProducts && initialProducts.length > 0 ? initialProducts : INITIAL_PRODUCTS_SEED
+  )
+  const [categories, setCategories] = useState<CategoryItem[]>(
+    initialCategories && initialCategories.length > 0 ? initialCategories : INITIAL_CATEGORIES_SEED
+  )
 
   // Filters
   const [selectedCategory, setSelectedCategory] = useState<string>('All')
@@ -85,10 +93,12 @@ function ShopCatalogContent({
       .then((serverProds) => {
         if (Array.isArray(serverProds) && serverProds.length > 0) {
           const active = serverProds.filter((p: ProductItem) => p.is_published !== false)
-          setProducts(active)
-          try {
-            syncWithServerProducts(serverProds)
-          } catch (e) {}
+          if (active.length > 0) {
+            setProducts(active)
+            try {
+              syncWithServerProducts(serverProds)
+            } catch (e) {}
+          }
         }
       })
       .catch((err) => {
@@ -128,7 +138,6 @@ function ShopCatalogContent({
     const sale = searchParams.get('sale')
 
     if (query) {
-      setSearchQuery(query)
       const qClean = query.toLowerCase().trim()
       const matchCat = categories.find(
         (c) =>
@@ -138,6 +147,7 @@ function ShopCatalogContent({
       )
       if (matchCat) {
         setSelectedCategory(matchCat.id)
+        setSearchQuery('')
         if (matchCat.level === 2 && matchCat.parent_id) {
           const parent = categories.find((c) => c.id === matchCat.parent_id)
           if (parent?.parent_id) {
@@ -154,6 +164,7 @@ function ShopCatalogContent({
           setOpenMainCategory(matchCat.id)
         }
       } else {
+        setSearchQuery(query)
         setSelectedCategory('All')
       }
     }

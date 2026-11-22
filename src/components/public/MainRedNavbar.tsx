@@ -159,6 +159,10 @@ export default function MainRedNavbar() {
       if (itemTitle.includes('Export')) return '/about#export'
       return '/production'
     }
+    const catMatch = categories.find((c) => c.name.toLowerCase() === itemTitle.toLowerCase())
+    if (catMatch) {
+      return `/products?cat=${catMatch.slug || catMatch.id}`
+    }
     return `/products?query=${encodeURIComponent(itemTitle)}`
   }
 
