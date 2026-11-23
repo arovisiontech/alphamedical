@@ -5,7 +5,7 @@ import GeoModeSwitcher from './GeoModeSwitcher'
 
 export default function TopBar() {
   return (
-    <div className="bg-[#596168] text-slate-100 text-[11px] font-normal py-1.5 px-3 sm:px-6 lg:px-8 border-b border-slate-600/50 w-full overflow-hidden">
+    <div className="bg-[#596168] text-slate-100 text-[11px] font-normal py-1.5 px-3 sm:px-6 lg:px-8 border-b border-slate-600/50 w-full relative z-50">
       <div className="max-w-7xl 2xl:max-w-[1900px] mx-auto flex items-center justify-between gap-2 text-center sm:text-left">
         {/* LEFT: USA Owned Operated */}
         <div className="flex items-center gap-2 shrink-0">
