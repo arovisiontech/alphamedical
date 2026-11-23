@@ -140,8 +140,11 @@ function CheckoutContent() {
     }
   }, [productSlug, queryQty, querySize, queryPrice])
 
-  const totalItemCount = cartItems.reduce((acc, it) => acc + it.quantity, 0)
-  const subTotal = cartItems.reduce((acc, it) => acc + (it.price * it.quantity), 0)
+  const totalItemCount = cartItems.reduce((acc, it) => acc + Math.max(1, Number(it.quantity) || 1), 0)
+  const subTotal = cartItems.reduce(
+    (acc, it) => acc + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1),
+    0
+  )
   const shippingCost =
     cartItems.length === 0
       ? 0.0

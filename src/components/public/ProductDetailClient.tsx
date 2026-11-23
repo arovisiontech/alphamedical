@@ -404,7 +404,7 @@ export default function ProductDetailClient({
     .slice(0, 4)
 
   const handleAddToCart = () => {
-    addToStoredCart(product, quantity, {
+    const updatedCart = addToStoredCart(product, quantity, {
       size: selectedSize,
       length: selectedLength,
       type: selectedType,
@@ -424,6 +424,7 @@ export default function ProductDetailClient({
             quantity,
             size: selectedSize,
             type: selectedType,
+            cart: updatedCart,
           },
         })
       )

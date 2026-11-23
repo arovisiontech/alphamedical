@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import TopBar from '@/src/components/public/TopBar'
 import HeaderNav from '@/src/components/public/HeaderNav'
 import MainRedNavbar from '@/src/components/public/MainRedNavbar'
@@ -21,6 +22,7 @@ import CartQuoteModal from '@/src/components/public/CartQuoteModal'
 import { ProductItem } from '@/src/types/product'
 
 export default function Home() {
+  const router = useRouter()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState<ProductItem[]>([])
@@ -39,7 +41,7 @@ export default function Home() {
       {/* 2. HEADER WITH LOGO 5 & SEARCH BAR */}
       <HeaderNav
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => router.push('/checkout')}
         cartCount={cartItems.length}
       />
 

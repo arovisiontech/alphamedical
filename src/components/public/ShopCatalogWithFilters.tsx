@@ -455,18 +455,20 @@ function ShopCatalogContent({
   }
 
   const handleCartClick = (prod: ProductItem) => {
-    const qty = quantities[prod.id] || 1
+    const qty = Math.max(1, Number(quantities[prod.id]) || 1)
     if (onAddToCart) {
-      onAddToCart(prod, qty)
+      try {
+        onAddToCart(prod, qty)
+      } catch (e) {}
     }
-    // Save to persistent cart
-    addToStoredCart(prod, qty)
+    // Save to persistent cart and get updated cart
+    const updatedCart = addToStoredCart(prod, qty)
 
-    // Trigger popup modal
+    // Trigger popup modal with updated cart
     if (typeof window !== 'undefined') {
       window.dispatchEvent(
         new CustomEvent('alpha_item_added_to_cart', {
-          detail: { product: prod, quantity: qty },
+          detail: { product: prod, quantity: qty, cart: updatedCart },
         })
       )
     }

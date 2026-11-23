@@ -94,8 +94,8 @@ export default function DiscountProductsSection({
       badge: item.badge,
     }
 
-    // Save to centralized store
-    addToStoredCart(cartProduct, qty)
+    // Save to centralized store and get updated list
+    const updatedCart = addToStoredCart(cartProduct, qty)
 
     // Fire popup event
     if (typeof window !== 'undefined') {
@@ -104,13 +104,16 @@ export default function DiscountProductsSection({
           detail: {
             product: cartProduct,
             quantity: qty,
+            cart: updatedCart,
           },
         })
       )
     }
 
     if (onAddToCart) {
-      onAddToCart(cartProduct, qty)
+      try {
+        onAddToCart(cartProduct, qty)
+      } catch (e) {}
     }
 
     setAddedState((prev) => ({ ...prev, [item.id]: true }))

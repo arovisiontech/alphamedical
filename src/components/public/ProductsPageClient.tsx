@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import TopBar from '@/src/components/public/TopBar'
 import HeaderNav from '@/src/components/public/HeaderNav'
 import MainRedNavbar from '@/src/components/public/MainRedNavbar'
@@ -20,6 +21,7 @@ export default function ProductsPageClient({
   initialProducts,
   initialCategories,
 }: ProductsPageClientProps) {
+  const router = useRouter()
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [isCartOpen, setIsCartOpen] = useState(false)
   const [cartItems, setCartItems] = useState<ProductItem[]>([])
@@ -35,7 +37,7 @@ export default function ProductsPageClient({
       <TopBar />
       <HeaderNav
         onOpenSearch={() => setIsSearchOpen(true)}
-        onOpenCart={() => setIsCartOpen(true)}
+        onOpenCart={() => router.push('/checkout')}
         cartCount={cartItems.length}
       />
       <MainRedNavbar />

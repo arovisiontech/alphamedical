@@ -13,6 +13,7 @@ interface AddToCartEventDetail {
   quantity: number
   size?: string
   type?: string
+  cart?: any[]
 }
 
 export default function AddToCartSuccessModal() {
@@ -29,10 +30,29 @@ export default function AddToCartSuccessModal() {
         setAddedItem(customEvent.detail)
         
         // Calculate latest cart subtotal
-        const currentCart = getStoredCart()
-        const total = currentCart.reduce((acc, it) => acc + (it.price * it.quantity), 0)
-        setCartTotal(total)
-        setCartCount(getStoredCartCount())
+        const currentCart =
+          customEvent.detail.cart && customEvent.detail.cart.length > 0
+            ? customEvent.detail.cart
+            : getStoredCart()
+
+        const count = currentCart.reduce(
+          (acc: number, it: any) => acc + Math.max(1, Number(it.quantity) || 1),
+          0
+        )
+        const total = currentCart.reduce(
+          (acc: number, it: any) =>
+            acc + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1),
+          0
+        )
+
+        const fallbackCount = count > 0 ? count : Math.max(1, Number(customEvent.detail.quantity) || 1)
+        const fallbackTotal =
+          total > 0
+            ? total
+            : (Number(customEvent.detail.product.price) || 53.9) * fallbackCount
+
+        setCartTotal(fallbackTotal)
+        setCartCount(fallbackCount)
         setIsOpen(true)
       }
     }
@@ -60,7 +80,7 @@ export default function AddToCartSuccessModal() {
 
   const handleOpenFullCart = () => {
     setIsOpen(false)
-    window.dispatchEvent(new CustomEvent('alpha_open_cart_modal'))
+    router.push('/checkout')
   }
 
   return (

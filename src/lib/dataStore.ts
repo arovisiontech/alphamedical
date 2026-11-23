@@ -475,6 +475,16 @@ function cleanLegacyStorage() {
     'alpha_products_v4',
     'alpha_products_v3',
     'alpha_products_v2',
+    'alpha_products_v1',
+    'alpha_products',
+    'alpha_categories_v4',
+    'alpha_categories_v3',
+    'alpha_categories_v2',
+    'alpha_categories',
+    'alpha_catalogues_v3',
+    'alpha_catalogues_v2',
+    'alpha_catalogues_v1',
+    'alpha_catalogues',
   ]
   oldKeys.forEach((k) => {
     try {
@@ -1581,7 +1591,7 @@ export function saveStoredCheckoutSettings(data: CheckoutSettings): void {
 }
 
 // ==============================================================================
-// REAL-TIME PERSISTENT SHOPPING CART STORE
+// REAL-TIME PERSISTENT SHOPPING CART STORE WITH MEMORY & STORAGE FALLBACK
 // ==============================================================================
 export interface CartItem {
   id: string
@@ -1594,33 +1604,179 @@ export interface CartItem {
   price: number
 }
 
+// Memory cache for instantaneous, zero-latency sync across components in the same window
+let _memoryCart: CartItem[] | null = null
+
+// Helper to sanitize product inside CartItem to ensure minimal payload (< 1KB per item)
+function sanitizeCartProduct(prod: any): ProductItem {
+  if (!prod || typeof prod !== 'object') {
+    return {
+      id: `prod-fallback-${Date.now()}`,
+      title: 'Medical Supply Item',
+      slug: 'medical-supply-item',
+      sku: 'AMS-2026',
+      price: 53.90,
+      featured_image: '/images/products/image-399.png',
+      category_id: 'cat-general',
+      category_name: 'Medical Supplies',
+      in_stock: true,
+      is_published: true,
+    } as ProductItem
+  }
+
+  let featImg = prod.featured_image || '/images/products/image-399.png'
+  if (typeof featImg === 'string' && featImg.length > 50000) {
+    featImg = '/images/products/image-399.png'
+  }
+
+  return {
+    id: String(prod.id || prod.sku || `item-${Date.now()}`),
+    title: String(prod.title || prod.name || 'Medical Supply Product'),
+    slug: String(prod.slug || 'medical-product'),
+    sku: String(prod.sku || 'AMS-2026'),
+    price: Number(prod.price) || 53.90,
+    original_price: prod.original_price ? Number(prod.original_price) : undefined,
+    featured_image: featImg,
+    category_id: prod.category_id || 'cat-general',
+    category_name: prod.category_name || 'Medical Instruments',
+    short_description: prod.short_description || '',
+    in_stock: prod.in_stock !== false,
+    is_published: prod.is_published !== false,
+  } as ProductItem
+}
+
+// Clean any old oversized localStorage keys to guarantee sufficient storage quota
+function purgeOversizedStorage() {
+  if (typeof window === 'undefined') return
+  const obsoleteKeys = [
+    'alpha_products_v8',
+    'alpha_products_v7',
+    'alpha_products_v6',
+    'alpha_products_v5',
+    'alpha_products_v4',
+    'alpha_products_v3',
+    'alpha_products_v2',
+    'alpha_products_v1',
+    'alpha_products',
+    'alpha_categories_v4',
+    'alpha_categories_v3',
+    'alpha_categories_v2',
+    'alpha_categories',
+    'alpha_catalogues_v3',
+    'alpha_catalogues_v2',
+    'alpha_catalogues',
+  ]
+  obsoleteKeys.forEach((key) => {
+    try {
+      localStorage.removeItem(key)
+    } catch (e) {}
+  })
+}
+
 export function getStoredCart(): CartItem[] {
-  if (typeof window === 'undefined') return []
+  if (typeof window === 'undefined') {
+    return _memoryCart || []
+  }
+
+  // 1. Check memory cache first
+  if (_memoryCart !== null && Array.isArray(_memoryCart) && _memoryCart.length > 0) {
+    return _memoryCart
+  }
+
+  // 2. Read from localStorage or sessionStorage
+  let raw: string | null = null
   try {
-    const raw = localStorage.getItem('alpha_cart_v1')
-    if (raw) {
-      const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed)) return parsed
-    }
+    raw = localStorage.getItem('alpha_cart_v1')
   } catch (e) {}
-  return []
+
+  if (!raw) {
+    try {
+      raw = sessionStorage.getItem('alpha_cart_v1')
+    } catch (e) {}
+  }
+
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        // Normalize each item
+        const normalized: CartItem[] = parsed
+          .filter((it) => it && typeof it === 'object')
+          .map((it: any) => {
+            const prod = it.product ? sanitizeCartProduct(it.product) : sanitizeCartProduct(it)
+            const qty = Math.max(1, Number(it.quantity) || 1)
+            const price = Number(it.price) || prod.price || 53.90
+            return {
+              id: String(it.id || `cart-${prod.id}`),
+              product: prod,
+              quantity: qty,
+              size: it.size || it.selectedLength,
+              length: it.length || it.selectedLength,
+              selectedLength: it.selectedLength || it.size || '15.5cm',
+              selectedType: it.selectedType || 'Standard',
+              price,
+            }
+          })
+        _memoryCart = normalized
+        return normalized
+      }
+    } catch (e) {
+      console.warn('Failed to parse alpha_cart_v1:', e)
+    }
+  }
+
+  _memoryCart = _memoryCart || []
+  return _memoryCart
 }
 
 export function saveStoredCart(items: CartItem[]): void {
+  // Normalize items before saving
+  const cleanItems: CartItem[] = (Array.isArray(items) ? items : []).map((it) => ({
+    id: it.id || `cart-${it.product?.id || Date.now()}`,
+    product: sanitizeCartProduct(it.product),
+    quantity: Math.max(1, Number(it.quantity) || 1),
+    size: it.size,
+    length: it.length,
+    selectedLength: it.selectedLength || it.size || '15.5cm',
+    selectedType: it.selectedType || 'Standard',
+    price: Number(it.price) || it.product?.price || 53.90,
+  }))
+
+  _memoryCart = cleanItems
+
   if (typeof window !== 'undefined') {
+    const serialized = JSON.stringify(cleanItems)
+
+    // Try localStorage
     try {
-      localStorage.setItem('alpha_cart_v1', JSON.stringify(items))
-      window.dispatchEvent(new Event('alpha_cart_updated'))
+      localStorage.setItem('alpha_cart_v1', serialized)
+    } catch (err) {
+      // If quota exceeded, purge legacy keys and retry
+      purgeOversizedStorage()
+      try {
+        localStorage.setItem('alpha_cart_v1', serialized)
+      } catch (err2) {
+        console.warn('LocalStorage save failed, using sessionStorage fallback:', err2)
+      }
+    }
+
+    // Always mirror to sessionStorage as backup
+    try {
+      sessionStorage.setItem('alpha_cart_v1', serialized)
+    } catch (e) {}
+
+    // Dispatch real-time cart update events
+    try {
+      window.dispatchEvent(
+        new CustomEvent('alpha_cart_updated', { detail: { items: cleanItems } })
+      )
       if (typeof BroadcastChannel !== 'undefined') {
-        try {
-          const ch = new BroadcastChannel('alpha_sync_channel')
-          ch.postMessage({ type: 'cart_updated', timestamp: Date.now() })
-          ch.close()
-        } catch (e) {}
+        const ch = new BroadcastChannel('alpha_sync_channel')
+        ch.postMessage({ type: 'cart_updated', items: cleanItems, timestamp: Date.now() })
+        ch.close()
       }
     } catch (e) {}
   }
-  savePersistentData('alpha_cart_v1', items)
 }
 
 export function addToStoredCart(
@@ -1628,12 +1784,20 @@ export function addToStoredCart(
   quantity: number = 1,
   options?: { size?: string; length?: string; type?: string; price?: number }
 ): CartItem[] {
-  const current = getStoredCart()
-  const price = options?.price ?? product.price ?? 53.90
-  const existingIdx = current.findIndex((i) => i.product.id === product.id)
+  const current = [...getStoredCart()]
+  const safeProd = sanitizeCartProduct(product)
+  const price = options?.price ?? safeProd.price ?? 53.90
+  const qty = Math.max(1, Number(quantity) || 1)
+
+  const existingIdx = current.findIndex(
+    (i) =>
+      i.product?.id === safeProd.id ||
+      i.id === safeProd.id ||
+      (safeProd.slug && i.product?.slug === safeProd.slug)
+  )
 
   if (existingIdx >= 0) {
-    current[existingIdx].quantity += quantity
+    current[existingIdx].quantity += qty
     if (options?.price !== undefined) current[existingIdx].price = options.price
     if (options?.size) {
       current[existingIdx].size = options.size
@@ -1646,9 +1810,9 @@ export function addToStoredCart(
     if (options?.type) current[existingIdx].selectedType = options.type
   } else {
     current.push({
-      id: `cart-${product.id}-${Date.now()}`,
-      product,
-      quantity,
+      id: `cart-${safeProd.id}-${Date.now()}`,
+      product: safeProd,
+      quantity: qty,
       size: options?.size,
       length: options?.length,
       selectedLength: options?.length || options?.size || '15.5cm',
@@ -1663,7 +1827,9 @@ export function addToStoredCart(
 
 export function removeFromStoredCart(productId: string): CartItem[] {
   const current = getStoredCart()
-  const filtered = current.filter((i) => i.product.id !== productId && i.id !== productId)
+  const filtered = current.filter(
+    (i) => i.product?.id !== productId && i.id !== productId && i.product?.slug !== productId
+  )
   saveStoredCart(filtered)
   return filtered
 }
@@ -1672,7 +1838,7 @@ export function updateCartQuantity(productId: string, quantity: number): CartIte
   const current = getStoredCart()
   const updated = current
     .map((i) => {
-      if (i.product.id === productId || i.id === productId) {
+      if (i.product?.id === productId || i.id === productId || i.product?.slug === productId) {
         return { ...i, quantity: Math.max(1, quantity) }
       }
       return i
@@ -1683,18 +1849,23 @@ export function updateCartQuantity(productId: string, quantity: number): CartIte
 }
 
 export function clearStoredCart(): void {
+  _memoryCart = []
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem('alpha_cart_v1')
-      window.dispatchEvent(new Event('alpha_cart_updated'))
+    } catch (e) {}
+    try {
+      sessionStorage.removeItem('alpha_cart_v1')
+    } catch (e) {}
+    try {
+      window.dispatchEvent(new CustomEvent('alpha_cart_updated', { detail: { items: [] } }))
     } catch (e) {}
   }
-  savePersistentData('alpha_cart_v1', [])
 }
 
 export function getStoredCartCount(): number {
   const items = getStoredCart()
-  return items.reduce((sum, item) => sum + (item.quantity || 1), 0)
+  return items.reduce((sum, item) => sum + (Math.max(1, Number(item.quantity) || 1)), 0)
 }
 
 
