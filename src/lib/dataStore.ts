@@ -1368,7 +1368,7 @@ export function saveStoredFaqBulkInquiry(data: FaqBulkInquiryData): void {
 export const INITIAL_GEO_STORE_SETTINGS_SEED: GeoStoreSettings = {
   store_mode: 'auto_geo',
   allowed_store_countries: ['US'],
-  default_country: 'US',
+  default_country: 'GLOBAL',
   paypal_enabled: true,
   paypal_mode: 'sandbox',
   paypal_client_id: 'sb',

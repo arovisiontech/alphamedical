@@ -36,7 +36,7 @@ const COUNTRY_NAMES: Record<string, string> = {
 
 export function GeoLocationProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<GeoStoreSettings>(getStoredGeoStoreSettings())
-  const [countryCode, setCountryCode] = useState<string>('US')
+  const [countryCode, setCountryCode] = useState<string>('GLOBAL')
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false)
   const [activeInquiryProduct, setActiveInquiryProduct] = useState<ProductItem | Partial<ProductItem> | null>(null)
 
@@ -50,7 +50,32 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
     const loadedSettings = getStoredGeoStoreSettings()
     setSettings(loadedSettings)
 
-    // Check manual override first
+    // 1. Check URL query parameters for admin/tester quick link (?store=usa, ?store=inquiry, ?store=auto)
+    if (typeof window !== 'undefined') {
+      try {
+        const search = window.location.search
+        if (search) {
+          const params = new URLSearchParams(search)
+          const storeParam = params.get('store') || params.get('mode') || params.get('test_store')
+          if (storeParam) {
+            const val = storeParam.toLowerCase().trim()
+            if (val === 'usa' || val === 'us' || val === 'store') {
+              localStorage.setItem('alpha_user_country_override', 'US')
+              setCountryCode('US')
+              return
+            } else if (val === 'inquiry' || val === 'quote' || val === 'pk' || val === 'global') {
+              localStorage.setItem('alpha_user_country_override', 'PK')
+              setCountryCode('PK')
+              return
+            } else if (val === 'auto' || val === 'reset') {
+              localStorage.removeItem('alpha_user_country_override')
+            }
+          }
+        }
+      } catch (e) {}
+    }
+
+    // 2. Check saved override
     const savedCountry = localStorage.getItem('alpha_user_country_override')
     if (savedCountry) {
       setCountryCode(savedCountry.toUpperCase())
@@ -96,7 +121,7 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
           }
         } catch {}
 
-        setCountryCode(loadedSettings.default_country || 'US')
+        setCountryCode(loadedSettings.default_country || 'GLOBAL')
       }
 
       detectCountry()
