@@ -952,9 +952,9 @@ function CheckoutContent() {
                   <Lock className="w-4 h-4" />
                   <span>
                     {isSubmitting
-                      ? 'Connecting To Secure Stripe Gateway...'
+                      ? 'Connecting To Secure Payment Gateway...'
                       : paymentMethod === 'card'
-                      ? (checkoutSettings.button_text || 'PAY WITH CARD (STRIPE)')
+                      ? (checkoutSettings.button_text || 'PAY WITH CARD').replace(/\s*\(STRIPE\)/i, '')
                       : 'PLACE ORDER'}
                   </span>
                   <ArrowRight className="w-4 h-4" />

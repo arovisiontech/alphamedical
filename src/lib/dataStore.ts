@@ -1521,7 +1521,7 @@ export const INITIAL_CHECKOUT_SETTINGS_SEED: CheckoutSettings = {
   card_badge: 'Direct Online',
   card_description: 'Visa, Mastercard, American Express, Discover (3D-Secure & SCA verified)',
   card_footnote: "Card details are processed directly through Stripe's certified PCI Level 1 gateway.",
-  button_text: 'PAY WITH CARD (STRIPE)',
+  button_text: 'PAY WITH CARD',
 
   // Step 6: Coupons
   step6_title: 'Coupon / Voucher / Reward',
