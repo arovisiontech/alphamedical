@@ -61,22 +61,29 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
             const val = storeParam.toLowerCase().trim()
             if (val === 'usa' || val === 'us' || val === 'store') {
               localStorage.setItem('alpha_user_country_override', 'US')
+              sessionStorage.setItem('alpha_user_country_override', 'US')
               setCountryCode('US')
               return
             } else if (val === 'inquiry' || val === 'quote' || val === 'pk' || val === 'global') {
               localStorage.setItem('alpha_user_country_override', 'PK')
+              sessionStorage.setItem('alpha_user_country_override', 'PK')
               setCountryCode('PK')
               return
             } else if (val === 'auto' || val === 'reset') {
               localStorage.removeItem('alpha_user_country_override')
+              sessionStorage.removeItem('alpha_user_country_override')
             }
           }
         }
       } catch (e) {}
     }
 
-    // 2. Check saved override
-    const savedCountry = localStorage.getItem('alpha_user_country_override')
+    // 2. Check saved override (localStorage or sessionStorage)
+    let savedCountry: string | null = null
+    try {
+      savedCountry = localStorage.getItem('alpha_user_country_override') || sessionStorage.getItem('alpha_user_country_override')
+    } catch (e) {}
+
     if (savedCountry) {
       setCountryCode(savedCountry.toUpperCase())
       return
@@ -130,13 +137,36 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
     } else {
       setCountryCode('GLOBAL')
     }
+
+    const handleGeoOverride = () => {
+      try {
+        const override =
+          localStorage.getItem('alpha_user_country_override') ||
+          sessionStorage.getItem('alpha_user_country_override')
+        if (override) {
+          setCountryCode(override.toUpperCase())
+        }
+      } catch (e) {}
+    }
+
+    window.addEventListener('alpha_geo_override_updated', handleGeoOverride)
+    window.addEventListener('storage', handleGeoOverride)
+
+    return () => {
+      window.removeEventListener('alpha_geo_override_updated', handleGeoOverride)
+      window.removeEventListener('storage', handleGeoOverride)
+    }
   }, [])
 
   const setManualCountry = (code: string) => {
     const upper = code.toUpperCase()
     setCountryCode(upper)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('alpha_user_country_override', upper)
+      try {
+        localStorage.setItem('alpha_user_country_override', upper)
+        sessionStorage.setItem('alpha_user_country_override', upper)
+        window.dispatchEvent(new CustomEvent('alpha_geo_override_updated', { detail: { country: upper } }))
+      } catch (e) {}
     }
   }
 
