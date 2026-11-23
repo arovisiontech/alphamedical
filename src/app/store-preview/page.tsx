@@ -29,6 +29,8 @@ export default function StorePreviewPortalPage() {
   const [justActivated, setJustActivated] = useState<string | null>(null)
 
   useEffect(() => {
+    // Automatically activate USA Store for the tester on mount
+    setManualCountry('US')
     setCartCount(getStoredCartCount())
     const handleCart = () => setCartCount(getStoredCartCount())
     window.addEventListener('alpha_cart_updated', handleCart)

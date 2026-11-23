@@ -50,28 +50,52 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
     const loadedSettings = getStoredGeoStoreSettings()
     setSettings(loadedSettings)
 
-    // 1. Check URL query parameters for admin/tester quick link (?store=usa, ?store=inquiry, ?store=auto)
+    // 1. Check URL query parameters and path for admin/tester private store link
     if (typeof window !== 'undefined') {
       try {
         const search = window.location.search
+        const path = window.location.pathname.toLowerCase()
+
+        // If visiting /store, /shop, or /store-preview, automatically activate Store Mode
+        if (path.startsWith('/store') || path.startsWith('/shop')) {
+          localStorage.setItem('alpha_user_country_override', 'US')
+          sessionStorage.setItem('alpha_user_country_override', 'US')
+          setCountryCode('US')
+          return
+        }
+
         if (search) {
           const params = new URLSearchParams(search)
-          const storeParam = params.get('store') || params.get('mode') || params.get('test_store')
-          if (storeParam) {
-            const val = storeParam.toLowerCase().trim()
-            if (val === 'usa' || val === 'us' || val === 'store') {
-              localStorage.setItem('alpha_user_country_override', 'US')
-              sessionStorage.setItem('alpha_user_country_override', 'US')
-              setCountryCode('US')
-              return
-            } else if (val === 'inquiry' || val === 'quote' || val === 'pk' || val === 'global') {
+          if (
+            params.has('store') ||
+            params.has('shop') ||
+            params.has('test_store') ||
+            params.has('mode')
+          ) {
+            const rawVal = (
+              params.get('store') ||
+              params.get('shop') ||
+              params.get('mode') ||
+              params.get('test_store') ||
+              ''
+            )
+              .toLowerCase()
+              .trim()
+
+            if (rawVal === 'inquiry' || rawVal === 'quote' || rawVal === 'rfq') {
               localStorage.setItem('alpha_user_country_override', 'PK')
               sessionStorage.setItem('alpha_user_country_override', 'PK')
               setCountryCode('PK')
               return
-            } else if (val === 'auto' || val === 'reset') {
+            } else if (rawVal === 'auto' || rawVal === 'reset') {
               localStorage.removeItem('alpha_user_country_override')
               sessionStorage.removeItem('alpha_user_country_override')
+            } else {
+              // ANY value (e.g. ?store=pk, ?store=usa, ?store=true, ?store=1, ?store) activates Store mode
+              localStorage.setItem('alpha_user_country_override', 'US')
+              sessionStorage.setItem('alpha_user_country_override', 'US')
+              setCountryCode('US')
+              return
             }
           }
         }
@@ -81,7 +105,9 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
     // 2. Check saved override (localStorage or sessionStorage)
     let savedCountry: string | null = null
     try {
-      savedCountry = localStorage.getItem('alpha_user_country_override') || sessionStorage.getItem('alpha_user_country_override')
+      savedCountry =
+        localStorage.getItem('alpha_user_country_override') ||
+        sessionStorage.getItem('alpha_user_country_override')
     } catch (e) {}
 
     if (savedCountry) {
@@ -189,7 +215,11 @@ export function GeoLocationProvider({ children }: { children: React.ReactNode })
   } else {
     // auto_geo
     const allowed = (settings.allowed_store_countries || ['US']).map((c) => c.toUpperCase())
-    isUsaStore = allowed.includes(countryCode)
+    isUsaStore =
+      allowed.includes(countryCode) ||
+      (typeof window !== 'undefined' &&
+        (window.location.pathname.toLowerCase().startsWith('/store') ||
+          window.location.pathname.toLowerCase().startsWith('/shop')))
   }
 
   const countryName = COUNTRY_NAMES[countryCode] || countryCode
