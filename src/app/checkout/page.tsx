@@ -37,6 +37,7 @@ import {
   removeFromStoredCart,
   clearStoredCart,
   CartItem,
+  US_STATES,
 } from '@/src/lib/dataStore'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
 import { ProductItem } from '@/src/types/product'
@@ -605,17 +606,7 @@ function CheckoutContent() {
                         onChange={(e) => setCountry(e.target.value)}
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none focus:border-[#96161B] cursor-pointer text-slate-900"
                       >
-                        {(checkoutSettings.allowed_countries?.length ? checkoutSettings.allowed_countries : [
-                          'Pakistan',
-                          'United States',
-                          'United Kingdom',
-                          'Canada',
-                          'Germany',
-                          'United Arab Emirates',
-                          'Saudi Arabia',
-                        ]).map((c) => (
-                          <option key={c} value={c}>{c}</option>
-                        ))}
+                        <option value="United States">United States</option>
                       </select>
                     </div>
 
@@ -628,17 +619,10 @@ function CheckoutContent() {
                         onChange={(e) => setRegion(e.target.value)}
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3 py-2.5 text-xs font-semibold outline-none focus:border-[#96161B] cursor-pointer text-slate-900"
                       >
-                        {(checkoutSettings.allowed_regions?.length ? checkoutSettings.allowed_regions : [
-                          'Punjab',
-                          'Sindh',
-                          'Khyber Pakhtunkhwa',
-                          'Balochistan',
-                          'Islamabad',
-                          'California',
-                          'Texas',
-                          'New York',
-                        ]).map((r) => (
-                          <option key={r} value={r}>{r}</option>
+                        {US_STATES.map((st) => (
+                          <option key={st} value={st}>
+                            {st}
+                          </option>
                         ))}
                       </select>
                     </div>

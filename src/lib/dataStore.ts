@@ -1416,6 +1416,60 @@ export function saveStoredGeoStoreSettings(data: GeoStoreSettings): void {
   savePersistentData('alpha_geo_store_settings_v1', data)
 }
 
+export const US_STATES = [
+  'Alabama',
+  'Alaska',
+  'Arizona',
+  'Arkansas',
+  'California',
+  'Colorado',
+  'Connecticut',
+  'Delaware',
+  'Florida',
+  'Georgia',
+  'Hawaii',
+  'Idaho',
+  'Illinois',
+  'Indiana',
+  'Iowa',
+  'Kansas',
+  'Kentucky',
+  'Louisiana',
+  'Maine',
+  'Maryland',
+  'Massachusetts',
+  'Michigan',
+  'Minnesota',
+  'Mississippi',
+  'Missouri',
+  'Montana',
+  'Nebraska',
+  'Nevada',
+  'New Hampshire',
+  'New Jersey',
+  'New Mexico',
+  'New York',
+  'North Carolina',
+  'North Dakota',
+  'Ohio',
+  'Oklahoma',
+  'Oregon',
+  'Pennsylvania',
+  'Rhode Island',
+  'South Carolina',
+  'South Dakota',
+  'Tennessee',
+  'Texas',
+  'Utah',
+  'Vermont',
+  'Virginia',
+  'Washington',
+  'West Virginia',
+  'Wisconsin',
+  'Wyoming',
+  'District of Columbia',
+]
+
 // ==============================================================================
 // INITIAL CHECKOUT SETTINGS SEED (MATCHING SCREENSHOT 2)
 // ==============================================================================
@@ -1433,33 +1487,18 @@ export const INITIAL_CHECKOUT_SETTINGS_SEED: CheckoutSettings = {
   // Step 2: Personal details
   step2_title: 'Your Personal Details',
 
-  // Step 3: Billing Address
+  // Step 3: Billing Address (USA Store Only)
   step3_title: 'Billing Address',
   allowed_countries: [
-    'Pakistan',
     'United States',
-    'United Kingdom',
-    'Canada',
-    'Germany',
-    'United Arab Emirates',
-    'Saudi Arabia',
   ],
-  default_country: 'Pakistan',
-  allowed_regions: [
-    'Punjab',
-    'Sindh',
-    'Khyber Pakhtunkhwa',
-    'Balochistan',
-    'Islamabad',
-    'California',
-    'Texas',
-    'New York',
-  ],
+  default_country: 'United States',
+  allowed_regions: US_STATES,
 
   // Step 4: Shipping Method
   step4_title: 'Shipping Method',
-  shipping_name: 'Fast International Shipping',
-  shipping_description: 'reliable worldwide delivery',
+  shipping_name: 'Fast USA Shipping',
+  shipping_description: 'Fast nationwide USA delivery with tracking',
   shipping_cost: 30.99,
   free_shipping_threshold: 100,
   free_shipping_quantity: 10,
@@ -1508,6 +1547,20 @@ export function getStoredCheckoutSettings(): CheckoutSettings {
       null
     )
     if (data && data.page_title) {
+      if (
+        data.default_country === 'Pakistan' ||
+        data.allowed_countries?.includes('Pakistan') ||
+        data.allowed_regions?.includes('Punjab')
+      ) {
+        data.allowed_countries = ['United States']
+        data.default_country = 'United States'
+        data.allowed_regions = US_STATES
+        if (typeof window !== 'undefined') {
+          try {
+            localStorage.setItem('alpha_checkout_settings_v1', JSON.stringify(data))
+          } catch (e) {}
+        }
+      }
       return data
     }
   } catch (e) {
