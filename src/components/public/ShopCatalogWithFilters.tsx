@@ -488,8 +488,8 @@ function ShopCatalogContent({
         {/* =========================================================
             LEFT SIDEBAR FILTERS (MATCHING SCREENSHOT & SVG DESIGN)
         ========================================================= */}
-        <div className="lg:col-span-3 space-y-6">
-          <div className="bg-white p-5 sm:p-6 2xl:p-8 rounded-3xl border border-slate-200/90 shadow-sm space-y-6 sticky top-24">
+        <div className="lg:col-span-4 xl:col-span-3 space-y-6 min-w-0">
+          <div className="bg-white p-4 sm:p-5 2xl:p-7 rounded-3xl border border-slate-200/90 shadow-sm space-y-5 sticky top-24 overflow-hidden">
             
             {/* FILTER HEADER */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -586,15 +586,15 @@ function ShopCatalogContent({
                     setSelectedCategory('All')
                     setSearchQuery('')
                   }}
-                  className={`w-full text-left py-2.5 px-3.5 rounded-xl text-sm 2xl:text-base font-bold transition-all cursor-pointer flex items-center justify-between ${
+                  className={`w-full text-left py-2 px-3 rounded-xl text-xs sm:text-sm 2xl:text-base font-bold transition-all cursor-pointer flex items-center justify-between min-w-0 ${
                     selectedCategory === 'All'
                       ? 'bg-[#96161B] text-white shadow-sm'
                       : 'text-slate-800 hover:bg-slate-100'
                   }`}
                 >
-                  <span>All Divisions</span>
+                  <span className="truncate">All Divisions</span>
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
+                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold shrink-0 ml-1.5 ${
                       selectedCategory === 'All'
                         ? 'bg-white/20 text-white'
                         : 'bg-slate-100 text-slate-500'
@@ -619,10 +619,10 @@ function ShopCatalogContent({
                     )
 
                     return (
-                      <div key={mainCat.id} className="space-y-1">
+                      <div key={mainCat.id} className="space-y-1 w-full min-w-0">
                         {/* MAIN CATEGORY ROW */}
                         <div
-                          className={`w-full rounded-xl transition-all flex items-center justify-between px-3 py-2 cursor-pointer ${
+                          className={`w-full rounded-xl transition-all flex items-center justify-between px-3 py-2 cursor-pointer min-w-0 ${
                             isMainSelected
                               ? 'bg-[#96161B] text-white font-bold shadow-sm'
                               : isOpen
@@ -639,15 +639,16 @@ function ShopCatalogContent({
                               setOpenMainCategory(mainCat.id)
                               setOpenSubCategory(null)
                             }}
-                            className="flex items-center gap-2 flex-1 text-left truncate cursor-pointer py-1 text-sm 2xl:text-base font-black"
+                            className="flex items-center gap-1.5 flex-1 min-w-0 text-left cursor-pointer py-1 text-xs sm:text-sm 2xl:text-base font-black"
+                            title={mainCat.name}
                           >
                             <span className="truncate">{mainCat.name}</span>
                           </button>
 
                           {/* Right side: count badge + chevron toggle */}
-                          <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                          <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
                             <span
-                              className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                              className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
                                 isMainSelected
                                   ? 'bg-white/20 text-white'
                                   : 'bg-slate-200/70 text-slate-600'
@@ -662,7 +663,7 @@ function ShopCatalogContent({
                                   e.stopPropagation()
                                   toggleMainCategory(mainCat.id)
                                 }}
-                                className={`p-1 rounded-lg transition-colors cursor-pointer ${
+                                className={`p-1 rounded-lg transition-colors cursor-pointer shrink-0 ${
                                   isMainSelected
                                     ? 'hover:bg-white/20 text-white'
                                     : 'hover:bg-slate-200 text-slate-500'
@@ -679,9 +680,9 @@ function ShopCatalogContent({
                           </div>
                         </div>
 
-                        {/* SUB-CATEGORIES ACCORDION PANEL (Only open when selected/toggled, closes when others open) */}
+                        {/* SUB-CATEGORIES ACCORDION PANEL */}
                         {isOpen && subCategories.length > 0 && (
-                          <div className="pl-3 pr-1 py-1.5 ml-3 my-1 space-y-1 border-l-2 border-red-300 bg-red-50/20 rounded-r-xl transition-all">
+                          <div className="pl-2 pr-1 py-1.5 ml-2 my-1 space-y-1 border-l-2 border-red-300 bg-red-50/20 rounded-r-xl transition-all overflow-hidden">
                             {subCategories.map((sub) => {
                               const isSubDirectlySelected =
                                 selectedCategory === sub.id ||
@@ -700,8 +701,8 @@ function ShopCatalogContent({
                               const isSubOpen = openSubCategory === sub.id
 
                               return (
-                                <div key={sub.id} className="space-y-1">
-                                  <div className="flex items-center justify-between gap-1">
+                                <div key={sub.id} className="space-y-1 w-full min-w-0">
+                                  <div className="flex items-center justify-between gap-1 w-full min-w-0">
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -713,17 +714,18 @@ function ShopCatalogContent({
                                           )
                                         }
                                       }}
-                                      className={`flex-1 text-left py-2 px-3 rounded-lg text-sm 2xl:text-[15px] font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                      className={`flex-1 min-w-0 text-left py-1.5 px-2 rounded-lg text-xs sm:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
                                         isSubDirectlySelected
                                           ? 'bg-[#96161B] text-white shadow-xs'
                                           : hasSelectedChild
                                           ? 'bg-red-50 text-[#96161B] border border-red-200'
                                           : 'text-slate-700 hover:text-slate-900 hover:bg-slate-200/70'
                                       }`}
+                                      title={sub.name}
                                     >
-                                      <span className="flex items-center gap-1.5 truncate">
+                                      <span className="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
                                         <span
-                                          className={`text-xs ${
+                                          className={`text-xs shrink-0 ${
                                             isSubDirectlySelected
                                               ? 'text-white/80'
                                               : hasSelectedChild
@@ -736,7 +738,7 @@ function ShopCatalogContent({
                                         <span className="truncate">{sub.name}</span>
                                       </span>
                                       <span
-                                        className={`text-[11px] shrink-0 ml-1.5 font-bold ${
+                                        className={`text-[11px] shrink-0 font-bold ${
                                           isSubDirectlySelected
                                             ? 'text-white/80'
                                             : hasSelectedChild
@@ -755,7 +757,7 @@ function ShopCatalogContent({
                                           e.stopPropagation()
                                           setOpenSubCategory((prev) => (prev === sub.id ? null : sub.id))
                                         }}
-                                        className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                                        className={`p-1 rounded-md transition-colors cursor-pointer shrink-0 ${
                                           isSubDirectlySelected
                                             ? 'hover:bg-white/20 text-white'
                                             : 'text-slate-400 hover:text-slate-700 hover:bg-slate-200/60'
@@ -773,7 +775,7 @@ function ShopCatalogContent({
 
                                   {/* NESTED SUB-SUBCATEGORIES (LEVEL 2) IF ANY */}
                                   {subChildren.length > 0 && isSubOpen && (
-                                    <div className="pl-3 py-1 ml-2 space-y-1 border-l-2 border-red-200 bg-white/60 rounded-r-lg">
+                                    <div className="pl-2 py-1 ml-1.5 space-y-1 border-l-2 border-red-200 bg-white/60 rounded-r-lg overflow-hidden">
                                       {subChildren.map((subChild) => {
                                         const isChildSelected =
                                           selectedCategory === subChild.id ||
@@ -788,20 +790,25 @@ function ShopCatalogContent({
                                               setSelectedCategory(subChild.id)
                                               setSearchQuery('')
                                             }}
-                                            className={`w-full text-left py-1.5 px-2.5 rounded-md text-xs 2xl:text-sm font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                            className={`w-full min-w-0 text-left py-1 px-2 rounded-md text-[11px] sm:text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                                               isChildSelected
                                                 ? 'bg-[#96161B] text-white font-bold shadow-xs'
                                                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
                                             }`}
+                                            title={subChild.name}
                                           >
-                                            <span className="truncate flex items-center gap-1.5">
-                                              <span className={isChildSelected ? 'text-white' : 'text-slate-400 font-bold'}>
+                                            <span className="truncate min-w-0 flex items-center gap-1.5 flex-1 mr-1">
+                                              <span
+                                                className={`shrink-0 ${
+                                                  isChildSelected ? 'text-white' : 'text-slate-400 font-bold'
+                                                }`}
+                                              >
                                                 •
                                               </span>
-                                              <span>{subChild.name}</span>
+                                              <span className="truncate">{subChild.name}</span>
                                             </span>
                                             <span
-                                              className={`text-[10px] shrink-0 ml-1 font-semibold ${
+                                              className={`text-[10px] shrink-0 font-semibold ${
                                                 isChildSelected
                                                   ? 'text-white/80'
                                                   : 'text-slate-400'
@@ -927,7 +934,7 @@ function ShopCatalogContent({
         {/* =========================================================
             RIGHT PRODUCTS GRID (MATCHING IMAGE 399 EXACT DESIGN)
         ========================================================= */}
-        <div className="lg:col-span-9 space-y-6">
+        <div className="lg:col-span-8 xl:col-span-9 space-y-6 min-w-0">
           
           {/* TOP BAR: RESULTS COUNT & SORTING DROPDOWN */}
           <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/90 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs 2xl:text-sm font-bold text-slate-700">
