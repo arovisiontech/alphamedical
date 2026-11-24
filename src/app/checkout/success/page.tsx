@@ -46,6 +46,19 @@ function SuccessContent() {
         submittedAt: new Date().toISOString(),
       }
       localStorage.setItem('alpha_order_ratings', JSON.stringify([newRating, ...existing]))
+
+      // Sync customer rating into real orders record
+      const orders = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
+      const targetRef = details?.order_ref || orderRef
+      const targetId = targetRef.replace('ALPH-', 'ORD-')
+      const updated = orders.map((o: any) => {
+        if (o.id === targetId || o.id === targetRef) {
+          return { ...o, rating: starRating, reviewComment: feedbackText }
+        }
+        return o
+      })
+      localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
     } catch (e) {}
     setFeedbackSubmitted(true)
   }
@@ -57,22 +70,15 @@ function SuccessContent() {
         .then((data) => {
           if (data && data.success) {
             setDetails(data)
-            // Save to local orders list for admin view
+            // Mark real order as Paid in alpha_orders_records
             try {
-              const currentOrders = JSON.parse(localStorage.getItem('alpha_orders_v2') || '[]')
-              const exists = currentOrders.some((o: any) => o.order_ref === (data.order_ref || orderRef))
-              if (!exists) {
-                const newOrder = {
-                  id: `ord-${Date.now()}`,
-                  order_ref: data.order_ref || orderRef,
-                  customer_name: data.customer_name || 'Hospital Client',
-                  customer_email: data.customer_email || 'client@medical.com',
-                  total: data.amount_total || 84.89,
-                  status: 'Paid',
-                  payment_gateway: 'Stripe Credit/Debit Card',
-                  created_at: new Date().toISOString(),
-                }
-                localStorage.setItem('alpha_orders_v2', JSON.stringify([newOrder, ...currentOrders]))
+              const savedLast = sessionStorage.getItem('alpha_last_checkout_order')
+              if (savedLast) {
+                const parsed = JSON.parse(savedLast)
+                parsed.status = 'Paid'
+                const existing = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
+                const filtered = Array.isArray(existing) ? existing.filter((o: any) => o.id !== parsed.id) : []
+                localStorage.setItem('alpha_orders_records', JSON.stringify([parsed, ...filtered]))
                 window.dispatchEvent(new Event('alpha_orders_updated'))
               }
             } catch (e) {}

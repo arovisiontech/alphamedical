@@ -27,6 +27,9 @@ import {
   Layers,
   ShieldCheck,
   Building,
+  ZoomIn,
+  Trash2,
+  Plus,
 } from 'lucide-react'
 import { getStoredProducts } from '@/src/lib/dataStore'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
@@ -87,7 +90,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
     customerZip: '38105',
     customerCountry: 'United States',
     productCount: 14,
-    itemsDescription: 'Mayo-Hegar Needle Holders, Iris Scissors 11.5cm, Adson Tissue Forceps',
+    itemsDescription: 'Hartmann Dressing Forceps, Super Cut Scissors, Mayo-Hegar Needle Holders',
     items: [
       {
         id: 'item-1',
@@ -97,7 +100,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 6,
         unitPrice: 49.50,
         totalPrice: 297.00,
-        image: '/images/extracted/image_1.png',
+        image: '/images/products/display-test-forceps.jpg',
       },
       {
         id: 'item-2',
@@ -117,16 +120,16 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 3,
         unitPrice: 58.00,
         totalPrice: 174.00,
-        image: '/images/extracted/image_2.png',
+        image: '/images/products/alpha-prod-1793959246422-feat.jpg',
       },
     ],
     dateTime: '2026-11-02 14:32:10',
     month: 'November',
     year: 2026,
     status: 'Dispatched',
-    subtotal: 1450.00,
+    subtotal: 746.00,
     shipping: 15.00,
-    total: 1465.00,
+    total: 761.00,
     rating: 5,
     reviewComment: 'Instruments arrived in sterile sealed packaging. Perfect balance and finish.',
   },
@@ -141,7 +144,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
     customerZip: '29640',
     customerCountry: 'United States',
     productCount: 8,
-    itemsDescription: 'Bone Rongeurs Single Action, Crile Hemostatic Forceps Curved',
+    itemsDescription: 'Super Cut Lister Bandage Scissors, Extracting Forceps German Stainless',
     items: [
       {
         id: 'item-4',
@@ -151,7 +154,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 4,
         unitPrice: 48.00,
         totalPrice: 192.00,
-        image: '/images/extracted/image_3.png',
+        image: '/images/products/image-399.png',
       },
       {
         id: 'item-5',
@@ -161,16 +164,16 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 4,
         unitPrice: 62.00,
         totalPrice: 248.00,
-        image: '/images/products/image-399.png',
+        image: '/images/products/display-test-forceps.jpg',
       },
     ],
     dateTime: '2026-11-01 10:15:45',
     month: 'November',
     year: 2026,
     status: 'Delivered',
-    subtotal: 780.00,
+    subtotal: 440.00,
     shipping: 15.00,
-    total: 795.00,
+    total: 455.00,
     rating: 5,
     reviewComment: 'Flawless action, no glare under OR lamps. Our surgical techs loved them.',
   },
@@ -185,7 +188,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
     customerZip: '98104',
     customerCountry: 'United States',
     productCount: 25,
-    itemsDescription: 'Metzenbaum Scissors Tungsten Carbide, Weitlaner Retractor 3x4',
+    itemsDescription: 'Metzenbaum Scissors Tungsten Carbide, Super Cut Iris Scissors',
     items: [
       {
         id: 'item-6',
@@ -195,7 +198,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 15,
         unitPrice: 52.00,
         totalPrice: 780.00,
-        image: '/images/extracted/image_4.png',
+        image: '/images/products/image-399.png',
       },
       {
         id: 'item-7',
@@ -205,16 +208,16 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 10,
         unitPrice: 44.00,
         totalPrice: 440.00,
-        image: '/images/extracted/image_5.png',
+        image: '/images/products/alpha-prod-1793960060273-feat.jpg',
       },
     ],
     dateTime: '2026-10-28 17:40:02',
     month: 'October',
     year: 2026,
     status: 'Delivered',
-    subtotal: 2850.00,
+    subtotal: 1220.00,
     shipping: 0.00,
-    total: 2850.00,
+    total: 1220.00,
     rating: 5,
     reviewComment: 'Bulk delivery on schedule. Passed all hospital sterilization validations.',
   },
@@ -239,16 +242,16 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 5,
         unitPrice: 38.00,
         totalPrice: 190.00,
-        image: '/images/extracted/image_1.png',
+        image: '/images/products/image-399.png',
       },
     ],
     dateTime: '2026-10-22 09:20:18',
     month: 'October',
     year: 2026,
     status: 'Failed',
-    subtotal: 320.00,
+    subtotal: 190.00,
     shipping: 15.00,
-    total: 335.00,
+    total: 205.00,
     rating: 3,
     reviewComment: 'Customer requested change of shipping address before dispatch.',
   },
@@ -263,7 +266,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
     customerZip: '22601',
     customerCountry: 'United States',
     productCount: 32,
-    itemsDescription: 'Scalpel Handles #3 & #4, Sponge Forceps Straight 25cm',
+    itemsDescription: 'Hartmann Dressing Forceps, Super Cut Freeman Kaye Scissors',
     items: [
       {
         id: 'item-9',
@@ -273,7 +276,7 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
         quantity: 20,
         unitPrice: 49.50,
         totalPrice: 990.00,
-        image: '/images/extracted/image_1.png',
+        image: '/images/products/display-test-forceps.jpg',
       },
       {
         id: 'item-10',
@@ -290,9 +293,9 @@ const INITIAL_ORDERS_DATA: OrderItemRecord[] = [
     month: 'September',
     year: 2026,
     status: 'Dispatched',
-    subtotal: 3950.00,
+    subtotal: 1662.00,
     shipping: 0.00,
-    total: 3950.00,
+    total: 1662.00,
     rating: 5,
     reviewComment: 'Repeat wholesale order for our surgical suites. 5/5 quality.',
   },
@@ -322,6 +325,7 @@ export default function AdminStatisticsPage() {
   const [currency, setCurrency] = useState<'USD' | 'PKR'>('USD')
   const [orders, setOrders] = useState<OrderItemRecord[]>(INITIAL_ORDERS_DATA)
   const [selectedOrder, setSelectedOrder] = useState<OrderItemRecord | null>(null)
+  const [zoomedImage, setZoomedImage] = useState<{ src: string; title: string; sku?: string; size?: string } | null>(null)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Dispatched' | 'Delivered' | 'Failed' | 'Processing'>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -331,18 +335,101 @@ export default function AdminStatisticsPage() {
     setTotalProducts(prods.length)
 
     // Load custom orders if in storage
-    if (typeof window !== 'undefined') {
-      try {
-        const saved = localStorage.getItem('alpha_orders_records')
-        if (saved) {
-          const parsed = JSON.parse(saved)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setOrders(parsed)
+    const syncOrders = () => {
+      if (typeof window !== 'undefined') {
+        try {
+          const saved = localStorage.getItem('alpha_orders_records')
+          if (saved) {
+            const parsed = JSON.parse(saved)
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setOrders(parsed)
+              return
+            }
           }
-        }
-      } catch (e) {}
+          setOrders(INITIAL_ORDERS_DATA)
+        } catch (e) {}
+      }
+    }
+
+    syncOrders()
+    window.addEventListener('alpha_orders_updated', syncOrders)
+    window.addEventListener('storage', syncOrders)
+    return () => {
+      window.removeEventListener('alpha_orders_updated', syncOrders)
+      window.removeEventListener('storage', syncOrders)
     }
   }, [])
+
+  const handleClearDemoOrders = () => {
+    const realOnly = orders.filter(
+      (o) => !o.id.startsWith('ORD-98') && !o.id.startsWith('ORD-97') && !o.id.startsWith('ORD-96')
+    )
+    setOrders(realOnly)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('alpha_orders_records', JSON.stringify(realOnly))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
+    }
+  }
+
+  const handleAddLiveTestOrder = () => {
+    const now = new Date()
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+    const testId = `ORD-${Math.floor(10000 + Math.random() * 90000)}`
+    const testOrder: OrderItemRecord = {
+      id: testId,
+      customerName: 'Miami Surgical Specialty Hospital',
+      customerEmail: 'procurement@miamisurg.org',
+      customerPhone: '+1 (305) 555-8912',
+      customerAddress: '1611 NW 12th Ave',
+      customerCity: 'Miami',
+      customerState: 'Florida',
+      customerZip: '33136',
+      customerCountry: 'United States',
+      productCount: 3,
+      itemsDescription: 'Super Cut Plastic Reconstructive Scissors, Hartmann Dressing Forceps',
+      items: [
+        {
+          id: `item-${Date.now()}-1`,
+          title: 'Super Cut Plastic Reconstructive Scissors',
+          sku: 'SKU-2001',
+          size: '15.5cm Curved',
+          quantity: 2,
+          unitPrice: 55.00,
+          totalPrice: 110.00,
+          image: '/images/products/image-399.png',
+        },
+        {
+          id: `item-${Date.now()}-2`,
+          title: 'Hartmann Dressing Forceps',
+          sku: 'SKU-4500',
+          size: '14.0cm Straight',
+          quantity: 1,
+          unitPrice: 49.50,
+          totalPrice: 49.50,
+          image: '/images/products/display-test-forceps.jpg',
+        },
+      ],
+      dateTime: `${now.toISOString().slice(0, 10)} ${now.toTimeString().slice(0, 8)}`,
+      month: months[now.getMonth()],
+      year: now.getFullYear(),
+      status: 'Processing',
+      subtotal: 159.50,
+      shipping: 15.00,
+      total: 174.50,
+      rating: 5,
+      reviewComment: 'Verified purchase from USA Store. Immediate delivery dispatch.',
+    }
+
+    const updated = [testOrder, ...orders.filter((o) => o.id !== testId)]
+    setOrders(updated)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
+    }
+  }
 
   const handleUpdateStatus = (id: string, newStatus: OrderItemRecord['status']) => {
     const updated = orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
@@ -419,6 +506,26 @@ export default function AdminStatisticsPage() {
                 USD ($)
               </button>
             </div>
+
+            <button
+              type="button"
+              onClick={handleClearDemoOrders}
+              className="bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Remove demo mock orders and show only real live orders"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Clear Demo Orders</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleAddLiveTestOrder}
+              className="bg-slate-900 hover:bg-[#96161B] text-white px-3 py-1.5 rounded-xl font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs"
+              title="Create a live test order with authentic surgical instruments"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Add Test Order</span>
+            </button>
           </div>
         </div>
 
@@ -578,17 +685,32 @@ export default function AdminStatisticsPage() {
                         {/* PRODUCT THUMBNAIL, TITLE, SIZE, QUANTITY */}
                         <td className="py-3.5 px-4 min-w-[260px] max-w-sm">
                           <div className="flex items-center gap-2.5">
-                            <div className="w-11 h-11 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 relative flex items-center justify-center shadow-2xs">
+                            <div
+                              onClick={() =>
+                                firstItem &&
+                                setZoomedImage({
+                                  src: firstItem.image,
+                                  title: firstItem.title,
+                                  sku: firstItem.sku,
+                                  size: firstItem.size,
+                                })
+                              }
+                              className="w-11 h-11 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 relative flex items-center justify-center shadow-2xs group cursor-zoom-in"
+                              title="Click to Zoom Image"
+                            >
                               {firstItem?.image ? (
                                 <SafeProductImage
                                   src={firstItem.image}
                                   alt={firstItem.title}
                                   fill
-                                  className="object-contain p-1"
+                                  className="object-contain p-1 group-hover:scale-110 transition-transform duration-200"
                                 />
                               ) : (
                                 <Package className="w-5 h-5 text-slate-400" />
                               )}
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                <ZoomIn className="w-4 h-4" />
+                              </div>
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="font-bold text-slate-900 truncate text-xs flex items-center gap-1.5">
@@ -774,15 +896,46 @@ export default function AdminStatisticsPage() {
                           <tr key={idx} className="hover:bg-slate-50/60">
                             <td className="py-3 px-3">
                               <div className="flex items-center gap-2.5">
-                                <div className="w-10 h-10 rounded-lg bg-white border border-slate-200 relative overflow-hidden shrink-0">
+                                <div
+                                  onClick={() =>
+                                    setZoomedImage({
+                                      src: item.image,
+                                      title: item.title,
+                                      sku: item.sku,
+                                      size: item.size,
+                                    })
+                                  }
+                                  className="w-12 h-12 rounded-xl bg-white border border-slate-200 relative overflow-hidden shrink-0 group cursor-zoom-in shadow-2xs"
+                                  title="Click to Zoom Image"
+                                >
                                   <SafeProductImage
                                     src={item.image}
                                     alt={item.title}
                                     fill
-                                    className="object-contain p-1"
+                                    className="object-contain p-1 group-hover:scale-110 transition-transform duration-200"
                                   />
+                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white">
+                                    <ZoomIn className="w-4 h-4" />
+                                  </div>
                                 </div>
-                                <span className="font-extrabold text-slate-900">{item.title}</span>
+                                <div>
+                                  <span className="font-extrabold text-slate-900 block">{item.title}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setZoomedImage({
+                                        src: item.image,
+                                        title: item.title,
+                                        sku: item.sku,
+                                        size: item.size,
+                                      })
+                                    }
+                                    className="text-slate-400 hover:text-[#96161B] inline-flex items-center gap-1 text-[10px] font-semibold transition-colors mt-0.5 cursor-pointer"
+                                  >
+                                    <ZoomIn className="w-3 h-3" />
+                                    <span>Zoom Photo</span>
+                                  </button>
+                                </div>
                               </div>
                             </td>
                             <td className="py-3 px-3 font-mono font-bold text-slate-500">{item.sku}</td>
@@ -842,6 +995,67 @@ export default function AdminStatisticsPage() {
                 </div>
               </div>
 
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================================
+            HIGH RESOLUTION INSTRUMENT IMAGE ZOOM LIGHTBOX MODAL
+        ========================================================================= */}
+        {zoomedImage && (
+          <div
+            className="fixed inset-0 z-[70] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in"
+            onClick={() => setZoomedImage(null)}
+          >
+            <div
+              className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative border border-slate-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#96161B] bg-red-50 px-2 py-0.5 rounded">
+                    High-Resolution Zoom Preview
+                  </span>
+                  <h3 className="font-black text-base text-slate-900 mt-1">
+                    {zoomedImage.title}
+                  </h3>
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
+                    {zoomedImage.sku && <span className="font-mono font-bold text-slate-600">{zoomedImage.sku}</span>}
+                    {zoomedImage.size && (
+                      <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-bold">
+                        Size: {zoomedImage.size}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setZoomedImage(null)}
+                  className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="relative w-full h-80 sm:h-96 bg-[#fafafa] rounded-2xl border border-slate-100 overflow-hidden flex items-center justify-center p-4">
+                <SafeProductImage
+                  src={zoomedImage.src}
+                  alt={zoomedImage.title}
+                  fill
+                  className="object-contain p-4"
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+                <span>Click outside or the close button to return</span>
+                <button
+                  type="button"
+                  onClick={() => setZoomedImage(null)}
+                  className="bg-slate-900 hover:bg-[#96161B] text-white px-4 py-2 rounded-xl font-bold transition-all cursor-pointer shadow-xs"
+                >
+                  Close Viewer
+                </button>
+              </div>
             </div>
           </div>
         )}

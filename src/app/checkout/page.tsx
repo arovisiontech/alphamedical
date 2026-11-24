@@ -220,6 +220,52 @@ function CheckoutContent() {
     const generatedRef = `ALPH-${Math.floor(100000 + Math.random() * 900000)}`
     setOrderNumber(generatedRef)
 
+    // RECORD REAL ORDER IMMEDIATELY FOR ADMIN ORDERS FULFILLMENT
+    const now = new Date()
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+    const dateFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
+
+    const realOrderRecord = {
+      id: `ORD-${generatedRef.replace('ALPH-', '')}`,
+      customerName: `${firstName} ${lastName}`.trim() || 'Hospital Procurement',
+      customerEmail: email,
+      customerPhone: phone || '+1 (561) 528-9764',
+      customerAddress: address,
+      customerCity: city,
+      customerState: region,
+      customerZip: postCode,
+      customerCountry: country || 'United States',
+      productCount: totalItemCount,
+      itemsDescription: cartItems.map((i) => i.product.title).join(', '),
+      items: cartItems.map((it, idx) => ({
+        id: `item-${Date.now()}-${idx}`,
+        title: it.product.title,
+        sku: it.product.sku || 'SKU-4500',
+        size: it.size || 'Standard',
+        quantity: it.quantity,
+        unitPrice: Number(it.price) || 49.50,
+        totalPrice: (Number(it.price) || 49.50) * it.quantity,
+        image: it.product.featured_image || '/images/products/image-399.png',
+      })),
+      dateTime: dateFormatted,
+      month: months[now.getMonth()],
+      year: now.getFullYear(),
+      status: 'Processing' as const,
+      subtotal: subTotal,
+      shipping: shippingCost,
+      total: total,
+      rating: 5,
+      reviewComment: 'Verified purchase from USA Store.',
+    }
+
+    try {
+      sessionStorage.setItem('alpha_last_checkout_order', JSON.stringify(realOrderRecord))
+      const existing = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
+      const filtered = Array.isArray(existing) ? existing.filter((o: any) => o.id !== realOrderRecord.id) : []
+      localStorage.setItem('alpha_orders_records', JSON.stringify([realOrderRecord, ...filtered]))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
+    } catch (e) {}
+
     if (paymentMethod === 'card') {
       try {
         const payload = {
