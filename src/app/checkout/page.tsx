@@ -145,13 +145,17 @@ function CheckoutContent() {
     (acc, it) => acc + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1),
     0
   )
+  const isFreeShipping =
+    checkoutSettings.enable_free_shipping === true ||
+    (Boolean(checkoutSettings.free_shipping_threshold) && subTotal >= checkoutSettings.free_shipping_threshold) ||
+    (Boolean(checkoutSettings.free_shipping_quantity) && totalItemCount >= checkoutSettings.free_shipping_quantity)
+
   const shippingCost =
     cartItems.length === 0
       ? 0.0
-      : totalItemCount >= (checkoutSettings.free_shipping_quantity || 10) ||
-        subTotal >= (checkoutSettings.free_shipping_threshold || 100)
+      : isFreeShipping
       ? 0.0
-      : (checkoutSettings.shipping_cost ?? 30.99)
+      : (checkoutSettings.shipping_cost ?? 15.00)
   const total = Math.max(0, subTotal + shippingCost - discountAmount)
 
   const handleQuantityStep = (id: string, newQty: number) => {
@@ -374,82 +378,26 @@ function CheckoutContent() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 2xl:gap-12 items-start">
             
             {/* -------------------------------------------------------------
-                LEFT COLUMN (8 COLS): 6 NUMBERED STEP CARDS
+                LEFT COLUMN (8 COLS): 5 STREAMLINED STEP CARDS
             ------------------------------------------------------------- */}
             <div className="lg:col-span-7 xl:col-span-8 space-y-6">
 
               {/* =========================================================
-                  STEP 1: LOGIN OR REGISTER
-              ========================================================= */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                      1
-                    </span>
-                    <div>
-                      <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900 leading-tight">
-                        {checkoutSettings.step1_title || 'Login Or Register'}
-                      </h2>
-                      <span className="text-xs text-slate-400 font-medium">
-                        {checkoutSettings.step1_subtitle || 'Already Have An Account?'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Right: Checkout as Guest */}
-                  {checkoutSettings.allow_guest_checkout !== false && (
-                    <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5">
-                      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-slate-600">
-                        <User className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-800">
-                          {checkoutSettings.guest_badge_text || 'Checkout As Guest'}
-                        </div>
-                        <div className="text-[10px] text-slate-400">
-                          {checkoutSettings.guest_badge_subtext || 'no account required'}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-6 pt-2 text-xs sm:text-sm font-bold text-slate-700">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="auth"
-                      checked={authType === 'login'}
-                      onChange={() => setAuthType('login')}
-                      className="accent-[#96161B] w-4 h-4 cursor-pointer"
-                    />
-                    <span>Login</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="auth"
-                      checked={authType === 'register'}
-                      onChange={() => setAuthType('register')}
-                      className="accent-[#96161B] w-4 h-4 cursor-pointer"
-                    />
-                    <span>Register</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* =========================================================
-                  STEP 2: YOUR PERSONAL DETAILS
+                  STEP 1: YOUR PERSONAL DETAILS
               ========================================================= */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                   <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                    2
+                    1
                   </span>
-                  <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    {checkoutSettings.step2_title || 'Your Personal Details'}
-                  </h2>
+                  <div>
+                    <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
+                      {checkoutSettings.step2_title || 'Your Personal Details'}
+                    </h2>
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      Direct checkout — no login required
+                    </span>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
@@ -524,15 +472,15 @@ function CheckoutContent() {
               </div>
 
               {/* =========================================================
-                  STEP 3: BILLING ADDRESS
+                  STEP 2: BILLING ADDRESS
               ========================================================= */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                   <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                    3
+                    2
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    {checkoutSettings.step3_title || 'Billing Address'}
+                    {checkoutSettings.step3_title || 'Billing & Shipping Address'}
                   </h2>
                 </div>
 
@@ -634,12 +582,12 @@ function CheckoutContent() {
               </div>
 
               {/* =========================================================
-                  STEP 4: SHIPPING METHOD
+                  STEP 3: SHIPPING METHOD
               ========================================================= */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
                 <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                   <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                    4
+                    3
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
                     {checkoutSettings.step4_title || 'Shipping Method'}
@@ -656,27 +604,33 @@ function CheckoutContent() {
                     />
                     <div>
                       <span className="font-extrabold text-xs sm:text-sm text-slate-900 block">
-                        {checkoutSettings.shipping_name || 'Fast International Shipping'}
+                        {checkoutSettings.shipping_name || 'Shipping Fee'}
                       </span>
                       <span className="text-[11px] text-slate-400">
-                        {checkoutSettings.shipping_description || 'reliable worldwide delivery'}
+                        {checkoutSettings.shipping_description || 'standard secure delivery with tracking'}
                       </span>
                     </div>
                   </div>
                   <span className="font-extrabold text-sm sm:text-base text-slate-900">
-                    ${shippingCost.toFixed(2)}
+                    {shippingCost === 0 ? (
+                      <span className="text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 text-xs font-black">
+                        FREE SHIPPING
+                      </span>
+                    ) : (
+                      `$${shippingCost.toFixed(2)}`
+                    )}
                   </span>
                 </label>
               </div>
 
               {/* =========================================================
-                  STEP 5: PAYMENT METHOD (CREDIT & DEBIT CARD VIA STRIPE)
+                  STEP 4: PAYMENT METHOD (CREDIT & DEBIT CARD VIA STRIPE)
               ========================================================= */}
               <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 flex-wrap gap-2">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                      5
+                      4
                     </span>
                     <div>
                       <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
@@ -734,13 +688,13 @@ function CheckoutContent() {
               </div>
 
               {/* =========================================================
-                  STEP 6: COUPON / VOUCHER / REWARD
+                  STEP 5: COUPON / VOUCHER / REWARD
               ========================================================= */}
               {checkoutSettings.enable_coupons !== false && (
                 <div className="bg-white rounded-2xl border border-slate-200/90 shadow-xs p-6 2xl:p-8 space-y-4">
                   <div className="flex items-center gap-3 border-b border-slate-100 pb-3">
                     <span className="w-8 h-8 rounded-full bg-[#96161B] text-white font-black text-sm flex items-center justify-center shrink-0">
-                      6
+                      5
                     </span>
                     <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
                       {checkoutSettings.step6_title || 'Coupon / Voucher / Reward'}
@@ -910,8 +864,14 @@ function CheckoutContent() {
                     <span className="font-bold text-slate-900">${subTotal.toFixed(2)}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span>{checkoutSettings.shipping_name || 'Fast International Shipping'}</span>
-                    <span className="font-bold text-slate-900">${shippingCost.toFixed(2)}</span>
+                    <span>{checkoutSettings.shipping_name || 'Shipping Fee'}</span>
+                    <span className="font-bold text-slate-900">
+                      {shippingCost === 0 ? (
+                        <span className="text-emerald-700 font-extrabold">Free Shipping</span>
+                      ) : (
+                        `$${shippingCost.toFixed(2)}`
+                      )}
+                    </span>
                   </div>
                   {discountAmount > 0 && (
                     <div className="flex items-center justify-between text-emerald-600 font-bold">

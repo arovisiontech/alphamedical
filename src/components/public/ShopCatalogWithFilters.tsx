@@ -529,27 +529,29 @@ function ShopCatalogContent({
               </div>
             </div>
 
-            {/* PRICE RANGE SLIDER */}
-            <div className="space-y-2 border-t border-slate-100 pt-4">
-              <div className="flex items-center justify-between text-xs 2xl:text-sm font-bold">
-                <span className="uppercase text-slate-700">Max Price:</span>
-                <span className="text-[#96161B] font-extrabold">${maxPrice} USD</span>
+            {/* PRICE RANGE SLIDER (USA STORE ONLY) */}
+            {isUsaStore && (
+              <div className="space-y-2 border-t border-slate-100 pt-4">
+                <div className="flex items-center justify-between text-xs 2xl:text-sm font-bold">
+                  <span className="uppercase text-slate-700">Max Price:</span>
+                  <span className="text-[#96161B] font-extrabold">${maxPrice} USD</span>
+                </div>
+                <input
+                  type="range"
+                  min="10"
+                  max="500"
+                  step="5"
+                  value={maxPrice}
+                  onChange={(e) => setMaxPrice(Number(e.target.value))}
+                  className="w-full accent-[#96161B] cursor-pointer"
+                />
+                <div className="flex justify-between text-[10px] 2xl:text-[11px] font-bold text-slate-400">
+                  <span>$10</span>
+                  <span>$250</span>
+                  <span>$500+</span>
+                </div>
               </div>
-              <input
-                type="range"
-                min="10"
-                max="500"
-                step="5"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="w-full accent-[#96161B] cursor-pointer"
-              />
-              <div className="flex justify-between text-[10px] 2xl:text-[11px] font-bold text-slate-400">
-                <span>$10</span>
-                <span>$250</span>
-                <span>$500+</span>
-              </div>
-            </div>
+            )}
 
             {/* AVAILABILITY */}
             <div className="space-y-2 border-t border-slate-100 pt-4">
@@ -1052,17 +1054,23 @@ function ShopCatalogContent({
                           SKU:{prod.sku || '1001'}
                         </div>
 
-                        {/* PRICE ROW */}
-                        <div className="flex items-baseline gap-2.5 mt-2">
-                          {originalPrice && originalPrice > price && (
-                            <span className="text-slate-900 font-bold text-sm sm:text-base line-through">
-                              ${originalPrice.toFixed(2)}
+                        {/* PRICE ROW (USA STORE ONLY) VS INQUIRY STATUS */}
+                        {isUsaStore ? (
+                          <div className="flex items-baseline gap-2.5 mt-2">
+                            {originalPrice && originalPrice > price && (
+                              <span className="text-slate-900 font-bold text-sm sm:text-base line-through">
+                                ${originalPrice.toFixed(2)}
+                              </span>
+                            )}
+                            <span className="text-[#96161B] font-extrabold text-base sm:text-lg 2xl:text-xl">
+                              ${price.toFixed(2)}
                             </span>
-                          )}
-                          <span className="text-[#96161B] font-extrabold text-base sm:text-lg 2xl:text-xl">
-                            ${price.toFixed(2)}
-                          </span>
-                        </div>
+                          </div>
+                        ) : (
+                          <div className="mt-2 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg inline-block">
+                            Bulk B2B Quote Available
+                          </div>
+                        )}
 
                         {/* IN STOCK STATUS */}
                         <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-medium text-emerald-600 mt-2">

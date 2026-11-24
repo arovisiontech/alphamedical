@@ -23,6 +23,7 @@ export interface CheckoutSettings {
   shipping_name: string
   shipping_description: string
   shipping_cost: number
+  enable_free_shipping?: boolean
   free_shipping_threshold: number
   free_shipping_quantity: number
 

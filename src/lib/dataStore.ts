@@ -1507,9 +1507,10 @@ export const INITIAL_CHECKOUT_SETTINGS_SEED: CheckoutSettings = {
 
   // Step 4: Shipping Method
   step4_title: 'Shipping Method',
-  shipping_name: 'Fast USA Shipping',
-  shipping_description: 'Fast nationwide USA delivery with tracking',
-  shipping_cost: 30.99,
+  shipping_name: 'Shipping Fee',
+  shipping_description: 'Standard nationwide USA delivery with tracking',
+  shipping_cost: 15.00,
+  enable_free_shipping: false,
   free_shipping_threshold: 100,
   free_shipping_quantity: 10,
 
@@ -1557,6 +1558,7 @@ export function getStoredCheckoutSettings(): CheckoutSettings {
       null
     )
     if (data && data.page_title) {
+      let needsSave = false
       if (
         data.default_country === 'Pakistan' ||
         data.allowed_countries?.includes('Pakistan') ||
@@ -1565,11 +1567,24 @@ export function getStoredCheckoutSettings(): CheckoutSettings {
         data.allowed_countries = ['United States']
         data.default_country = 'United States'
         data.allowed_regions = US_STATES
-        if (typeof window !== 'undefined') {
-          try {
-            localStorage.setItem('alpha_checkout_settings_v1', JSON.stringify(data))
-          } catch (e) {}
-        }
+        needsSave = true
+      }
+      if (
+        data.shipping_name === 'Fast USA Shipping' ||
+        data.shipping_name === 'Fast International Shipping' ||
+        !data.shipping_name
+      ) {
+        data.shipping_name = 'Shipping Fee'
+        needsSave = true
+      }
+      if (typeof data.enable_free_shipping === 'undefined') {
+        data.enable_free_shipping = false
+        needsSave = true
+      }
+      if (needsSave && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('alpha_checkout_settings_v1', JSON.stringify(data))
+        } catch (e) {}
       }
       return data
     }
