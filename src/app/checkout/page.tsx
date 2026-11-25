@@ -996,24 +996,24 @@ function CheckoutContent() {
               )}
 
               {/* =========================================================
-                  REVIEW & PROCEED TO CONFIRM ORDER (LEFT COLUMN BOTTOM)
+                  CONFIRM ORDER BUTTON (LEFT COLUMN BOTTOM)
               ========================================================= */}
-              <div className="bg-slate-50 rounded-2xl border border-slate-200/90 p-5 sm:p-6 space-y-3">
-                <p className="text-xs text-slate-600 font-medium">
-                  Make sure all required personal, delivery address, and card details are filled above, then confirm your order in the summary panel.
-                </p>
+              <div id="checkout-confirm-order" className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-3">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 pb-2 border-b border-slate-100">
+                  <span>Order Total (Sub-Total ${subTotal.toFixed(2)} + Shipping ${shippingCost.toFixed(2)}{appliedDiscount > 0 ? ` − Discount $${appliedDiscount.toFixed(2)}` : ''})</span>
+                  <span className="text-lg sm:text-xl font-black text-[#96161B]">${total.toFixed(2)}</span>
+                </div>
                 <button
-                  type="button"
-                  onClick={() => {
-                    const el = document.getElementById('order-summary-confirm')
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                      el.focus()
-                    }
-                  }}
-                  className="w-full bg-slate-900 hover:bg-[#96161B] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer"
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
                 >
-                  <span>FILL DETAILS &amp; PROCEED TO CONFIRM ORDER</span>
+                  <Lock className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Confirming Order & Processing Card...'
+                      : `CONFIRM ORDER — $${total.toFixed(2)}`}
+                  </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1174,19 +1174,16 @@ function CheckoutContent() {
                   </div>
                 </div>
 
-                {/* LARGE RED PLACE ORDER BUTTON */}
+                {/* FILL DETAILS & PROCEED BUTTON (RIGHT SUMMARY) */}
                 <button
                   id="order-summary-confirm"
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
+                  type="button"
+                  onClick={() => {
+                    window.scrollTo({ top: 180, behavior: 'smooth' })
+                  }}
+                  className="w-full bg-[#96161B] hover:bg-[#7d1216] text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>
-                    {isSubmitting
-                      ? 'Confirming Order & Processing Card...'
-                      : `CONFIRM & PLACE ORDER — $${total.toFixed(2)}`}
-                  </span>
+                  <span>FILL DETAILS &amp; PROCEED</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
 
