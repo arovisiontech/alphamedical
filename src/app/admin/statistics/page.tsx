@@ -74,7 +74,9 @@ export interface OrderItemRecord {
   dateTime: string
   month: string
   year: number
-  status: 'Dispatched' | 'Delivered' | 'Failed' | 'Processing'
+  status: 'Dispatched' | 'Delivered' | 'Failed' | 'Processing' | 'Cancelled'
+  cancelReason?: string
+  cancelledAt?: string
   subtotal: number
   shipping: number
   total: number
@@ -331,7 +333,7 @@ export default function AdminStatisticsPage() {
   const [reviews, setReviews] = useState<StoreReviewItem[]>(INITIAL_REVIEWS_SEED)
   const [selectedOrder, setSelectedOrder] = useState<OrderItemRecord | null>(null)
   const [zoomedImage, setZoomedImage] = useState<{ src: string; title: string; sku?: string; size?: string } | null>(null)
-  const [statusFilter, setStatusFilter] = useState<'All' | 'Dispatched' | 'Delivered' | 'Failed' | 'Processing'>('All')
+  const [statusFilter, setStatusFilter] = useState<'All' | 'Dispatched' | 'Delivered' | 'Failed' | 'Processing' | 'Cancelled'>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
@@ -503,7 +505,8 @@ export default function AdminStatisticsPage() {
 
   const dispatchedCount = orders.filter((o) => o.status === 'Dispatched').length
   const deliveredCount = orders.filter((o) => o.status === 'Delivered').length
-  const failedCount = orders.filter((o) => o.status === 'Failed').length
+  const failedCount = orders.filter((o) => o.status === 'Failed' || o.status === 'Cancelled').length
+  const cancelledCount = orders.filter((o) => o.status === 'Cancelled').length
   const processingCount = orders.filter((o) => o.status === 'Processing').length
 
   return (
@@ -682,6 +685,7 @@ export default function AdminStatisticsPage() {
                 <option value="All">All Statuses</option>
                 <option value="Dispatched">Dispatched ({dispatchedCount})</option>
                 <option value="Delivered">Delivered ({deliveredCount})</option>
+                <option value="Cancelled">Cancelled ({cancelledCount})</option>
                 <option value="Failed">Failed ({failedCount})</option>
                 <option value="Processing">Processing ({processingCount})</option>
               </select>
@@ -794,14 +798,14 @@ export default function AdminStatisticsPage() {
                                 ? 'bg-emerald-100 text-emerald-800'
                                 : ord.status === 'Dispatched'
                                 ? 'bg-blue-100 text-blue-800'
-                                : ord.status === 'Failed'
+                                : ord.status === 'Failed' || ord.status === 'Cancelled'
                                 ? 'bg-red-100 text-red-800'
                                 : 'bg-amber-100 text-amber-800'
                             }`}
                           >
                             {ord.status === 'Delivered' && <CheckCircle2 className="w-3 h-3" />}
                             {ord.status === 'Dispatched' && <Truck className="w-3 h-3" />}
-                            {ord.status === 'Failed' && <XCircle className="w-3 h-3" />}
+                            {(ord.status === 'Failed' || ord.status === 'Cancelled') && <XCircle className="w-3 h-3" />}
                             {ord.status === 'Processing' && <Clock className="w-3 h-3" />}
                             <span>{ord.status}</span>
                           </span>
@@ -952,6 +956,14 @@ export default function AdminStatisticsPage() {
                         <strong className="text-slate-900">Payment:</strong>{' '}
                         <span className="text-emerald-700 font-bold">
                           {selectedOrder.paymentStatus || 'Paid'} ({selectedOrder.paymentMethod})
+                        </span>
+                      </div>
+                    )}
+                    {selectedOrder.status === 'Cancelled' && (
+                      <div>
+                        <strong className="text-red-700">Cancellation Reason:</strong>{' '}
+                        <span className="text-red-600 font-semibold">
+                          {selectedOrder.cancelReason || 'Cancelled by customer'}
                         </span>
                       </div>
                     )}

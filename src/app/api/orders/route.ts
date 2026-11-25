@@ -77,6 +77,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, orders: updated })
     }
 
+    if (body?.action === 'cancel_order' && body.id) {
+      const targetId = String(body.id)
+      const altId = targetId.replace('ALPH-', 'ORD-')
+      const updated = current.map((o: any) =>
+        o.id === targetId || o.id === altId || o.orderRef === targetId
+          ? {
+              ...o,
+              status: 'Cancelled',
+              paymentStatus: 'Cancelled / Refunded',
+              cancelReason: body.reason || 'Cancelled by customer',
+              cancelledAt: new Date().toISOString(),
+            }
+          : o
+      )
+      saveOrdersToFile(updated)
+      return NextResponse.json({ success: true, orders: updated })
+    }
+
     if (body?.action === 'update_rating' && body.id) {
       const updated = current.map((o: any) =>
         o.id === body.id || o.id === body.id.replace('ALPH-', 'ORD-')

@@ -20,6 +20,8 @@ import {
   Star,
   ThumbsUp,
   Send,
+  XCircle,
+  AlertTriangle,
 } from 'lucide-react'
 import { addStoredReview } from '@/src/lib/dataStore'
 
@@ -36,6 +38,73 @@ function SuccessContent() {
   const [starRating, setStarRating] = useState<number>(5)
   const [feedbackText, setFeedbackText] = useState<string>('')
   const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false)
+
+  // Order Cancellation State
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('Changed my mind')
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [isOrderCancelled, setIsOrderCancelled] = useState(false)
+
+  const handleCancelOrder = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsCancelling(true)
+    const targetRef = details?.order_ref || localOrder?.orderRef || orderRef
+    const targetId = targetRef.replace('ALPH-', 'ORD-')
+
+    try {
+      const updatedOrder = localOrder
+        ? {
+            ...localOrder,
+            status: 'Cancelled',
+            paymentStatus: 'Cancelled / Refunded',
+            cancelReason: cancelReason.trim() || 'Cancelled by customer',
+            cancelledAt: new Date().toISOString(),
+          }
+        : null
+
+      if (updatedOrder) {
+        setLocalOrder(updatedOrder)
+        sessionStorage.setItem('alpha_last_checkout_order', JSON.stringify(updatedOrder))
+      }
+
+      const orders = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
+      const updated = Array.isArray(orders)
+        ? orders.map((o: any) =>
+            o.id === targetId || o.id === targetRef || o.orderRef === targetRef
+              ? {
+                  ...o,
+                  status: 'Cancelled',
+                  paymentStatus: 'Cancelled / Refunded',
+                  cancelReason: cancelReason.trim() || 'Cancelled by customer',
+                  cancelledAt: new Date().toISOString(),
+                }
+              : o
+          )
+        : []
+      localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
+
+      if (typeof BroadcastChannel !== 'undefined') {
+        const ch = new BroadcastChannel('alpha_sync_channel')
+        ch.postMessage({ type: 'orders_updated', timestamp: Date.now() })
+        ch.close()
+      }
+
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cancel_order',
+          id: targetId,
+          reason: cancelReason.trim() || 'Cancelled by customer',
+        }),
+      })
+    } catch (err) {}
+
+    setIsCancelling(false)
+    setIsCancelModalOpen(false)
+    setIsOrderCancelled(true)
+  }
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,13 +168,17 @@ function SuccessContent() {
       if (savedLast) {
         const parsed = JSON.parse(savedLast)
         setLocalOrder(parsed)
+        if (parsed.status === 'Cancelled') setIsOrderCancelled(true)
       } else {
         const orders = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
         const targetId = orderRef.replace('ALPH-', 'ORD-')
         const found = Array.isArray(orders)
           ? orders.find((o: any) => o.id === targetId || o.orderRef === orderRef || o.id === orderRef)
           : null
-        if (found) setLocalOrder(found)
+        if (found) {
+          setLocalOrder(found)
+          if (found.status === 'Cancelled') setIsOrderCancelled(true)
+        }
       }
     } catch (e) {}
 
@@ -168,24 +241,44 @@ function SuccessContent() {
       <main className="flex-1 max-w-3xl mx-auto w-full p-4 sm:p-8 flex items-center justify-center">
         <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl p-6 sm:p-10 w-full space-y-8 animate-fade-in">
           
-          {/* GREEN SUCCESS BADGE */}
-          <div className="text-center space-y-3">
-            <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50">
-              <CheckCircle2 className="w-10 h-10" />
-            </div>
+          {/* GREEN SUCCESS OR RED CANCELLED BADGE */}
+          {isOrderCancelled || localOrder?.status === 'Cancelled' ? (
+            <div className="text-center space-y-3">
+              <div className="w-20 h-20 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto shadow-inner ring-8 ring-red-50/50">
+                <XCircle className="w-10 h-10" />
+              </div>
 
-            <div className="inline-flex items-center gap-1.5 bg-emerald-100/80 text-emerald-800 text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Stripe Card Payment Verified</span>
-            </div>
+              <div className="inline-flex items-center gap-1.5 bg-red-100 text-red-800 text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
+                <XCircle className="w-3.5 h-3.5" />
+                <span>Order Cancelled</span>
+              </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Thank You! Your Order Is Confirmed
-            </h1>
-            <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
-              Your payment has been securely processed by Stripe. A receipt and order confirmation has been emailed to you.
-            </p>
-          </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Your Order Has Been Cancelled
+              </h1>
+              <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
+                Your order has been cancelled as requested and our dispatch team has been notified. Any card authorization will be reversed automatically.
+              </p>
+            </div>
+          ) : (
+            <div className="text-center space-y-3">
+              <div className="w-20 h-20 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto shadow-inner ring-8 ring-emerald-50/50">
+                <CheckCircle2 className="w-10 h-10" />
+              </div>
+
+              <div className="inline-flex items-center gap-1.5 bg-emerald-100/80 text-emerald-800 text-[11px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Card Payment Verified</span>
+              </div>
+
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                Thank You! Your Order Is Confirmed
+              </h1>
+              <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
+                Your payment has been securely processed. A receipt and order confirmation has been generated for you.
+              </p>
+            </div>
+          )}
 
           {/* ORDER RECEIPT CARD */}
           <div className="bg-slate-50/80 border border-slate-200 rounded-2xl p-6 space-y-4">
@@ -362,18 +455,38 @@ function SuccessContent() {
           <div className="flex flex-col sm:flex-row items-center gap-3 pt-2">
             <button
               onClick={() => window.print()}
-              className="w-full sm:w-1/2 py-3.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              className="w-full sm:flex-1 py-3.5 px-4 rounded-xl border border-slate-300 hover:bg-slate-50 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
               <Printer className="w-4 h-4 text-slate-600" />
               <span>Print Official Invoice</span>
             </button>
 
+            {!isOrderCancelled && localOrder?.status !== 'Cancelled' && localOrder?.status !== 'Delivered' && (
+              <button
+                type="button"
+                onClick={() => setIsCancelModalOpen(true)}
+                className="w-full sm:flex-1 py-3.5 px-4 rounded-xl border border-red-300 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Cancel Order</span>
+              </button>
+            )}
+
             <Link
               href="/"
-              className="w-full sm:w-1/2 py-3.5 px-4 rounded-xl bg-[#96161B] hover:bg-[#7d1216] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 transition-all cursor-pointer"
+              className="w-full sm:flex-1 py-3.5 px-4 rounded-xl bg-[#96161B] hover:bg-[#7d1216] text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-red-950/20 transition-all cursor-pointer"
             >
               <span>Back To Homepage</span>
               <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="text-center">
+            <Link
+              href="/track-order"
+              className="text-xs font-bold text-slate-500 hover:text-[#96161B] underline"
+            >
+              Track or Cancel Order Anytime →
             </Link>
           </div>
 
@@ -384,6 +497,61 @@ function SuccessContent() {
           </div>
         </div>
       </main>
+
+      {/* ORDER CANCELLATION MODAL */}
+      {isCancelModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 space-y-5">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-black text-base text-slate-900">Cancel Order {details?.order_ref || localOrder?.orderRef || orderRef}?</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Are you sure you want to cancel this order? Once cancelled, dispatch will be stopped immediately.
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCancelOrder} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Reason for Cancellation
+                </label>
+                <select
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 outline-none focus:border-[#96161B]"
+                >
+                  <option value="Changed my mind">Changed my mind</option>
+                  <option value="Ordered wrong size or instrument">Ordered wrong size or instrument</option>
+                  <option value="Need to update delivery address">Need to update delivery address</option>
+                  <option value="Duplicate order placed by mistake">Duplicate order placed by mistake</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(false)}
+                  className="flex-1 py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                >
+                  Keep Order
+                </button>
+                <button
+                  type="submit"
+                  disabled={isCancelling}
+                  className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  {isCancelling ? 'Cancelling...' : 'Yes, Cancel Order'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
