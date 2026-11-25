@@ -147,10 +147,15 @@ function CheckoutContent() {
     }
   }, [productSlug, queryQty, querySize, queryPrice])
 
+  const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100
+
   const totalItemCount = cartItems.reduce((acc, it) => acc + Math.max(1, Number(it.quantity) || 1), 0)
-  const subTotal = cartItems.reduce(
-    (acc, it) => acc + (Number(it.price) || 0) * Math.max(1, Number(it.quantity) || 1),
-    0
+  const subTotal = round2(
+    cartItems.reduce((acc, it) => {
+      const unit = round2(Number(it.price ?? it.product?.price ?? 0))
+      const qty = Math.max(1, Number(it.quantity) || 1)
+      return acc + round2(unit * qty)
+    }, 0)
   )
   const isFreeShipping =
     checkoutSettings.enable_free_shipping === true ||
@@ -162,8 +167,9 @@ function CheckoutContent() {
       ? 0.0
       : isFreeShipping
       ? 0.0
-      : (checkoutSettings.shipping_cost ?? 15.00)
-  const total = Math.max(0, subTotal + shippingCost - discountAmount)
+      : round2(checkoutSettings.shipping_cost ?? 15.00)
+  const appliedDiscount = Math.min(round2(discountAmount), round2(subTotal + shippingCost))
+  const total = Math.max(0, round2(subTotal + shippingCost - appliedDiscount))
 
   const handleQuantityStep = (id: string, newQty: number) => {
     updateCartQuantity(id, newQty)
@@ -331,23 +337,27 @@ function CheckoutContent() {
       cardholderName: cardholderName.trim(),
       productCount: totalItemCount,
       itemsDescription: cartItems.map((i) => i.product.title).join(', '),
-      items: cartItems.map((it, idx) => ({
-        id: `item-${Date.now()}-${idx}`,
-        title: it.product.title,
-        sku: it.product.sku || 'SKU-4500',
-        size: it.size || it.length || 'Standard',
-        quantity: it.quantity,
-        unitPrice: Number(it.price) || 49.50,
-        totalPrice: (Number(it.price) || 49.50) * it.quantity,
-        image: it.product.featured_image || '/images/products/image-399.png',
-      })),
+      items: cartItems.map((it, idx) => {
+        const unit = round2(Number(it.price ?? it.product?.price ?? 0))
+        const qty = Math.max(1, Number(it.quantity) || 1)
+        return {
+          id: `item-${Date.now()}-${idx}`,
+          title: it.product.title,
+          sku: it.product.sku || 'SKU-4500',
+          size: it.size || it.length || 'Standard',
+          quantity: qty,
+          unitPrice: unit,
+          totalPrice: round2(unit * qty),
+          image: it.product.featured_image || '/images/products/image-399.png',
+        }
+      }),
       dateTime: dateFormatted,
       month: months[now.getMonth()],
       year: now.getFullYear(),
       status: 'Processing' as const,
       subtotal: subTotal,
       shipping: shippingCost,
-      discount: discountAmount,
+      discount: appliedDiscount,
       total: total,
       rating: 5,
       reviewComment: 'Verified purchase from USA Store.',
@@ -982,6 +992,29 @@ function CheckoutContent() {
                 </div>
               )}
 
+              {/* =========================================================
+                  PRIMARY CONFIRM & PLACE ORDER BUTTON (LEFT COLUMN BOTTOM)
+              ========================================================= */}
+              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 2xl:p-8 space-y-3">
+                <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 pb-2 border-b border-slate-100">
+                  <span>Order Total (Sub-Total ${subTotal.toFixed(2)} + Shipping ${shippingCost.toFixed(2)}{appliedDiscount > 0 ? ` − Discount $${appliedDiscount.toFixed(2)}` : ''})</span>
+                  <span className="text-lg sm:text-xl font-black text-[#96161B]">${total.toFixed(2)}</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
+                >
+                  <Lock className="w-4 h-4" />
+                  <span>
+                    {isSubmitting
+                      ? 'Confirming Order & Processing Card...'
+                      : `CONFIRM & PLACE ORDER — $${total.toFixed(2)}`}
+                  </span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+
             </div>
 
             {/* -------------------------------------------------------------
@@ -1018,8 +1051,8 @@ function CheckoutContent() {
                 ) : (
                   <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
                     {cartItems.map((item) => {
-                      const itemPrice = item.price ?? 53.90
-                      const lineTotal = itemPrice * item.quantity
+                      const itemPrice = round2(Number(item.price ?? item.product?.price ?? 0))
+                      const lineTotal = round2(itemPrice * Math.max(1, Number(item.quantity) || 1))
                       return (
                         <div
                           key={item.id}
@@ -1108,10 +1141,10 @@ function CheckoutContent() {
                       )}
                     </span>
                   </div>
-                  {discountAmount > 0 && (
+                  {appliedDiscount > 0 && (
                     <div className="flex items-center justify-between text-emerald-600 font-bold">
                       <span>Discount / Voucher</span>
-                      <span>-${discountAmount.toFixed(2)}</span>
+                      <span>-${appliedDiscount.toFixed(2)}</span>
                     </div>
                   )}
 
@@ -1147,10 +1180,8 @@ function CheckoutContent() {
                   <Lock className="w-4 h-4" />
                   <span>
                     {isSubmitting
-                      ? 'Authorizing Card & Placing Order...'
-                      : paymentMethod === 'card'
-                      ? `PAY $${total.toFixed(2)} WITH CARD`
-                      : 'PLACE ORDER'}
+                      ? 'Confirming Order & Processing Card...'
+                      : `CONFIRM & PLACE ORDER — $${total.toFixed(2)}`}
                   </span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
