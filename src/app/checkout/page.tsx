@@ -769,7 +769,7 @@ function CheckoutContent() {
 
                   <div className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-                    <span>{checkoutSettings.step5_badge || 'Stripe 256-Bit SSL Encrypted'}</span>
+                    <span>256-Bit SSL Encrypted</span>
                   </div>
                 </div>
 
@@ -925,9 +925,12 @@ function CheckoutContent() {
                   <div className="pt-3 border-t border-red-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-600">
                     <div className="flex items-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{checkoutSettings.card_footnote || "256-bit SSL encrypted card payment processing."}</span>
+                      <span>256-bit SSL encrypted secure card payment processing.</span>
                     </div>
-                    <StripeBadge />
+                    <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>PCI-DSS Secured</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -993,24 +996,24 @@ function CheckoutContent() {
               )}
 
               {/* =========================================================
-                  PRIMARY CONFIRM & PLACE ORDER BUTTON (LEFT COLUMN BOTTOM)
+                  REVIEW & PROCEED TO CONFIRM ORDER (LEFT COLUMN BOTTOM)
               ========================================================= */}
-              <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 2xl:p-8 space-y-3">
-                <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 pb-2 border-b border-slate-100">
-                  <span>Order Total (Sub-Total ${subTotal.toFixed(2)} + Shipping ${shippingCost.toFixed(2)}{appliedDiscount > 0 ? ` − Discount $${appliedDiscount.toFixed(2)}` : ''})</span>
-                  <span className="text-lg sm:text-xl font-black text-[#96161B]">${total.toFixed(2)}</span>
-                </div>
+              <div className="bg-slate-50 rounded-2xl border border-slate-200/90 p-5 sm:p-6 space-y-3">
+                <p className="text-xs text-slate-600 font-medium">
+                  Make sure all required personal, delivery address, and card details are filled above, then confirm your order in the summary panel.
+                </p>
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('order-summary-confirm')
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                      el.focus()
+                    }
+                  }}
+                  className="w-full bg-slate-900 hover:bg-[#96161B] text-white py-3.5 px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 transition-all duration-200 shadow-md cursor-pointer"
                 >
-                  <Lock className="w-4 h-4" />
-                  <span>
-                    {isSubmitting
-                      ? 'Confirming Order & Processing Card...'
-                      : `CONFIRM & PLACE ORDER — $${total.toFixed(2)}`}
-                  </span>
+                  <span>FILL DETAILS &amp; PROCEED TO CONFIRM ORDER</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1173,6 +1176,7 @@ function CheckoutContent() {
 
                 {/* LARGE RED PLACE ORDER BUTTON */}
                 <button
+                  id="order-summary-confirm"
                   type="submit"
                   disabled={isSubmitting}
                   className="w-full bg-[#96161B] hover:bg-[#7d1216] disabled:bg-slate-400 text-white py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-3 transition-all duration-200 shadow-xl shadow-red-950/25 active:scale-98 cursor-pointer shimmer-effect"
@@ -1202,7 +1206,7 @@ function CheckoutContent() {
 
                   <div className="pt-1 flex items-center justify-center gap-2 text-[10px] text-slate-500 font-medium">
                     <Lock className="w-3 h-3 text-slate-400" />
-                    <span>{checkoutSettings.guarantee_desc || '256-Bit SSL Encryption • Powered by Stripe'}</span>
+                    <span>256-Bit SSL Encryption • Secure Card Payment</span>
                   </div>
                 </div>
 
