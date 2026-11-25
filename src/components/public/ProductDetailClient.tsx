@@ -33,7 +33,7 @@ import PublicSearchModal from '@/src/components/public/PublicSearchModal'
 import InquiryModal from '@/src/components/public/InquiryModal'
 import { useGeoLocation } from '@/src/context/GeoLocationContext'
 import { ProductItem, QuantityDiscountTier } from '@/src/types/product'
-import { getStoredProducts, addToStoredCart } from '@/src/lib/dataStore'
+import { getStoredProducts, addToStoredCart, addStoredReview, getStoredReviews } from '@/src/lib/dataStore'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface ProductDetailClientProps {
@@ -250,11 +250,18 @@ export default function ProductDetailClient({
     if (typeof window !== 'undefined') {
       try {
         const stored = localStorage.getItem(`alpha_reviews_${product.sku || 'default'}`)
-        if (stored) {
-          const parsed = JSON.parse(stored)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setReviews(parsed)
+        const skuParsed = stored ? JSON.parse(stored) : []
+        const globalReviews = getStoredReviews().filter(
+          (r) => !r.productSku || r.productSku === product.sku
+        )
+        const combined = [...(Array.isArray(skuParsed) ? skuParsed : [])]
+        globalReviews.forEach((gr) => {
+          if (!combined.some((c: any) => c.id === gr.id)) {
+            combined.push(gr)
           }
+        })
+        if (combined.length > 0) {
+          setReviews(combined)
         }
       } catch (e) {}
     }
@@ -280,6 +287,11 @@ export default function ProductDetailClient({
         localStorage.setItem(`alpha_reviews_${product.sku || 'default'}`, JSON.stringify(updated))
       } catch (e) {}
     }
+    addStoredReview({
+      ...reviewItem,
+      productSku: product.sku || undefined,
+      productTitle: product.title,
+    })
     setIsWriteReviewOpen(false)
     setNewReviewAuthor('')
     setNewReviewHospital('')

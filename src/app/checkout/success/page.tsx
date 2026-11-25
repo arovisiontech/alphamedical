@@ -21,6 +21,7 @@ import {
   ThumbsUp,
   Send,
 } from 'lucide-react'
+import { addStoredReview } from '@/src/lib/dataStore'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
@@ -29,6 +30,7 @@ function SuccessContent() {
 
   const [loading, setLoading] = useState(true)
   const [details, setDetails] = useState<any>(null)
+  const [localOrder, setLocalOrder] = useState<any>(null)
 
   // 5-Star Customer Satisfaction Rating State
   const [starRating, setStarRating] = useState<number>(5)
@@ -37,33 +39,76 @@ function SuccessContent() {
 
   const handleFeedbackSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const targetRef = details?.order_ref || localOrder?.orderRef || orderRef
+    const targetId = targetRef.replace('ALPH-', 'ORD-')
+    const commentText = feedbackText.trim() || 'Verified 5-star purchase & seamless checkout experience.'
+
     try {
       const existing = JSON.parse(localStorage.getItem('alpha_order_ratings') || '[]')
       const newRating = {
-        orderRef: details?.order_ref || orderRef,
+        orderRef: targetRef,
         rating: starRating,
-        comment: feedbackText,
+        comment: commentText,
         submittedAt: new Date().toISOString(),
       }
       localStorage.setItem('alpha_order_ratings', JSON.stringify([newRating, ...existing]))
 
       // Sync customer rating into real orders record
       const orders = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
-      const targetRef = details?.order_ref || orderRef
-      const targetId = targetRef.replace('ALPH-', 'ORD-')
       const updated = orders.map((o: any) => {
-        if (o.id === targetId || o.id === targetRef) {
-          return { ...o, rating: starRating, reviewComment: feedbackText }
+        if (o.id === targetId || o.id === targetRef || o.orderRef === targetRef) {
+          return { ...o, rating: starRating, reviewComment: commentText }
         }
         return o
       })
       localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
       window.dispatchEvent(new Event('alpha_orders_updated'))
+
+      // Sync into server orders API
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_rating',
+          id: targetId,
+          rating: starRating,
+          reviewComment: commentText,
+        }),
+      }).catch(() => {})
+
+      // Publish to Website Public Reviews & Admin Reviews Store
+      const firstItem = localOrder?.items?.[0]
+      addStoredReview({
+        author: localOrder?.customerName || 'Verified USA Store Buyer',
+        hospital: localOrder?.customerCompany || `${localOrder?.customerCity || 'USA'}, ${localOrder?.customerState || ''}`.replace(/,\s*$/, ''),
+        rating: starRating,
+        title: `Verified Order ${targetRef} Review`,
+        comment: commentText,
+        productSku: firstItem?.sku,
+        productTitle: firstItem?.title || localOrder?.itemsDescription,
+        orderRef: targetRef,
+      })
     } catch (e) {}
     setFeedbackSubmitted(true)
   }
 
   useEffect(() => {
+    // Load local order receipt from sessionStorage / localStorage
+    try {
+      const savedLast = sessionStorage.getItem('alpha_last_checkout_order')
+      if (savedLast) {
+        const parsed = JSON.parse(savedLast)
+        setLocalOrder(parsed)
+      } else {
+        const orders = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
+        const targetId = orderRef.replace('ALPH-', 'ORD-')
+        const found = Array.isArray(orders)
+          ? orders.find((o: any) => o.id === targetId || o.orderRef === orderRef || o.id === orderRef)
+          : null
+        if (found) setLocalOrder(found)
+      }
+    } catch (e) {}
+
     if (sessionId) {
       fetch(`/api/checkout/stripe/verify?session_id=${sessionId}`)
         .then((res) => res.json())
@@ -75,7 +120,9 @@ function SuccessContent() {
               const savedLast = sessionStorage.getItem('alpha_last_checkout_order')
               if (savedLast) {
                 const parsed = JSON.parse(savedLast)
-                parsed.status = 'Paid'
+                parsed.status = 'Processing'
+                parsed.paymentStatus = 'Paid'
+                setLocalOrder(parsed)
                 const existing = JSON.parse(localStorage.getItem('alpha_orders_records') || '[]')
                 const filtered = Array.isArray(existing) ? existing.filter((o: any) => o.id !== parsed.id) : []
                 localStorage.setItem('alpha_orders_records', JSON.stringify([parsed, ...filtered]))
@@ -154,14 +201,14 @@ function SuccessContent() {
                 <span className="text-slate-400 block mb-0.5">Payment Method</span>
                 <span className="font-bold text-slate-900 flex items-center gap-1.5">
                   <CreditCard className="w-4 h-4 text-[#96161B]" />
-                  <span>Direct Credit / Debit Card (Stripe)</span>
+                  <span>{localOrder?.paymentMethod || 'Direct Credit / Debit Card'}</span>
                 </span>
               </div>
 
               <div>
                 <span className="text-slate-400 block mb-0.5">Amount Paid</span>
-                <span className="font-black text-slate-900 text-sm text-emerald-700">
-                  ${details?.amount_total?.toFixed(2) || '55.00'} USD
+                <span className="font-black text-sm text-emerald-700">
+                  ${(details?.amount_total ?? localOrder?.total ?? 55.0).toFixed(2)} USD
                 </span>
               </div>
 
@@ -182,10 +229,45 @@ function SuccessContent() {
               </div>
             </div>
 
-            {details?.customer_email && (
-              <div className="pt-3 border-t border-slate-200/70 text-xs">
-                <span className="text-slate-400 block mb-0.5">Confirmation Sent To:</span>
-                <span className="font-bold text-slate-800">{details.customer_email}</span>
+            {(localOrder || details?.customer_email) && (
+              <div className="pt-3 border-t border-slate-200/70 grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-400 block mb-0.5">Customer & Contact</span>
+                  <span className="font-bold text-slate-800 block">{localOrder?.customerName || 'Verified Customer'}</span>
+                  <span className="text-slate-600 block">{details?.customer_email || localOrder?.customerEmail}</span>
+                  {localOrder?.customerPhone && (
+                    <span className="text-slate-600 block">{localOrder.customerPhone}</span>
+                  )}
+                </div>
+                {localOrder?.customerAddress && (
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Delivery Address</span>
+                    <span className="font-semibold text-slate-800 block">
+                      {localOrder.customerAddress}
+                    </span>
+                    <span className="text-slate-600 block">
+                      {[localOrder.customerCity, localOrder.customerState, localOrder.customerZip].filter(Boolean).join(', ')}
+                    </span>
+                    <span className="text-slate-600 block">{localOrder.customerCountry || 'United States'}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {localOrder?.items && localOrder.items.length > 0 && (
+              <div className="pt-3 border-t border-slate-200/70 space-y-2 text-xs">
+                <span className="text-slate-400 block font-bold uppercase text-[10px]">Ordered Products</span>
+                {localOrder.items.map((item: any) => (
+                  <div key={item.id} className="flex items-center justify-between bg-white px-3 py-2 rounded-xl border border-slate-200/80">
+                    <div>
+                      <span className="font-bold text-slate-900 block">{item.title}</span>
+                      <span className="text-[11px] text-slate-500">
+                        SKU: {item.sku} • Size: {item.size || 'Standard'} • Qty: {item.quantity}
+                      </span>
+                    </div>
+                    <span className="font-black text-slate-900">${Number(item.totalPrice || 0).toFixed(2)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </div>

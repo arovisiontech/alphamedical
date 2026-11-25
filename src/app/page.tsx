@@ -15,6 +15,7 @@ import CompliancesPromoSection from '@/src/components/public/CompliancesPromoSec
 import OrderProcessSection from '@/src/components/public/OrderProcessSection'
 import DiscountProductsSection from '@/src/components/public/DiscountProductsSection'
 import FaqBulkInquirySection from '@/src/components/public/FaqBulkInquirySection'
+import CustomerReviewsSection from '@/src/components/public/CustomerReviewsSection'
 import ScrollAnimationObserver from '@/src/components/public/ScrollAnimationObserver'
 import PublicFooter from '@/src/components/public/PublicFooter'
 import PublicSearchModal from '@/src/components/public/PublicSearchModal'
@@ -97,6 +98,11 @@ export default function Home() {
       {/* 13. FAQ & BULK INQUIRY LUXURY SECTION (MATCHING SCREENSHOT 1) */}
       <div className="reveal-scale">
         <FaqBulkInquirySection />
+      </div>
+
+      {/* 13b. VERIFIED 5-STAR CUSTOMER REVIEWS SECTION */}
+      <div className="reveal-on-scroll">
+        <CustomerReviewsSection />
       </div>
 
       {/* 14. FOOTER */}

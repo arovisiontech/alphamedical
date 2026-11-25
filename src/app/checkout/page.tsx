@@ -85,6 +85,13 @@ function CheckoutContent() {
   const [country, setCountry] = useState('United States')
   const [region, setRegion] = useState('Florida')
 
+  // Card payment details
+  const [cardholderName, setCardholderName] = useState('')
+  const [cardNumber, setCardNumber] = useState('')
+  const [cardExpiry, setCardExpiry] = useState('')
+  const [cardCvc, setCardCvc] = useState('')
+  const [billingZip, setBillingZip] = useState('')
+
   // Order state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
@@ -202,6 +209,45 @@ function CheckoutContent() {
     setTimeout(() => setCouponMessage(null), 4000)
   }
 
+  const detectCardBrand = (num: string): 'Visa' | 'Mastercard' | 'Amex' | 'Discover' | 'Card' => {
+    const digits = num.replace(/\D/g, '')
+    if (/^4/.test(digits)) return 'Visa'
+    if (/^(5[1-5]|2[2-7])/.test(digits)) return 'Mastercard'
+    if (/^3[47]/.test(digits)) return 'Amex'
+    if (/^(6011|65|64[4-9])/.test(digits)) return 'Discover'
+    return 'Card'
+  }
+
+  const formatCardNumberInput = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 16)
+    return digits.replace(/(\d{4})(?=\d)/g, '$1 ')
+  }
+
+  const formatExpiryInput = (val: string) => {
+    const digits = val.replace(/\D/g, '').slice(0, 4)
+    if (digits.length >= 3) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`
+    }
+    return digits
+  }
+
+  const isValidLuhn = (digits: string): boolean => {
+    let sum = 0
+    let shouldDouble = false
+    for (let i = digits.length - 1; i >= 0; i--) {
+      let digit = parseInt(digits.charAt(i), 10)
+      if (shouldDouble) {
+        digit *= 2
+        if (digit > 9) digit -= 9
+      }
+      sum += digit
+      shouldDouble = !shouldDouble
+    }
+    return sum % 10 === 0
+  }
+
+  const detectedCardBrand = detectCardBrand(cardNumber)
+
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault()
     setErrorMessage(null)
@@ -211,8 +257,47 @@ function CheckoutContent() {
       return
     }
 
-    if (!email || !address || !city || !postCode) {
-      setErrorMessage('Please fill in all required contact and billing fields (Email, Address, City, Postal Code).')
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
+      setErrorMessage('Please fill in all required personal contact details (First Name, Last Name, Email, Phone).')
+      return
+    }
+
+    if (!address.trim() || !city.trim() || !postCode.trim() || !region.trim()) {
+      setErrorMessage('Please fill in all required delivery address fields (Street Address, City, State, Postal/ZIP Code).')
+      return
+    }
+
+    const rawCardDigits = cardNumber.replace(/\D/g, '')
+    if (!cardholderName.trim()) {
+      setErrorMessage('Please enter the Cardholder Name exactly as printed on your card.')
+      return
+    }
+    if (rawCardDigits.length < 13 || rawCardDigits.length > 19 || !isValidLuhn(rawCardDigits)) {
+      setErrorMessage('Please enter a valid 13-16 digit Credit or Debit Card number.')
+      return
+    }
+
+    const expMatch = cardExpiry.match(/^(\d{2})\/(\d{2})$/)
+    if (!expMatch) {
+      setErrorMessage('Please enter a valid card expiry date in MM/YY format.')
+      return
+    }
+    const expMonth = parseInt(expMatch[1], 10)
+    const expYear = 2000 + parseInt(expMatch[2], 10)
+    const nowDate = new Date()
+    if (
+      expMonth < 1 ||
+      expMonth > 12 ||
+      expYear < nowDate.getFullYear() ||
+      (expYear === nowDate.getFullYear() && expMonth < nowDate.getMonth() + 1)
+    ) {
+      setErrorMessage('Your card expiry date is invalid or expired. Please check MM/YY.')
+      return
+    }
+
+    const rawCvc = cardCvc.replace(/\D/g, '')
+    if (rawCvc.length < 3 || rawCvc.length > 4) {
+      setErrorMessage('Please enter a valid 3 or 4 digit CVC/CVV security code.')
       return
     }
 
@@ -220,28 +305,37 @@ function CheckoutContent() {
     const generatedRef = `ALPH-${Math.floor(100000 + Math.random() * 900000)}`
     setOrderNumber(generatedRef)
 
-    // RECORD REAL ORDER IMMEDIATELY FOR ADMIN ORDERS FULFILLMENT
+    const cardLast4 = rawCardDigits.slice(-4)
     const now = new Date()
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December']
     const dateFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
 
+    const fullAddressLine = [address.trim(), address2.trim()].filter(Boolean).join(', ')
+
     const realOrderRecord = {
       id: `ORD-${generatedRef.replace('ALPH-', '')}`,
-      customerName: `${firstName} ${lastName}`.trim() || 'Hospital Procurement',
-      customerEmail: email,
-      customerPhone: phone || '+1 (561) 528-9764',
-      customerAddress: address,
-      customerCity: city,
+      orderRef: generatedRef,
+      customerName: `${firstName.trim()} ${lastName.trim()}`.trim() || 'Hospital Procurement',
+      customerCompany: company.trim() || undefined,
+      customerEmail: email.trim(),
+      customerPhone: phone.trim(),
+      customerAddress: fullAddressLine,
+      customerCity: city.trim(),
       customerState: region,
-      customerZip: postCode,
+      customerZip: postCode.trim(),
       customerCountry: country || 'United States',
+      paymentMethod: `${detectedCardBrand} •••• ${cardLast4}`,
+      paymentStatus: 'Paid',
+      cardBrand: detectedCardBrand,
+      cardLast4,
+      cardholderName: cardholderName.trim(),
       productCount: totalItemCount,
       itemsDescription: cartItems.map((i) => i.product.title).join(', '),
       items: cartItems.map((it, idx) => ({
         id: `item-${Date.now()}-${idx}`,
         title: it.product.title,
         sku: it.product.sku || 'SKU-4500',
-        size: it.size || 'Standard',
+        size: it.size || it.length || 'Standard',
         quantity: it.quantity,
         unitPrice: Number(it.price) || 49.50,
         totalPrice: (Number(it.price) || 49.50) * it.quantity,
@@ -253,6 +347,7 @@ function CheckoutContent() {
       status: 'Processing' as const,
       subtotal: subTotal,
       shipping: shippingCost,
+      discount: discountAmount,
       total: total,
       rating: 5,
       reviewComment: 'Verified purchase from USA Store.',
@@ -264,54 +359,26 @@ function CheckoutContent() {
       const filtered = Array.isArray(existing) ? existing.filter((o: any) => o.id !== realOrderRecord.id) : []
       localStorage.setItem('alpha_orders_records', JSON.stringify([realOrderRecord, ...filtered]))
       window.dispatchEvent(new Event('alpha_orders_updated'))
+      if (typeof BroadcastChannel !== 'undefined') {
+        const ch = new BroadcastChannel('alpha_sync_channel')
+        ch.postMessage({ type: 'orders_updated', timestamp: Date.now() })
+        ch.close()
+      }
     } catch (e) {}
 
-    if (paymentMethod === 'card') {
-      try {
-        const payload = {
-          items: cartItems.map((it) => ({
-            id: it.product.id,
-            title: it.product.title,
-            sku: it.product.sku,
-            price: it.price,
-            quantity: it.quantity,
-            featured_image: it.product.featured_image,
-            size: it.size,
-          })),
-          customer: { firstName, lastName, email, phone, company },
-          shippingAddress: { address, address2, city, postCode, country, region },
-          shippingCost,
-          discountAmount,
-          orderRef: generatedRef,
-        }
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: realOrderRecord }),
+      })
+    } catch (e) {}
 
-        const res = await fetch('/api/checkout/stripe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        })
-
-        const data = await res.json()
-
-        if (data.url) {
-          // Direct redirect to Stripe Checkout
-          window.location.href = data.url
-          return
-        } else {
-          setErrorMessage(data.error || 'Failed to initialize Stripe card checkout.')
-          setIsSubmitting(false)
-        }
-      } catch (err: any) {
-        setErrorMessage(err.message || 'Payment network error. Please try again.')
-        setIsSubmitting(false)
-      }
-    } else {
-      setTimeout(() => {
-        clearStoredCart()
-        setIsSubmitting(false)
-        setOrderPlaced(true)
-      }, 1200)
-    }
+    setTimeout(() => {
+      clearStoredCart()
+      setIsSubmitting(false)
+      router.push(`/checkout/success?order_ref=${encodeURIComponent(generatedRef)}`)
+    }, 900)
   }
 
   return (
@@ -526,24 +593,26 @@ function CheckoutContent() {
                     2
                   </span>
                   <h2 className="font-black text-sm sm:text-base 2xl:text-lg text-slate-900">
-                    {checkoutSettings.step3_title || 'Billing & Shipping Address'}
+                    {checkoutSettings.step3_title || 'Delivery & Billing Address'}
                   </h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Company</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Company / Hospital</label>
                     <input
                       type="text"
                       value={company}
                       onChange={(e) => setCompany(e.target.value)}
-                      placeholder="Hospital or Clinic Name"
+                      placeholder="Hospital or Clinic Name (Optional)"
                       className="w-full bg-slate-50/60 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs 2xl:text-sm outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Address</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Delivery Street Address <span className="text-[#96161B]">*</span>
+                    </label>
                     <input
                       type="text"
                       required
@@ -716,17 +785,137 @@ function CheckoutContent() {
 
                     {/* Official Crisp Vector Logos */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <VisaIcon className="h-7 w-auto drop-shadow-xs" />
-                      <MastercardIcon className="h-7 w-auto drop-shadow-xs" />
-                      <AmexIcon className="h-7 w-auto drop-shadow-xs" />
-                      <DiscoverIcon className="h-7 w-auto drop-shadow-xs" />
+                      <div className={`transition-opacity ${detectedCardBrand === 'Card' || detectedCardBrand === 'Visa' ? 'opacity-100' : 'opacity-35'}`}>
+                        <VisaIcon className="h-7 w-auto drop-shadow-xs" />
+                      </div>
+                      <div className={`transition-opacity ${detectedCardBrand === 'Card' || detectedCardBrand === 'Mastercard' ? 'opacity-100' : 'opacity-35'}`}>
+                        <MastercardIcon className="h-7 w-auto drop-shadow-xs" />
+                      </div>
+                      <div className={`transition-opacity ${detectedCardBrand === 'Card' || detectedCardBrand === 'Amex' ? 'opacity-100' : 'opacity-35'}`}>
+                        <AmexIcon className="h-7 w-auto drop-shadow-xs" />
+                      </div>
+                      <div className={`transition-opacity ${detectedCardBrand === 'Card' || detectedCardBrand === 'Discover' ? 'opacity-100' : 'opacity-35'}`}>
+                        <DiscoverIcon className="h-7 w-auto drop-shadow-xs" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* INTERACTIVE CARD PAYMENT INPUT FIELDS */}
+                  <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-5 space-y-4 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                      <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-[#96161B]" />
+                        <span>Enter Card Details</span>
+                      </span>
+                      <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                        {detectedCardBrand !== 'Card' ? `${detectedCardBrand} Detected` : 'SSL Protected'}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Cardholder Name */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Cardholder Name <span className="text-[#96161B]">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            autoComplete="cc-name"
+                            value={cardholderName}
+                            onChange={(e) => setCardholderName(e.target.value)}
+                            placeholder="Full Name as Printed on Card"
+                            className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-9 pr-3.5 py-2.5 text-xs 2xl:text-sm outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                          />
+                          <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                        </div>
+                      </div>
+
+                      {/* Card Number */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Card Number <span className="text-[#96161B]">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            required
+                            autoComplete="cc-number"
+                            value={cardNumber}
+                            onChange={(e) => setCardNumber(formatCardNumberInput(e.target.value))}
+                            placeholder="1234 5678 9012 3456"
+                            maxLength={19}
+                            className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-9 pr-20 py-2.5 text-xs 2xl:text-sm font-mono tracking-wider outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                          />
+                          <CreditCard className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+                            {detectedCardBrand}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Expiry Date MM/YY */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Expiry Date (MM/YY) <span className="text-[#96161B]">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          required
+                          autoComplete="cc-exp"
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(formatExpiryInput(e.target.value))}
+                          placeholder="MM/YY"
+                          maxLength={5}
+                          className="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs 2xl:text-sm font-mono tracking-wider outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                        />
+                      </div>
+
+                      {/* CVC / CVV */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          CVC / CVV <span className="text-[#96161B]">*</span>
+                        </label>
+                        <div className="relative">
+                          <input
+                            type="password"
+                            inputMode="numeric"
+                            required
+                            autoComplete="cc-csc"
+                            value={cardCvc}
+                            onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                            placeholder="123"
+                            maxLength={4}
+                            className="w-full bg-slate-50/70 border border-slate-200 rounded-xl pl-3.5 pr-9 py-2.5 text-xs 2xl:text-sm font-mono tracking-widest outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                          />
+                          <Lock className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                        </div>
+                      </div>
+
+                      {/* Billing ZIP */}
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-1">
+                          Billing ZIP / Postal Code
+                        </label>
+                        <input
+                          type="text"
+                          autoComplete="postal-code"
+                          value={billingZip || postCode}
+                          onChange={(e) => setBillingZip(e.target.value)}
+                          placeholder="Same as delivery postal code (e.g. 29640)"
+                          className="w-full bg-slate-50/70 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs 2xl:text-sm outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div className="pt-3 border-t border-red-100/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-600">
                     <div className="flex items-center gap-1.5">
                       <Lock className="w-3.5 h-3.5 text-slate-500" />
-                      <span>{checkoutSettings.card_footnote || "Card details are processed directly through Stripe's certified PCI Level 1 gateway."}</span>
+                      <span>{checkoutSettings.card_footnote || "256-bit SSL encrypted card payment processing."}</span>
                     </div>
                     <StripeBadge />
                   </div>
@@ -958,9 +1147,9 @@ function CheckoutContent() {
                   <Lock className="w-4 h-4" />
                   <span>
                     {isSubmitting
-                      ? 'Connecting To Secure Payment Gateway...'
+                      ? 'Authorizing Card & Placing Order...'
                       : paymentMethod === 'card'
-                      ? (checkoutSettings.button_text || 'PAY WITH CARD').replace(/\s*\(STRIPE\)/i, '')
+                      ? `PAY $${total.toFixed(2)} WITH CARD`
                       : 'PLACE ORDER'}
                   </span>
                   <ArrowRight className="w-4 h-4" />

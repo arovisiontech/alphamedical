@@ -31,7 +31,7 @@ import {
   Trash2,
   Plus,
 } from 'lucide-react'
-import { getStoredProducts } from '@/src/lib/dataStore'
+import { getStoredProducts, getStoredReviews, INITIAL_REVIEWS_SEED, StoreReviewItem } from '@/src/lib/dataStore'
 import SafeProductImage from '@/src/components/public/SafeProductImage'
 
 interface MonthlyRow {
@@ -56,7 +56,9 @@ export interface OrderItemDetail {
 
 export interface OrderItemRecord {
   id: string
+  orderRef?: string
   customerName: string
+  customerCompany?: string
   customerEmail: string
   customerPhone: string
   customerAddress?: string
@@ -64,6 +66,8 @@ export interface OrderItemRecord {
   customerState?: string
   customerZip?: string
   customerCountry?: string
+  paymentMethod?: string
+  paymentStatus?: string
   productCount: number
   itemsDescription: string
   items: OrderItemDetail[]
@@ -324,6 +328,7 @@ export default function AdminStatisticsPage() {
   const [totalProducts, setTotalProducts] = useState(0)
   const [currency, setCurrency] = useState<'USD' | 'PKR'>('USD')
   const [orders, setOrders] = useState<OrderItemRecord[]>(INITIAL_ORDERS_DATA)
+  const [reviews, setReviews] = useState<StoreReviewItem[]>(INITIAL_REVIEWS_SEED)
   const [selectedOrder, setSelectedOrder] = useState<OrderItemRecord | null>(null)
   const [zoomedImage, setZoomedImage] = useState<{ src: string; title: string; sku?: string; size?: string } | null>(null)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Dispatched' | 'Delivered' | 'Failed' | 'Processing'>('All')
@@ -333,8 +338,9 @@ export default function AdminStatisticsPage() {
     // Sync live total products from store
     const prods = getStoredProducts()
     setTotalProducts(prods.length)
+    setReviews(getStoredReviews())
 
-    // Load custom orders if in storage
+    // Load custom orders from localStorage + merge with server /api/orders
     const syncOrders = () => {
       if (typeof window !== 'undefined') {
         try {
@@ -351,12 +357,42 @@ export default function AdminStatisticsPage() {
       }
     }
 
+    const syncReviews = () => {
+      setReviews(getStoredReviews())
+    }
+
     syncOrders()
+
+    fetch('/api/orders?t=' + Date.now(), { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverOrders) => {
+        if (Array.isArray(serverOrders) && serverOrders.length > 0) {
+          try {
+            const saved = localStorage.getItem('alpha_orders_records')
+            const localList: OrderItemRecord[] = saved ? JSON.parse(saved) : []
+            const map = new Map<string, OrderItemRecord>()
+            serverOrders.forEach((o: OrderItemRecord) => o && o.id && map.set(o.id, o))
+            localList.forEach((o: OrderItemRecord) => o && o.id && !map.has(o.id) && map.set(o.id, o))
+            if (map.size === 0) {
+              INITIAL_ORDERS_DATA.forEach((o) => map.set(o.id, o))
+            }
+            const merged = Array.from(map.values())
+            setOrders(merged)
+            localStorage.setItem('alpha_orders_records', JSON.stringify(merged))
+          } catch (e) {}
+        }
+      })
+      .catch(() => {})
+
     window.addEventListener('alpha_orders_updated', syncOrders)
+    window.addEventListener('alpha_reviews_updated', syncReviews)
     window.addEventListener('storage', syncOrders)
+    window.addEventListener('storage', syncReviews)
     return () => {
       window.removeEventListener('alpha_orders_updated', syncOrders)
+      window.removeEventListener('alpha_reviews_updated', syncReviews)
       window.removeEventListener('storage', syncOrders)
+      window.removeEventListener('storage', syncReviews)
     }
   }, [])
 
@@ -439,6 +475,11 @@ export default function AdminStatisticsPage() {
     }
     if (typeof window !== 'undefined') {
       localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
+      fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'update_status', id, status: newStatus }),
+      }).catch(() => {})
     }
   }
 
@@ -679,7 +720,12 @@ export default function AdminStatisticsPage() {
 
                         <td className="py-3.5 px-4 min-w-[180px]">
                           <div className="font-extrabold text-slate-900">{ord.customerName}</div>
-                          <div className="text-[11px] text-slate-400">{ord.customerPhone}</div>
+                          <div className="text-[11px] text-slate-500">{ord.customerPhone}</div>
+                          {ord.customerCity && (
+                            <div className="text-[10px] text-slate-400">
+                              {ord.customerCity}{ord.customerState ? `, ${ord.customerState}` : ''}
+                            </div>
+                          )}
                         </td>
 
                         {/* PRODUCT THUMBNAIL, TITLE, SIZE, QUANTITY */}
@@ -786,6 +832,66 @@ export default function AdminStatisticsPage() {
         </div>
 
         {/* =========================================================================
+            SECTION 1B: LIVE WEBSITE 5-STAR REVIEWS & CUSTOMER FEEDBACK
+        ========================================================================= */}
+        <div className="bg-white rounded-3xl border border-slate-200/90 shadow-sm p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div>
+              <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+                <Star className="w-5 h-5 fill-amber-400 text-amber-400" />
+                <span>Website Customer 5-Star Reviews ({reviews.length})</span>
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Live customer ratings and comments submitted on the storefront, product pages, and checkout receipts.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 bg-amber-50 border border-amber-200 text-amber-900 text-xs font-black px-3 py-1.5 rounded-xl">
+              <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+              <span>
+                Avg:{' '}
+                {reviews.length > 0
+                  ? (reviews.reduce((s, r) => s + (Number(r.rating) || 5), 0) / reviews.length).toFixed(1)
+                  : '5.0'}{' '}
+                / 5.0
+              </span>
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reviews.slice(0, 6).map((rev) => (
+              <div
+                key={rev.id}
+                className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-0.5">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <Star
+                        key={s}
+                        className={`w-3.5 h-3.5 ${
+                          s <= (rev.rating || 5) ? 'fill-amber-400 text-amber-400' : 'text-slate-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-semibold">{rev.date}</span>
+                </div>
+                <div className="font-extrabold text-slate-900 line-clamp-1">{rev.title}</div>
+                <p className="text-slate-600 italic line-clamp-3">&ldquo;{rev.comment}&rdquo;</p>
+                <div className="pt-2 border-t border-slate-200/70 flex items-center justify-between text-[11px]">
+                  <span className="font-bold text-slate-800 truncate">{rev.author}</span>
+                  {rev.productTitle && (
+                    <span className="text-[10px] font-semibold text-[#96161B] truncate max-w-[140px]">
+                      {rev.productTitle}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* =========================================================================
             RICH VIEW ORDER DETAILS MODAL (WITH PRODUCTS, IMAGES, SIZES & 5-STAR REVIEWS)
         ========================================================================= */}
         {selectedOrder && (
@@ -832,12 +938,23 @@ export default function AdminStatisticsPage() {
                   </div>
                   <div className="space-y-1 pt-0.5 text-slate-700">
                     <div><strong className="text-slate-900">Buyer:</strong> {selectedOrder.customerName}</div>
+                    {selectedOrder.customerCompany && (
+                      <div><strong className="text-slate-900">Company:</strong> {selectedOrder.customerCompany}</div>
+                    )}
                     <div><strong className="text-slate-900">Email:</strong> {selectedOrder.customerEmail}</div>
                     <div><strong className="text-slate-900">Phone:</strong> {selectedOrder.customerPhone}</div>
                     <div>
                       <strong className="text-slate-900">Shipping Address:</strong>{' '}
                       {selectedOrder.customerAddress || '129 Fleetwood Drive'}, {selectedOrder.customerCity || 'Easley'}, {selectedOrder.customerState || 'South Carolina'} {selectedOrder.customerZip || '29640'}, {selectedOrder.customerCountry || 'United States'}
                     </div>
+                    {selectedOrder.paymentMethod && (
+                      <div>
+                        <strong className="text-slate-900">Payment:</strong>{' '}
+                        <span className="text-emerald-700 font-bold">
+                          {selectedOrder.paymentStatus || 'Paid'} ({selectedOrder.paymentMethod})
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

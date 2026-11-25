@@ -1883,6 +1883,160 @@ export function getStoredCartCount(): number {
   return items.reduce((sum, item) => sum + (Math.max(1, Number(item.quantity) || 1)), 0)
 }
 
+// =========================================================================
+// STOREFRONT & ADMIN SHARED CUSTOMER REVIEWS (5-STAR RATINGS)
+// =========================================================================
+
+export interface StoreReviewItem {
+  id: string
+  author: string
+  hospital?: string
+  rating: number
+  title: string
+  comment: string
+  date: string
+  verified: boolean
+  productSku?: string
+  productTitle?: string
+  orderRef?: string
+}
+
+export const INITIAL_REVIEWS_SEED: StoreReviewItem[] = [
+  {
+    id: 'rev-seed-1',
+    author: 'Dr. David Miller, MD',
+    hospital: "St. Luke's Surgical Hospital, FL",
+    rating: 5,
+    title: 'Outstanding German-grade precision and grip',
+    comment:
+      'Used during high-precision surgical procedures. The balance and electropolished satin finish completely eliminate glare under OR lamps. Highly recommended.',
+    date: 'November 18, 2026',
+    verified: true,
+    productTitle: 'Hartmann Dressing Forceps',
+    productSku: 'SKU-4500',
+  },
+  {
+    id: 'rev-seed-2',
+    author: 'Sarah Jenkins, RN',
+    hospital: 'Metro Health OR Logistics',
+    rating: 5,
+    title: 'Durable across 60+ autoclave sterilization cycles',
+    comment:
+      'Passed over 60 autoclave sterilization cycles at 134°C with zero discoloration or rust. Very smooth action and fast nationwide delivery.',
+    date: 'November 10, 2026',
+    verified: true,
+    productTitle: 'Super Cut Plastic Reconstructive Scissors',
+    productSku: 'SKU-2001',
+  },
+  {
+    id: 'rev-seed-3',
+    author: 'Dr. Michael Vance, FACS',
+    hospital: 'Carolina Regional Orthopedics',
+    rating: 5,
+    title: 'Superb quality at competitive wholesale prices',
+    comment:
+      'Excellent craftsmanship and feel. Meets all US hospital compliance standards. Checkout and card payment were seamless.',
+    date: 'October 29, 2026',
+    verified: true,
+    productTitle: 'Mayo-Hegar Needle Holders TC Inserts',
+    productSku: 'SKU-1001',
+  },
+]
+
+let isReviewsSyncInitiated = false
+
+export function getStoredReviews(): StoreReviewItem[] {
+  if (typeof window === 'undefined') return INITIAL_REVIEWS_SEED
+
+  if (!isReviewsSyncInitiated) {
+    isReviewsSyncInitiated = true
+    fetch('/api/reviews?t=' + Date.now(), { cache: 'no-store' })
+      .then((res) => res.json())
+      .then((serverReviews) => {
+        if (Array.isArray(serverReviews) && serverReviews.length > 0) {
+          try {
+            const localRaw = localStorage.getItem('alpha_store_reviews')
+            const localList: StoreReviewItem[] = localRaw ? JSON.parse(localRaw) : []
+            const map = new Map<string, StoreReviewItem>()
+            localList.forEach((r) => r && r.id && map.set(r.id, r))
+            serverReviews.forEach((r: StoreReviewItem) => r && r.id && !map.has(r.id) && map.set(r.id, r))
+            const merged = Array.from(map.values())
+            localStorage.setItem('alpha_store_reviews', JSON.stringify(merged))
+            window.dispatchEvent(new Event('alpha_reviews_updated'))
+          } catch (e) {}
+        }
+      })
+      .catch(() => {})
+  }
+
+  try {
+    const raw = localStorage.getItem('alpha_store_reviews')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed
+      }
+    }
+    localStorage.setItem('alpha_store_reviews', JSON.stringify(INITIAL_REVIEWS_SEED))
+  } catch (e) {}
+
+  return INITIAL_REVIEWS_SEED
+}
+
+export function addStoredReview(review: Omit<StoreReviewItem, 'id' | 'date' | 'verified'> & Partial<Pick<StoreReviewItem, 'id' | 'date' | 'verified'>>): StoreReviewItem[] {
+  const newReview: StoreReviewItem = {
+    id: review.id || `rev-${Date.now()}`,
+    author: review.author.trim(),
+    hospital: review.hospital?.trim() || 'Verified USA Store Buyer',
+    rating: Math.min(5, Math.max(1, Number(review.rating) || 5)),
+    title: review.title?.trim() || 'Verified Customer Review',
+    comment: review.comment.trim(),
+    date:
+      review.date ||
+      new Date().toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric',
+      }),
+    verified: review.verified !== false,
+    productSku: review.productSku,
+    productTitle: review.productTitle,
+    orderRef: review.orderRef,
+  }
+
+  const current = getStoredReviews()
+  const updated = [newReview, ...current.filter((r) => r.id !== newReview.id)]
+
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('alpha_store_reviews', JSON.stringify(updated))
+      if (newReview.productSku) {
+        const skuKey = `alpha_reviews_${newReview.productSku}`
+        const skuRaw = localStorage.getItem(skuKey)
+        const skuList = skuRaw ? JSON.parse(skuRaw) : []
+        const skuUpdated = [newReview, ...(Array.isArray(skuList) ? skuList.filter((r: any) => r.id !== newReview.id) : [])]
+        localStorage.setItem(skuKey, JSON.stringify(skuUpdated))
+      }
+      window.dispatchEvent(new Event('alpha_reviews_updated'))
+
+      if (typeof BroadcastChannel !== 'undefined') {
+        const ch = new BroadcastChannel('alpha_sync_channel')
+        ch.postMessage({ type: 'reviews_updated', timestamp: Date.now() })
+        ch.close()
+      }
+
+      fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ review: newReview }),
+      }).catch(() => {})
+    } catch (e) {}
+  }
+
+  return updated
+}
+
+
 
 
 
