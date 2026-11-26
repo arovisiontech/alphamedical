@@ -26,6 +26,7 @@ import {
   ShoppingBag,
   ShoppingCart,
   Trash2,
+  MessageCircle,
 } from 'lucide-react'
 import {
   getStoredProducts,
@@ -75,6 +76,7 @@ function CheckoutContent() {
   const [lastName, setLastName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [whatsapp, setWhatsapp] = useState('')
 
   // Address (default to United States for USA store)
   const [company, setCompany] = useState('')
@@ -399,8 +401,8 @@ function CheckoutContent() {
       return
     }
 
-    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim()) {
-      setErrorMessage('Please fill in all required personal contact details (First Name, Last Name, Email, Phone).')
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || !phone.trim() || !whatsapp.trim()) {
+      setErrorMessage('Please fill in all required personal contact details (First Name, Last Name, Email, Phone, and WhatsApp Number).')
       return
     }
 
@@ -509,6 +511,28 @@ function CheckoutContent() {
 
       const finalTax = round2(intentData.taxAmount ?? taxAmount)
       const finalTotal = round2(intentData.amount ?? total)
+      const itemsDesc = cartItems.map((i) => i.product.title).join(', ')
+
+      // Trigger ALPHA Medical Supplies WhatsApp confirmation notification
+      let whatsappStatus = 'Pending'
+      let whatsappUrl = ''
+      try {
+        const waRes = await fetch('/api/whatsapp/send-order-confirmation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderRef: generatedRef,
+            customerName: `${firstName.trim()} ${lastName.trim()}`.trim(),
+            customerWhatsApp: whatsapp.trim(),
+            itemsDescription: itemsDesc,
+            total: finalTotal,
+            origin: window.location.origin,
+          }),
+        })
+        const waData = await waRes.json()
+        if (waData?.whatsappStatus) whatsappStatus = waData.whatsappStatus
+        if (waData?.waMeUrl) whatsappUrl = waData.waMeUrl
+      } catch (e) {}
 
       const realOrderRecord = {
         id: `ORD-${generatedRef.replace('ALPH-', '')}`,
@@ -519,6 +543,10 @@ function CheckoutContent() {
         customerCompany: company.trim() || undefined,
         customerEmail: email.trim(),
         customerPhone: phone.trim(),
+        customerWhatsApp: whatsapp.trim(),
+        whatsappStatus,
+        whatsappUrl,
+        customerDecision: 'Awaiting Confirmation',
         customerAddress: fullAddressLine,
         customerCity: city.trim(),
         customerState: region,
@@ -785,6 +813,26 @@ function CheckoutContent() {
                         className="w-full bg-slate-50/60 border border-slate-200 rounded-xl pl-9 pr-3 py-2.5 text-xs 2xl:text-sm outline-none focus:border-[#96161B] focus:bg-white text-slate-900"
                       />
                       <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      WhatsApp Number <span className="text-[#96161B]">*</span>
+                      <span className="text-[11px] font-normal text-emerald-700 ml-1.5">
+                        (Required for ALPHA Medical Supplies order confirmation &amp; proceed/cancel alerts)
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="tel"
+                        required
+                        value={whatsapp}
+                        onChange={(e) => setWhatsapp(e.target.value)}
+                        placeholder="+1 (561) 528 9764 (with country code)"
+                        className="w-full bg-emerald-50/40 border border-emerald-300 rounded-xl pl-9 pr-3 py-2.5 text-xs 2xl:text-sm outline-none focus:border-emerald-600 focus:bg-white text-slate-900"
+                      />
+                      <MessageCircle className="w-4 h-4 text-emerald-600 absolute left-3 top-1/2 -translate-y-1/2" />
                     </div>
                   </div>
                 </div>

@@ -61,6 +61,10 @@ export interface OrderItemRecord {
   customerCompany?: string
   customerEmail: string
   customerPhone: string
+  customerWhatsApp?: string
+  whatsappStatus?: string
+  whatsappUrl?: string
+  customerDecision?: string
   customerAddress?: string
   customerCity?: string
   customerState?: string
@@ -947,6 +951,45 @@ export default function AdminStatisticsPage() {
                     )}
                     <div><strong className="text-slate-900">Email:</strong> {selectedOrder.customerEmail}</div>
                     <div><strong className="text-slate-900">Phone:</strong> {selectedOrder.customerPhone}</div>
+                    {selectedOrder.customerWhatsApp && (
+                      <div>
+                        <strong className="text-slate-900">WhatsApp:</strong>{' '}
+                        <span className="font-bold text-emerald-700">{selectedOrder.customerWhatsApp}</span>
+                        {selectedOrder.whatsappStatus && (
+                          <span className="ml-1.5 text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                            {selectedOrder.whatsappStatus}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {selectedOrder.customerDecision && (
+                      <div>
+                        <strong className="text-slate-900">Customer Decision:</strong>{' '}
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded text-[11px] ${
+                            selectedOrder.customerDecision.toLowerCase().includes('cancel')
+                              ? 'bg-red-100 text-red-700'
+                              : selectedOrder.customerDecision.toLowerCase().includes('proceed')
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {selectedOrder.customerDecision}
+                        </span>
+                      </div>
+                    )}
+                    {selectedOrder.whatsappUrl && (
+                      <div className="pt-1">
+                        <a
+                          href={selectedOrder.whatsappUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-[11px] transition-colors"
+                        >
+                          <span>Send / Open WhatsApp Message (ALPHA Medical)</span>
+                        </a>
+                      </div>
+                    )}
                     <div>
                       <strong className="text-slate-900">Shipping Address:</strong>{' '}
                       {selectedOrder.customerAddress || '129 Fleetwood Drive'}, {selectedOrder.customerCity || 'Easley'}, {selectedOrder.customerState || 'South Carolina'} {selectedOrder.customerZip || '29640'}, {selectedOrder.customerCountry || 'United States'}

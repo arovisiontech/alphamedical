@@ -22,9 +22,10 @@ export default function TrackOrderPage() {
   const [ordersList, setOrdersList] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [cancelReason, setCancelReason] = useState('Changed my mind')
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('Changed my mind')
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isConfirmingProceed, setIsConfirmingProceed] = useState(false)
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -49,6 +50,22 @@ export default function TrackOrderPage() {
       } catch (e) {}
 
       setOrdersList(local)
+      const params = new URLSearchParams(window.location.search)
+      const refParam = (params.get('ref') || '').trim().toUpperCase()
+      if (refParam) {
+        setOrderInput(refParam)
+        const altRef = refParam.replace('ALPH-', 'ORD-')
+        const matched = local.find(
+          (o) =>
+            o.id?.toUpperCase() === refParam ||
+            o.id?.toUpperCase() === altRef ||
+            o.orderRef?.toUpperCase() === refParam
+        )
+        if (matched) {
+          setSelectedOrder(matched)
+          return
+        }
+      }
       if (local.length > 0 && !selectedOrder) {
         setSelectedOrder(local[0])
       }
@@ -56,6 +73,30 @@ export default function TrackOrderPage() {
 
     loadOrders()
   }, [])
+
+  const handleConfirmProceed = async () => {
+    if (!selectedOrder) return
+    setIsConfirmingProceed(true)
+    const targetId = selectedOrder.id
+    const updatedOrder = {
+      ...selectedOrder,
+      customerDecision: 'Proceed Confirmed by Customer',
+      confirmedProceedAt: new Date().toISOString(),
+    }
+    try {
+      setSelectedOrder(updatedOrder)
+      const nextList = ordersList.map((o) => (o.id === targetId ? updatedOrder : o))
+      setOrdersList(nextList)
+      localStorage.setItem('alpha_orders_records', JSON.stringify(nextList))
+      window.dispatchEvent(new Event('alpha_orders_updated'))
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm_proceed', id: targetId }),
+      })
+    } catch (e) {}
+    setIsConfirmingProceed(false)
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -265,14 +306,33 @@ export default function TrackOrderPage() {
               </div>
 
               {selectedOrder.status !== 'Cancelled' && selectedOrder.status !== 'Delivered' ? (
-                <button
-                  type="button"
-                  onClick={() => setIsCancelModalOpen(true)}
-                  className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <XCircle className="w-4 h-4" />
-                  <span>Cancel This Order</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {selectedOrder.customerDecision !== 'Proceed Confirmed by Customer' ? (
+                    <button
+                      type="button"
+                      disabled={isConfirmingProceed}
+                      onClick={handleConfirmProceed}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>{isConfirmingProceed ? 'Confirming...' : 'Confirm & Proceed Order'}</span>
+                    </button>
+                  ) : (
+                    <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-xl font-bold text-xs inline-flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Proceed Confirmed</span>
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => setIsCancelModalOpen(true)}
+                    className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Cancel This Order</span>
+                  </button>
+                </div>
               ) : selectedOrder.status === 'Cancelled' ? (
                 <span className="text-xs font-bold text-red-600">
                   Cancelled ({selectedOrder.cancelReason || 'Cancelled by customer'})

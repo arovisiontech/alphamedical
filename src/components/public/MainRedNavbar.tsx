@@ -144,6 +144,7 @@ export default function MainRedNavbar() {
         },
       ],
     })
+    items.push({ name: 'Track / Cancel Order', href: '/track-order' })
     items.push({ name: 'Contact Us', href: '/contact' })
 
     return items

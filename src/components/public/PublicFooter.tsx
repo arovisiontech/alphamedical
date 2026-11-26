@@ -294,6 +294,7 @@ export default function PublicFooter() {
             <ul className="space-y-2.5 text-xs sm:text-sm font-medium text-slate-600">
               {[
                 { name: 'Dealer Locator', href: '/dealer-locator' },
+                { name: 'Track / Cancel Order', href: '/track-order' },
                 { name: 'Shipping & Deliver', href: '/shipping-delivery' },
                 { name: 'Returns & Cancellation Policy', href: '/returns-refunds' },
                 { name: 'Contact Form', href: '/contact' },
