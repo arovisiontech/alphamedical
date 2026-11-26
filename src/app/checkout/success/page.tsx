@@ -361,6 +361,26 @@ function SuccessContent() {
                     <span className="font-black text-slate-900">${Number(item.totalPrice || 0).toFixed(2)}</span>
                   </div>
                 ))}
+                <div className="bg-white px-3 py-2.5 rounded-xl border border-slate-200/80 space-y-1 text-[11px] text-slate-600">
+                  <div className="flex justify-between">
+                    <span>Sub-Total</span>
+                    <span className="font-bold text-slate-900">${Number(localOrder.subtotal || 0).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Shipping</span>
+                    <span className="font-bold text-slate-900">${Number(localOrder.shipping || 0).toFixed(2)}</span>
+                  </div>
+                  {typeof localOrder.tax === 'number' && (
+                    <div className="flex justify-between">
+                      <span>Tax (Stripe Automatic • Exclusive)</span>
+                      <span className="font-bold text-slate-900">${Number(localOrder.tax || 0).toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between pt-1 border-t border-slate-100 text-xs font-black text-slate-900">
+                    <span>Total Paid</span>
+                    <span className="text-[#96161B]">${Number(localOrder.total || 0).toFixed(2)} USD</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>

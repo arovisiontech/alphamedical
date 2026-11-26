@@ -98,6 +98,12 @@ function CheckoutContent() {
   const cardExpiryMountRef = useRef<HTMLDivElement | null>(null)
   const cardCvcMountRef = useRef<HTMLDivElement | null>(null)
 
+  // Stripe Automatic Tax (Tax Exclusive) state
+  const [taxAmount, setTaxAmount] = useState<number>(0)
+  const [isCalculatingTax, setIsCalculatingTax] = useState<boolean>(false)
+  const [taxCalculated, setTaxCalculated] = useState<boolean>(false)
+  const [taxBreakdown, setTaxBreakdown] = useState<Array<{ amount: number; rate: string; jurisdiction: string }>>([])
+
   // Order state
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [orderPlaced, setOrderPlaced] = useState(false)
@@ -266,7 +272,68 @@ function CheckoutContent() {
       ? 0.0
       : round2(checkoutSettings.shipping_cost ?? 15.00)
   const appliedDiscount = Math.min(round2(discountAmount), round2(subTotal + shippingCost))
-  const total = Math.max(0, round2(subTotal + shippingCost - appliedDiscount))
+  const total = Math.max(0, round2(subTotal + shippingCost - appliedDiscount + taxAmount))
+
+  // Live Stripe Automatic Tax calculation (Tax Exclusive) whenever address or cart changes
+  useEffect(() => {
+    const zip = postCode.trim()
+    if (cartItems.length === 0 || zip.length < 5) {
+      setTaxAmount(0)
+      setTaxCalculated(false)
+      setTaxBreakdown([])
+      setIsCalculatingTax(false)
+      return
+    }
+
+    let cancelled = false
+    setIsCalculatingTax(true)
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/checkout/calculate-tax', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            items: cartItems.map((it) => ({
+              id: it.product.id,
+              title: it.product.title,
+              sku: it.product.sku,
+              price: round2(Number(it.price ?? it.product?.price ?? 0)),
+              quantity: Math.max(1, Number(it.quantity) || 1),
+            })),
+            shippingCost,
+            discountAmount: appliedDiscount,
+            shippingAddress: {
+              address: address.trim(),
+              address2: address2.trim(),
+              city: city.trim(),
+              region,
+              postCode: zip,
+              country: country || 'United States',
+            },
+          }),
+        })
+        const data = await res.json()
+        if (!cancelled) {
+          setTaxAmount(round2(Number(data?.taxAmount) || 0))
+          setTaxCalculated(!data?.pendingAddress)
+          setTaxBreakdown(Array.isArray(data?.taxBreakdown) ? data.taxBreakdown : [])
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setTaxAmount(0)
+          setTaxCalculated(false)
+        }
+      } finally {
+        if (!cancelled) setIsCalculatingTax(false)
+      }
+    }, 450)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [cartItems, shippingCost, appliedDiscount, postCode, region, city, address, address2, country])
 
   const handleQuantityStep = (id: string, newQty: number) => {
     updateCartQuantity(id, newQty)
@@ -440,10 +507,14 @@ function CheckoutContent() {
       const dateFormatted = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`
       const fullAddressLine = [address.trim(), address2.trim()].filter(Boolean).join(', ')
 
+      const finalTax = round2(intentData.taxAmount ?? taxAmount)
+      const finalTotal = round2(intentData.amount ?? total)
+
       const realOrderRecord = {
         id: `ORD-${generatedRef.replace('ALPH-', '')}`,
         orderRef: generatedRef,
         stripePaymentIntentId: confirmResult.paymentIntent.id,
+        taxCalculationId: intentData.calculationId,
         customerName: `${firstName.trim()} ${lastName.trim()}`.trim() || 'Hospital Procurement',
         customerCompany: company.trim() || undefined,
         customerEmail: email.trim(),
@@ -479,8 +550,9 @@ function CheckoutContent() {
         status: 'Processing' as const,
         subtotal: subTotal,
         shipping: shippingCost,
+        tax: finalTax,
         discount: appliedDiscount,
-        total: total,
+        total: finalTotal,
         rating: 5,
         reviewComment: 'Verified purchase from USA Store.',
       }
@@ -1098,7 +1170,11 @@ function CheckoutContent() {
               ========================================================= */}
               <div id="checkout-confirm-order" className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-5 sm:p-6 space-y-3">
                 <div className="flex items-center justify-between text-xs sm:text-sm text-slate-600 pb-2 border-b border-slate-100">
-                  <span>Order Total (Sub-Total ${subTotal.toFixed(2)} + Shipping ${shippingCost.toFixed(2)}{appliedDiscount > 0 ? ` − Discount $${appliedDiscount.toFixed(2)}` : ''})</span>
+                  <span>
+                    Order Total (Sub-Total ${subTotal.toFixed(2)} + Shipping ${shippingCost.toFixed(2)}
+                    {taxCalculated ? ` + Tax $${taxAmount.toFixed(2)}` : ''}
+                    {appliedDiscount > 0 ? ` − Discount $${appliedDiscount.toFixed(2)}` : ''})
+                  </span>
                   <span className="text-lg sm:text-xl font-black text-[#96161B]">${total.toFixed(2)}</span>
                 </div>
                 <button
@@ -1248,6 +1324,26 @@ function CheckoutContent() {
                       <span>-${appliedDiscount.toFixed(2)}</span>
                     </div>
                   )}
+
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="block">Estimated Tax (Exclusive)</span>
+                      {taxCalculated && taxBreakdown.length > 0 && (
+                        <span className="text-[10px] text-slate-400 block">
+                          {taxBreakdown.map((b) => `${b.jurisdiction} (${b.rate}%)`).join(' + ')}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-bold text-slate-900">
+                      {isCalculatingTax ? (
+                        <span className="text-slate-400 text-xs">Calculating...</span>
+                      ) : !taxCalculated ? (
+                        <span className="text-slate-400 text-xs">Enter ZIP code</span>
+                      ) : (
+                        `$${taxAmount.toFixed(2)}`
+                      )}
+                    </span>
+                  </div>
 
                   <div className="border-t border-slate-200 pt-3 flex items-baseline justify-between">
                     <span className="text-base sm:text-lg font-black text-slate-900">Total</span>

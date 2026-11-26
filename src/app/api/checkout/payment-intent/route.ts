@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
+import { calculateStripeAutomaticTax, normalizeUsStateCode, round2 } from '@/src/lib/stripeTax'
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            'Stripe Secret Key is missing or still set to placeholder. Add your live STRIPE_SECRET_KEY (sk_live_...) in environment variables.',
+            'Stripe Secret Key is missing or still set to placeholder. Add your live STRIPE_SECRET_KEY in environment variables.',
         },
         { status: 500 }
       )
@@ -22,29 +23,30 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Your cart is empty.' }, { status: 400 })
     }
 
-    const round2 = (n: number) => Math.round((Number(n) || 0) * 100) / 100
+    const postalCode = (shippingAddress?.postCode || '').trim()
+    if (postalCode.length < 5) {
+      return NextResponse.json(
+        { error: 'Please enter a valid 5-digit US Postal / ZIP Code for automatic tax calculation.' },
+        { status: 400 }
+      )
+    }
 
-    const subTotal = round2(
-      items.reduce((acc: number, it: any) => {
-        const unit = round2(Number(it.price) || 0)
-        const qty = Math.max(1, Number(it.quantity) || 1)
-        return acc + round2(unit * qty)
-      }, 0)
-    )
+    const stripe = new Stripe(stripeSecretKey)
 
-    const shipping = Math.max(0, round2(Number(shippingCost) || 0))
-    const discount = Math.min(Math.max(0, round2(Number(discountAmount) || 0)), round2(subTotal + shipping))
-    const grandTotal = Math.max(0, round2(subTotal + shipping - discount))
-    const amountInCents = Math.round(grandTotal * 100)
+    const taxResult = await calculateStripeAutomaticTax(stripe, {
+      items,
+      shippingCost: Number(shippingCost) || 0,
+      discountAmount: Number(discountAmount) || 0,
+      shippingAddress: shippingAddress || {},
+    })
 
-    if (amountInCents < 50) {
+    if (taxResult.amountInCents < 50) {
       return NextResponse.json(
         { error: 'Minimum card charge amount is $0.50 USD.' },
         { status: 400 }
       )
     }
 
-    const stripe = new Stripe(stripeSecretKey)
     const referenceId = orderRef || `ALPH-${Math.floor(100000 + Math.random() * 900000)}`
     const fullName = `${customer?.firstName || ''} ${customer?.lastName || ''}`.trim() || 'Customer'
     const itemsSummary = items
@@ -52,8 +54,10 @@ export async function POST(req: Request) {
       .join(', ')
       .slice(0, 450)
 
+    const stateCode = normalizeUsStateCode(shippingAddress?.region)
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amountInCents,
+      amount: taxResult.amountInCents,
       currency: 'usd',
       automatic_payment_methods: { enabled: true, allow_redirects: 'never' },
       receipt_email: customer?.email || undefined,
@@ -65,34 +69,44 @@ export async function POST(req: Request) {
           line1: shippingAddress?.address || '',
           line2: shippingAddress?.address2 || undefined,
           city: shippingAddress?.city || '',
-          state: shippingAddress?.region || '',
-          postal_code: shippingAddress?.postCode || '',
+          state: stateCode || shippingAddress?.region || '',
+          postal_code: postalCode,
           country: 'US',
         },
       },
       metadata: {
         order_ref: referenceId,
+        tax_strategy: 'stripe_automatic_tax',
+        tax_behavior: 'exclusive',
+        tax_calculation_id: taxResult.calculationId,
         customer_name: fullName,
         customer_email: customer?.email || '',
         customer_phone: customer?.phone || '',
         customer_company: customer?.company || '',
-        subtotal_usd: subTotal.toFixed(2),
-        shipping_usd: shipping.toFixed(2),
-        discount_usd: discount.toFixed(2),
-        total_usd: grandTotal.toFixed(2),
+        subtotal_usd: taxResult.subtotal.toFixed(2),
+        shipping_usd: taxResult.shipping.toFixed(2),
+        discount_usd: taxResult.discount.toFixed(2),
+        tax_usd: taxResult.taxAmount.toFixed(2),
+        total_usd: taxResult.total.toFixed(2),
       },
     })
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      amount: grandTotal,
+      calculationId: taxResult.calculationId,
+      subtotal: taxResult.subtotal,
+      shipping: taxResult.shipping,
+      discount: taxResult.discount,
+      taxAmount: taxResult.taxAmount,
+      amount: round2(taxResult.total),
+      taxBreakdown: taxResult.taxBreakdown,
       livemode: paymentIntent.livemode,
     })
   } catch (error: any) {
-    console.error('Stripe PaymentIntent Error:', error)
+    console.error('Stripe PaymentIntent + Automatic Tax Error:', error)
     return NextResponse.json(
-      { error: error?.message || 'Failed to initialize card payment with Stripe.' },
+      { error: error?.message || 'Failed to initialize card payment with Stripe Automatic Tax.' },
       { status: 500 }
     )
   }

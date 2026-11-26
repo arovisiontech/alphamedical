@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         line_items.push({
           price_data: {
             currency: 'usd',
+            tax_behavior: 'exclusive',
             product_data: {
               name: it.title || 'Alpha Surgical Instrument',
               description: it.sku ? `SKU: ${it.sku}` : 'Medical Grade Stainless Steel Instrument',
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
       line_items.push({
         price_data: {
           currency: 'usd',
+          tax_behavior: 'exclusive',
           product_data: {
             name: 'ALPHA Medical Surgical Instruments Order',
             description: 'Custom Order Delivery',
@@ -58,15 +60,16 @@ export async function POST(req: Request) {
       })
     }
 
-    // Add shipping as line item
+    // Add shipping as line item (exclusive tax)
     const parsedShipping = Number(shippingCost) || 0
     if (parsedShipping > 0) {
       line_items.push({
         price_data: {
           currency: 'usd',
+          tax_behavior: 'exclusive',
           product_data: {
-            name: 'Fast International Express Shipping',
-            description: 'Insured worldwide medical delivery with tracking',
+            name: 'Shipping Fee',
+            description: 'Insured nationwide medical delivery with tracking',
           },
           unit_amount: Math.round(parsedShipping * 100),
         },
@@ -76,14 +79,19 @@ export async function POST(req: Request) {
 
     const referenceId = orderRef || `ALPH-${Math.floor(100000 + Math.random() * 900000)}`
 
-    // Create Stripe Checkout Session
+    // Create Stripe Checkout Session with Automatic Tax (Tax Exclusive)
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
+      automatic_tax: { enabled: true },
+      billing_address_collection: 'required',
+      shipping_address_collection: { allowed_countries: ['US'] },
       line_items,
       customer_email: customer?.email || undefined,
       client_reference_id: referenceId,
       metadata: {
         order_ref: referenceId,
+        tax_strategy: 'stripe_automatic_tax',
+        tax_behavior: 'exclusive',
         customer_name: `${customer?.firstName || ''} ${customer?.lastName || ''}`.trim(),
         customer_phone: customer?.phone || '',
         customer_company: customer?.company || '',
