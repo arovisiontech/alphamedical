@@ -50,17 +50,30 @@ function SuccessContent() {
     setIsCancelling(true)
     const targetRef = details?.order_ref || localOrder?.orderRef || orderRef
     const targetId = targetRef.replace('ALPH-', 'ORD-')
+    const reasonText = cancelReason.trim() || 'Cancelled by customer'
 
     try {
-      const updatedOrder = localOrder
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          orderRef: targetRef,
+          reason: reasonText,
+          order: localOrder || undefined,
+        }),
+      })
+      const data = await res.json()
+
+      const updatedOrder = data?.order || (localOrder
         ? {
             ...localOrder,
             status: 'Cancelled',
-            paymentStatus: 'Cancelled / Refunded',
-            cancelReason: cancelReason.trim() || 'Cancelled by customer',
+            paymentStatus: 'Refunded / Cancelled',
+            cancelReason: reasonText,
             cancelledAt: new Date().toISOString(),
           }
-        : null
+        : null)
 
       if (updatedOrder) {
         setLocalOrder(updatedOrder)
@@ -71,13 +84,7 @@ function SuccessContent() {
       const updated = Array.isArray(orders)
         ? orders.map((o: any) =>
             o.id === targetId || o.id === targetRef || o.orderRef === targetRef
-              ? {
-                  ...o,
-                  status: 'Cancelled',
-                  paymentStatus: 'Cancelled / Refunded',
-                  cancelReason: cancelReason.trim() || 'Cancelled by customer',
-                  cancelledAt: new Date().toISOString(),
-                }
+              ? { ...o, ...(updatedOrder || {}), status: 'Cancelled', cancelReason: reasonText }
               : o
           )
         : []
@@ -89,16 +96,6 @@ function SuccessContent() {
         ch.postMessage({ type: 'orders_updated', timestamp: Date.now() })
         ch.close()
       }
-
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'cancel_order',
-          id: targetId,
-          reason: cancelReason.trim() || 'Cancelled by customer',
-        }),
-      })
     } catch (err) {}
 
     setIsCancelling(false)

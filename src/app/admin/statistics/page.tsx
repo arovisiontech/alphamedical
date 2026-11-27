@@ -61,10 +61,6 @@ export interface OrderItemRecord {
   customerCompany?: string
   customerEmail: string
   customerPhone: string
-  customerWhatsApp?: string
-  whatsappStatus?: string
-  whatsappUrl?: string
-  customerDecision?: string
   customerAddress?: string
   customerCity?: string
   customerState?: string
@@ -83,7 +79,11 @@ export interface OrderItemRecord {
   cancelledAt?: string
   subtotal: number
   shipping: number
+  tax?: number
   total: number
+  stripePaymentIntentId?: string
+  stripeRefundId?: string
+  refundStatus?: string
   rating?: number
   reviewComment?: string
 }
@@ -339,6 +339,8 @@ export default function AdminStatisticsPage() {
   const [zoomedImage, setZoomedImage] = useState<{ src: string; title: string; sku?: string; size?: string } | null>(null)
   const [statusFilter, setStatusFilter] = useState<'All' | 'Dispatched' | 'Delivered' | 'Failed' | 'Processing' | 'Cancelled'>('All')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isCancellingOrder, setIsCancellingOrder] = useState(false)
+  const [adminCancelMessage, setAdminCancelMessage] = useState<string | null>(null)
 
   useEffect(() => {
     // Sync live total products from store
@@ -474,6 +476,13 @@ export default function AdminStatisticsPage() {
   }
 
   const handleUpdateStatus = (id: string, newStatus: OrderItemRecord['status']) => {
+    if (newStatus === 'Cancelled') {
+      const target = orders.find((o) => o.id === id)
+      if (target) {
+        handleAdminCancelAndRefund(target)
+        return
+      }
+    }
     const updated = orders.map((o) => (o.id === id ? { ...o, status: newStatus } : o))
     setOrders(updated)
     if (selectedOrder && selectedOrder.id === id) {
@@ -486,6 +495,54 @@ export default function AdminStatisticsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'update_status', id, status: newStatus }),
       }).catch(() => {})
+    }
+  }
+
+  const handleAdminCancelAndRefund = async (order: OrderItemRecord) => {
+    setIsCancellingOrder(true)
+    setAdminCancelMessage(null)
+    try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: order.id,
+          orderRef: order.orderRef || order.id,
+          reason: 'Cancelled by Admin from Orders Panel',
+          order,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setAdminCancelMessage(data?.error || 'Failed to cancel/refund order on Stripe.')
+        setIsCancellingOrder(false)
+        return
+      }
+      const updatedOrder: OrderItemRecord = data?.order || {
+        ...order,
+        status: 'Cancelled',
+        paymentStatus: 'Refunded / Cancelled',
+        cancelReason: 'Cancelled by Admin from Orders Panel',
+        cancelledAt: new Date().toISOString(),
+      }
+      const updated = orders.map((o) => (o.id === order.id ? updatedOrder : o))
+      setOrders(updated)
+      if (selectedOrder && selectedOrder.id === order.id) {
+        setSelectedOrder(updatedOrder)
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('alpha_orders_records', JSON.stringify(updated))
+        window.dispatchEvent(new Event('alpha_orders_updated'))
+      }
+      setAdminCancelMessage(
+        data?.stripeRefundId
+          ? `Order cancelled & refunded on Stripe (Refund ID: ${data.stripeRefundId}). Cancellation email sent to ${order.customerEmail}.`
+          : `Order cancelled. Cancellation email sent to ${order.customerEmail}.`
+      )
+    } catch (err: any) {
+      setAdminCancelMessage(err?.message || 'Network error while cancelling order.')
+    } finally {
+      setIsCancellingOrder(false)
     }
   }
 
@@ -951,45 +1008,6 @@ export default function AdminStatisticsPage() {
                     )}
                     <div><strong className="text-slate-900">Email:</strong> {selectedOrder.customerEmail}</div>
                     <div><strong className="text-slate-900">Phone:</strong> {selectedOrder.customerPhone}</div>
-                    {selectedOrder.customerWhatsApp && (
-                      <div>
-                        <strong className="text-slate-900">WhatsApp:</strong>{' '}
-                        <span className="font-bold text-emerald-700">{selectedOrder.customerWhatsApp}</span>
-                        {selectedOrder.whatsappStatus && (
-                          <span className="ml-1.5 text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
-                            {selectedOrder.whatsappStatus}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    {selectedOrder.customerDecision && (
-                      <div>
-                        <strong className="text-slate-900">Customer Decision:</strong>{' '}
-                        <span
-                          className={`font-bold px-2 py-0.5 rounded text-[11px] ${
-                            selectedOrder.customerDecision.toLowerCase().includes('cancel')
-                              ? 'bg-red-100 text-red-700'
-                              : selectedOrder.customerDecision.toLowerCase().includes('proceed')
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {selectedOrder.customerDecision}
-                        </span>
-                      </div>
-                    )}
-                    {selectedOrder.whatsappUrl && (
-                      <div className="pt-1">
-                        <a
-                          href={selectedOrder.whatsappUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-[11px] transition-colors"
-                        >
-                          <span>Send / Open WhatsApp Message (ALPHA Medical)</span>
-                        </a>
-                      </div>
-                    )}
                     <div>
                       <strong className="text-slate-900">Shipping Address:</strong>{' '}
                       {selectedOrder.customerAddress || '129 Fleetwood Drive'}, {selectedOrder.customerCity || 'Easley'}, {selectedOrder.customerState || 'South Carolina'} {selectedOrder.customerZip || '29640'}, {selectedOrder.customerCountry || 'United States'}
@@ -1136,8 +1154,13 @@ export default function AdminStatisticsPage() {
               </div>
 
               {/* TOTALS & DISPATCH STATUS CONTROLS */}
+              {adminCancelMessage && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-2.5 rounded-xl text-xs font-bold">
+                  {adminCancelMessage}
+                </div>
+              )}
               <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
                   <span className="text-xs font-bold text-slate-700">Update Order Status:</span>
                   <select
                     value={selectedOrder.status}
@@ -1146,9 +1169,21 @@ export default function AdminStatisticsPage() {
                   >
                     <option value="Dispatched">Dispatched (In Transit)</option>
                     <option value="Delivered">Delivered (Completed)</option>
+                    <option value="Cancelled">Cancelled / Refunded</option>
                     <option value="Failed">Failed / Returned</option>
                     <option value="Processing">Processing (Packaging)</option>
                   </select>
+
+                  {selectedOrder.status !== 'Cancelled' && (
+                    <button
+                      type="button"
+                      disabled={isCancellingOrder}
+                      onClick={() => handleAdminCancelAndRefund(selectedOrder)}
+                      className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-colors"
+                    >
+                      {isCancellingOrder ? 'Refunding...' : 'Cancel & Refund (Stripe)'}
+                    </button>
+                  )}
                 </div>
 
                 <div className="text-right space-y-1 text-xs">
@@ -1161,6 +1196,11 @@ export default function AdminStatisticsPage() {
                       {selectedOrder.shipping === 0 ? 'Free Shipping' : `$${selectedOrder.shipping.toFixed(2)}`}
                     </span>
                   </div>
+                  {typeof selectedOrder.tax === 'number' && selectedOrder.tax > 0 && (
+                    <div className="text-slate-500">
+                      Tax (Exclusive): <span className="font-bold text-slate-900">${selectedOrder.tax.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="text-base font-black text-[#96161B] pt-1 border-t border-slate-200">
                     Grand Total: ${selectedOrder.total.toFixed(2)} USD
                   </div>

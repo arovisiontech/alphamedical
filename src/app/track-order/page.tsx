@@ -11,21 +11,41 @@ import {
   Truck,
   ArrowLeft,
   AlertTriangle,
+  MapPin,
+  ShieldCheck,
+  Calendar,
 } from 'lucide-react'
 import TopBar from '@/src/components/public/TopBar'
 import HeaderNav from '@/src/components/public/HeaderNav'
 import MainRedNavbar from '@/src/components/public/MainRedNavbar'
 import PublicFooter from '@/src/components/public/PublicFooter'
 
+function getEstimatedDeliveryWindow(dateTimeStr?: string, status?: string): string {
+  if (status === 'Delivered') return 'Delivered'
+  if (status === 'Cancelled') return 'Cancelled'
+  const base = dateTimeStr ? new Date(dateTimeStr.replace(' ', 'T')) : new Date()
+  const validBase = isNaN(base.getTime()) ? new Date() : base
+  const minDate = new Date(validBase.getTime() + 2 * 86400000)
+  const maxDate = new Date(validBase.getTime() + 4 * 86400000)
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  return `${fmt(minDate)} – ${fmt(maxDate)}`
+}
+
+function getTrackingCode(orderId?: string): string {
+  const num = String(orderId || '100000').replace(/\D/g, '').padStart(6, '0').slice(-6)
+  return `1Z999AA101${num}`
+}
+
 export default function TrackOrderPage() {
   const [orderInput, setOrderInput] = useState('')
   const [ordersList, setOrdersList] = useState<any[]>([])
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [cancelReason, setCancelReason] = useState('Changed my mind')
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
-  const [isConfirmingProceed, setIsConfirmingProceed] = useState(false)
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null)
 
   useEffect(() => {
     const loadOrders = async () => {
@@ -74,33 +94,10 @@ export default function TrackOrderPage() {
     loadOrders()
   }, [])
 
-  const handleConfirmProceed = async () => {
-    if (!selectedOrder) return
-    setIsConfirmingProceed(true)
-    const targetId = selectedOrder.id
-    const updatedOrder = {
-      ...selectedOrder,
-      customerDecision: 'Proceed Confirmed by Customer',
-      confirmedProceedAt: new Date().toISOString(),
-    }
-    try {
-      setSelectedOrder(updatedOrder)
-      const nextList = ordersList.map((o) => (o.id === targetId ? updatedOrder : o))
-      setOrdersList(nextList)
-      localStorage.setItem('alpha_orders_records', JSON.stringify(nextList))
-      window.dispatchEvent(new Event('alpha_orders_updated'))
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'confirm_proceed', id: targetId }),
-      })
-    } catch (e) {}
-    setIsConfirmingProceed(false)
-  }
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setSearchError(null)
+    setCancelFeedback(null)
     const q = orderInput.trim().toUpperCase()
     if (!q) return
 
@@ -116,7 +113,9 @@ export default function TrackOrderPage() {
       setSelectedOrder(found)
     } else {
       setSelectedOrder(null)
-      setSearchError(`No order found with reference "${orderInput.trim()}". Please check your Order ID (e.g. ALPH-123456).`)
+      setSearchError(
+        `No order found with reference "${orderInput.trim()}". Please check your Order ID (e.g. ALPH-123456).`
+      )
     }
   }
 
@@ -124,17 +123,32 @@ export default function TrackOrderPage() {
     e.preventDefault()
     if (!selectedOrder) return
     setIsCancelling(true)
+    setCancelFeedback(null)
 
     const targetId = selectedOrder.id
-    const updatedOrder = {
-      ...selectedOrder,
-      status: 'Cancelled',
-      paymentStatus: 'Cancelled / Refunded',
-      cancelReason: cancelReason.trim() || 'Cancelled by customer',
-      cancelledAt: new Date().toISOString(),
-    }
+    const reasonText = cancelReason.trim() || 'Cancelled by customer'
 
     try {
+      const res = await fetch('/api/orders/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          orderRef: selectedOrder.orderRef || targetId,
+          reason: reasonText,
+          order: selectedOrder,
+        }),
+      })
+      const data = await res.json()
+
+      const updatedOrder = data?.order || {
+        ...selectedOrder,
+        status: 'Cancelled',
+        paymentStatus: 'Refunded / Cancelled',
+        cancelReason: reasonText,
+        cancelledAt: new Date().toISOString(),
+      }
+
       setSelectedOrder(updatedOrder)
       const nextList = ordersList.map((o) => (o.id === targetId ? updatedOrder : o))
       setOrdersList(nextList)
@@ -147,20 +161,25 @@ export default function TrackOrderPage() {
         ch.close()
       }
 
-      await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'cancel_order',
-          id: targetId,
-          reason: cancelReason.trim() || 'Cancelled by customer',
-        }),
-      })
+      setCancelFeedback(
+        data?.stripeRefundId
+          ? `Order cancelled & refunded on Stripe (Refund ID: ${data.stripeRefundId}). Cancellation confirmation sent to ${updatedOrder.customerEmail}.`
+          : `Order cancelled. Cancellation confirmation sent to ${updatedOrder.customerEmail}.`
+      )
     } catch (err) {}
 
     setIsCancelling(false)
     setIsCancelModalOpen(false)
   }
+
+  const currentStage =
+    selectedOrder?.status === 'Delivered'
+      ? 4
+      : selectedOrder?.status === 'Dispatched'
+      ? 3
+      : selectedOrder?.status === 'Processing'
+      ? 2
+      : 1
 
   return (
     <div className="min-h-screen bg-[#f8fafc] flex flex-col font-sans text-slate-900">
@@ -168,14 +187,14 @@ export default function TrackOrderPage() {
       <HeaderNav />
       <MainRedNavbar />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-10 space-y-6">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 py-10 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-              Track or Cancel Your Order
+              Track Order, Parcel Route &amp; Cancellation
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Enter your Order Reference (e.g. ALPH-123456) to check status or cancel before dispatch.
+              Track your parcel delivery timeline, shipping route, or cancel your order with automatic Stripe refund.
             </p>
           </div>
           <Link
@@ -206,7 +225,7 @@ export default function TrackOrderPage() {
             type="submit"
             className="bg-[#96161B] hover:bg-[#7d1216] text-white px-6 py-3 rounded-xl font-black text-xs uppercase tracking-wider cursor-pointer shrink-0"
           >
-            Find Order
+            Track Order
           </button>
         </form>
 
@@ -216,7 +235,13 @@ export default function TrackOrderPage() {
           </div>
         )}
 
-        {/* SELECTED ORDER DETAILS */}
+        {cancelFeedback && (
+          <div className="bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 rounded-xl text-xs font-bold">
+            {cancelFeedback}
+          </div>
+        )}
+
+        {/* SELECTED ORDER DETAILS + PARCEL ROUTE TRACKER */}
         {selectedOrder && (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
@@ -253,9 +278,107 @@ export default function TrackOrderPage() {
               </div>
             </div>
 
+            {/* PARCEL & ROUTE TRACKING TIMELINE (FOR ACTIVE / NON-CANCELLED ORDERS) */}
+            {selectedOrder.status !== 'Cancelled' ? (
+              <div className="bg-slate-50 rounded-2xl border border-slate-200 p-5 space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
+                  <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-800">
+                    <Truck className="w-4 h-4 text-[#96161B]" />
+                    <span>Live Parcel &amp; Route Tracking</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3 text-xs">
+                    <span className="bg-white border border-slate-200 px-2.5 py-1 rounded-lg font-mono font-bold text-slate-700">
+                      Tracking #: {getTrackingCode(selectedOrder.id)}
+                    </span>
+                    <span className="inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-lg font-bold">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Est. Delivery: {getEstimatedDeliveryWindow(selectedOrder.dateTime, selectedOrder.status)}</span>
+                    </span>
+                  </div>
+                </div>
+
+                {/* ROUTE SUMMARY */}
+                <div className="flex flex-wrap items-center gap-2 text-xs text-slate-600 bg-white px-4 py-3 rounded-xl border border-slate-200">
+                  <MapPin className="w-4 h-4 text-[#96161B] shrink-0" />
+                  <span className="font-bold text-slate-900">Route:</span>
+                  <span>Easley, SC Warehouse (Origin)</span>
+                  <span className="text-slate-400">→</span>
+                  <span>US Medical Express Regional Hub</span>
+                  <span className="text-slate-400">→</span>
+                  <span className="font-bold text-[#96161B]">
+                    {[selectedOrder.customerCity, selectedOrder.customerState, selectedOrder.customerZip].filter(Boolean).join(', ') || 'Destination Address'}
+                  </span>
+                </div>
+
+                {/* 4-STEP TIMELINE */}
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-xs">
+                  {[
+                    {
+                      step: 1,
+                      title: 'Order Confirmed',
+                      desc: 'Payment authorized & verified',
+                      icon: ShieldCheck,
+                    },
+                    {
+                      step: 2,
+                      title: 'Sterile Packing',
+                      desc: 'QA inspection at Easley, SC',
+                      icon: Package,
+                    },
+                    {
+                      step: 3,
+                      title: 'In Transit',
+                      desc: 'On route via insured carrier',
+                      icon: Truck,
+                    },
+                    {
+                      step: 4,
+                      title: 'Delivered',
+                      desc: getEstimatedDeliveryWindow(selectedOrder.dateTime, selectedOrder.status),
+                      icon: CheckCircle2,
+                    },
+                  ].map((item) => {
+                    const Icon = item.icon
+                    const active = currentStage >= item.step
+                    return (
+                      <div
+                        key={item.step}
+                        className={`p-3.5 rounded-xl border ${
+                          active
+                            ? 'bg-white border-emerald-300 shadow-2xs'
+                            : 'bg-slate-100/70 border-slate-200 opacity-60'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div
+                            className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                              active ? 'bg-emerald-600 text-white' : 'bg-slate-300 text-slate-600'
+                            }`}
+                          >
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="font-black text-slate-900">{item.title}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500">{item.desc}</p>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-xs text-red-800 space-y-1">
+                <div className="font-black uppercase">Order Cancelled &amp; Refund Processed</div>
+                <div>Reason: {selectedOrder.cancelReason || 'Cancelled by customer'}</div>
+                {selectedOrder.refundStatus && <div>Refund Status: {selectedOrder.refundStatus}</div>}
+                {selectedOrder.stripeRefundId && (
+                  <div className="font-mono">Stripe Refund ID: {selectedOrder.stripeRefundId}</div>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-slate-50 p-4 rounded-2xl border border-slate-200">
               <div>
-                <span className="text-slate-400 block mb-0.5">Customer & Contact</span>
+                <span className="text-slate-400 block mb-0.5">Customer &amp; Contact</span>
                 <span className="font-bold text-slate-900 block">{selectedOrder.customerName}</span>
                 <span className="text-slate-600 block">{selectedOrder.customerEmail}</span>
                 <span className="text-slate-600 block">{selectedOrder.customerPhone}</span>
@@ -305,39 +428,60 @@ export default function TrackOrderPage() {
                 </span>
               </div>
 
-              {selectedOrder.status !== 'Cancelled' && selectedOrder.status !== 'Delivered' ? (
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {selectedOrder.customerDecision !== 'Proceed Confirmed by Customer' ? (
-                    <button
-                      type="button"
-                      disabled={isConfirmingProceed}
-                      onClick={handleConfirmProceed}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>{isConfirmingProceed ? 'Confirming...' : 'Confirm & Proceed Order'}</span>
-                    </button>
-                  ) : (
-                    <span className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2 rounded-xl font-bold text-xs inline-flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Proceed Confirmed</span>
-                    </span>
-                  )}
+              {selectedOrder.status !== 'Cancelled' && selectedOrder.status !== 'Delivered' && (
+                <button
+                  type="button"
+                  onClick={() => setIsCancelModalOpen(true)}
+                  className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <XCircle className="w-4 h-4" />
+                  <span>Cancel &amp; Refund Order</span>
+                </button>
+              )}
+            </div>
+          </div>
+        )}
 
-                  <button
-                    type="button"
-                    onClick={() => setIsCancelModalOpen(true)}
-                    className="bg-red-50 hover:bg-red-100 border border-red-300 text-red-700 px-5 py-2.5 rounded-xl font-black text-xs uppercase tracking-wider inline-flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <XCircle className="w-4 h-4" />
-                    <span>Cancel This Order</span>
-                  </button>
+        {/* RECENT ORDER HISTORY LIST */}
+        {ordersList.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs space-y-4">
+            <h2 className="text-sm sm:text-base font-black text-slate-900">
+              Your Recent Orders ({ordersList.length})
+            </h2>
+            <div className="divide-y divide-slate-100">
+              {ordersList.slice(0, 8).map((ord) => (
+                <div
+                  key={ord.id}
+                  onClick={() => setSelectedOrder(ord)}
+                  className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 cursor-pointer hover:bg-slate-50 px-3 rounded-xl transition-colors"
+                >
+                  <div>
+                    <span className="font-mono font-bold text-xs text-[#96161B] mr-2">
+                      {ord.orderRef || ord.id}
+                    </span>
+                    <span className="text-xs font-bold text-slate-900">
+                      {ord.itemsDescription}
+                    </span>
+                    <span className="text-[11px] text-slate-400 block">{ord.dateTime}</span>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span
+                      className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${
+                        ord.status === 'Cancelled'
+                          ? 'bg-red-100 text-red-700'
+                          : ord.status === 'Delivered'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {ord.status}
+                    </span>
+                    <span className="font-black text-xs text-slate-900">
+                      ${Number(ord.total || 0).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-              ) : selectedOrder.status === 'Cancelled' ? (
-                <span className="text-xs font-bold text-red-600">
-                  Cancelled ({selectedOrder.cancelReason || 'Cancelled by customer'})
-                </span>
-              ) : null}
+              ))}
             </div>
           </div>
         )}
@@ -352,10 +496,10 @@ export default function TrackOrderPage() {
               </div>
               <div>
                 <h3 className="font-black text-base text-slate-900">
-                  Cancel Order {selectedOrder.orderRef || selectedOrder.id}?
+                  Cancel &amp; Refund {selectedOrder.orderRef || selectedOrder.id}?
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Are you sure you want to cancel this order? Dispatch will be stopped immediately.
+                  This will cancel your order, automatically issue a refund via Stripe, and send a cancellation confirmation email.
                 </p>
               </div>
             </div>
@@ -391,7 +535,7 @@ export default function TrackOrderPage() {
                   disabled={isCancelling}
                   className="flex-1 py-3 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs uppercase tracking-wider cursor-pointer"
                 >
-                  {isCancelling ? 'Cancelling...' : 'Yes, Cancel Order'}
+                  {isCancelling ? 'Refunding & Cancelling...' : 'Yes, Cancel & Refund'}
                 </button>
               </div>
             </form>

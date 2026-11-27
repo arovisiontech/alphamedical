@@ -1,57 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import fs from 'fs'
-import path from 'path'
-import os from 'os'
+import { getOrdersFromDisk, saveOrdersToDisk } from '@/src/lib/ordersStore'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
-const dataFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json')
-const tmpFilePath = path.join(os.tmpdir(), 'alpha_orders.json')
-
-const g = globalThis as unknown as {
-  __alpha_orders?: any[]
-}
-
-function getOrdersFromFile(): any[] {
-  if (g.__alpha_orders !== undefined && Array.isArray(g.__alpha_orders)) {
-    return g.__alpha_orders
-  }
-
-  for (const filePath of [dataFilePath, tmpFilePath]) {
-    try {
-      if (fs.existsSync(filePath)) {
-        const parsed = JSON.parse(fs.readFileSync(filePath, 'utf-8'))
-        if (Array.isArray(parsed)) {
-          g.__alpha_orders = parsed
-          return parsed
-        }
-      }
-    } catch (e) {}
-  }
-
-  g.__alpha_orders = []
-  return []
-}
-
-function saveOrdersToFile(orders: any[]): void {
-  g.__alpha_orders = orders
-
-  try {
-    const dir = path.dirname(dataFilePath)
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true })
-    }
-    fs.writeFileSync(dataFilePath, JSON.stringify(orders, null, 2), 'utf-8')
-  } catch (e) {}
-
-  try {
-    fs.writeFileSync(tmpFilePath, JSON.stringify(orders, null, 2), 'utf-8')
-  } catch (e) {}
-}
-
 export async function GET() {
-  const orders = getOrdersFromFile()
+  const orders = getOrdersFromDisk()
   return NextResponse.json(orders, {
     headers: {
       'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
@@ -62,10 +16,10 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const current = getOrdersFromFile()
+    const current = getOrdersFromDisk()
 
     if (body?.action === 'replace' && Array.isArray(body.orders)) {
-      saveOrdersToFile(body.orders)
+      saveOrdersToDisk(body.orders)
       return NextResponse.json({ success: true, orders: body.orders })
     }
 
@@ -73,7 +27,7 @@ export async function POST(req: NextRequest) {
       const updated = current.map((o: any) =>
         o.id === body.id ? { ...o, status: body.status } : o
       )
-      saveOrdersToFile(updated)
+      saveOrdersToDisk(updated)
       return NextResponse.json({ success: true, orders: updated })
     }
 
@@ -85,30 +39,13 @@ export async function POST(req: NextRequest) {
           ? {
               ...o,
               status: 'Cancelled',
-              paymentStatus: 'Cancelled / Refunded',
-              customerDecision: 'Cancelled by Customer',
+              paymentStatus: o.paymentStatus || 'Cancelled / Refunded',
               cancelReason: body.reason || 'Cancelled by customer',
               cancelledAt: new Date().toISOString(),
             }
           : o
       )
-      saveOrdersToFile(updated)
-      return NextResponse.json({ success: true, orders: updated })
-    }
-
-    if (body?.action === 'confirm_proceed' && body.id) {
-      const targetId = String(body.id)
-      const altId = targetId.replace('ALPH-', 'ORD-')
-      const updated = current.map((o: any) =>
-        o.id === targetId || o.id === altId || o.orderRef === targetId
-          ? {
-              ...o,
-              customerDecision: 'Proceed Confirmed by Customer',
-              confirmedProceedAt: new Date().toISOString(),
-            }
-          : o
-      )
-      saveOrdersToFile(updated)
+      saveOrdersToDisk(updated)
       return NextResponse.json({ success: true, orders: updated })
     }
 
@@ -122,7 +59,7 @@ export async function POST(req: NextRequest) {
             }
           : o
       )
-      saveOrdersToFile(updated)
+      saveOrdersToDisk(updated)
       return NextResponse.json({ success: true, orders: updated })
     }
 
@@ -133,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     const filtered = current.filter((o: any) => o.id !== orderRecord.id)
     const updated = [orderRecord, ...filtered]
-    saveOrdersToFile(updated)
+    saveOrdersToDisk(updated)
 
     return NextResponse.json({ success: true, order: orderRecord })
   } catch (err: any) {
