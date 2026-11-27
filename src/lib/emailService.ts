@@ -116,7 +116,7 @@ export async function sendOrderConfirmationEmail(payload: OrderEmailPayload) {
           <tbody>${renderItemsRows(payload.items)}</tbody>
         </table>
         <p style="text-align:right;font-size:15px;"><strong>Total Paid: $${Number(payload.total || 0).toFixed(2)} USD</strong></p>
-        <p style="font-size:12px;color:#64748b;margin-top:20px;">Track or manage your order anytime at: <a href="https://alphasurgical.brandiedesign.agency/track-order?ref=${encodeURIComponent(payload.orderRef)}">Track / Cancel Order</a></p>
+        <p style="font-size:12px;color:#64748b;margin-top:20px;">Track or manage your order anytime at: <a href="https://alpha-medicalsupplies.com/track-order?ref=${encodeURIComponent(payload.orderRef)}">Track / Cancel Order</a></p>
       </div>
     </div>`
 

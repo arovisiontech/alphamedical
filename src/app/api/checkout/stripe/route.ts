@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     const stripe = new Stripe(stripeSecretKey)
 
-    const host = req.headers.get('host') || 'alphasurgical.brandiedesign.agency'
+    const host = req.headers.get('host') || 'alpha-medicalsupplies.com'
     const protocol = req.headers.get('x-forwarded-proto') || 'https'
     const origin = req.headers.get('origin') || `${protocol}://${host}`
 
